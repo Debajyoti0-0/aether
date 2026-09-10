@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -18,55 +19,101 @@ import (
 	"time"
 )
 
-// Protocol: every frame is 4-byte big-endian length + JSON payload.
-// Messages are the RPC contract of the Aether teamserver:
+// Protocol v2 (Stage 3, T2): every frame is 4-byte big-endian length +
+// JSON payload. Every envelope carries Version and RequestID so responses
+// are always correlatable to their request — shared response channels
+// and "first response belongs to the caller" assumptions are gone.
 //
-//   ExecuteCommand  (CommandRequest  -> CommandResponse)
-//   StreamWorkspace (WorkspaceRequest -> stream WorkspaceUpdate)
+// Message types: command | response | subscribe | event | ping | pong | error
+
+// ProtocolVersion is the only protocol version this build speaks.
+// Envelopes with any other version are rejected (no silent downgrade).
+const ProtocolVersion = 2
 
 // CommandRequest asks the teamserver to run an aether command in a workspace.
+// NOTE (Stage 3, T1): the client-asserted `operator` field was REMOVED —
+// the operator identity is derived exclusively from the mTLS client
+// certificate and attached server-side.
 type CommandRequest struct {
 	WorkspaceID string `json:"workspace_id"`
 	CommandLine string `json:"command_line"` // full aether CLI syntax
-	Operator    string `json:"operator,omitempty"`
 }
 
-// CommandResponse carries the result of an executed command.
+// CommandResponse carries the governed spine outcome of a command.
 type CommandResponse struct {
-	OK      bool   `json:"ok"`
-	Output  string `json:"output,omitempty"`
-	Error   string `json:"error,omitempty"`
-	TookMS  int64  `json:"took_ms"`
+	ActionID    string `json:"aid,omitempty"`
+	Status      string `json:"status,omitempty"` // completed | failed | aborted | completed_state_unknown
+	Stage       string `json:"stage,omitempty"`  // last successful spine stage
+	OperationID string `json:"opid,omitempty"`
+	Output      string `json:"output,omitempty"`
+	Error       string `json:"error,omitempty"`
+	TookMS      int64  `json:"took_ms"`
 }
 
-// WorkspaceRequest subscribes to workspace updates.
+// WorkspaceRequest subscribes to workspace updates. Cursor is the
+// last event sequence the client has seen (0 = everything retained);
+// the server replays everything newer from the persistent event store.
 type WorkspaceRequest struct {
 	WorkspaceID string `json:"workspace_id"`
+	Cursor      uint64 `json:"cursor,omitempty"`
 }
 
-// WorkspaceUpdate is one streamed change to a workspace.
+// WorkspaceUpdate is one streamed change to a workspace. Seq carries
+// the workspace's monotonic event sequence (gaps are detectable).
 type WorkspaceUpdate struct {
 	WorkspaceID string `json:"workspace_id"`
 	Kind        string `json:"kind"` // token_added, event, path_validated, ...
 	Payload     string `json:"payload,omitempty"`
 	Timestamp   int64  `json:"timestamp"`
+	Seq         int64  `json:"seq,omitempty"`
 }
 
 // MessageType discriminates frames on the wire.
 type MessageType string
 
 const (
-	MsgCommandRequest  MessageType = "command_request"
-	MsgCommandResponse MessageType = "command_response"
-	MsgWorkspaceSub    MessageType = "workspace_sub"
-	MsgWorkspaceUpdate MessageType = "workspace_update"
+	MsgCommandRequest  MessageType = "command"
+	MsgCommandResponse MessageType = "response"
+	MsgWorkspaceSub    MessageType = "subscribe"
+	MsgWorkspaceUpdate MessageType = "event"
+	MsgPing            MessageType = "ping"
+	MsgPong            MessageType = "pong"
 	MsgError           MessageType = "error"
 )
 
-// Envelope is the outer frame: type + payload.
+// Envelope is the outer frame: protocol version, correlation ID,
+// message type, optional per-workspace event sequence, payload.
 type Envelope struct {
-	Type    MessageType     `json:"type"`
-	Payload json.RawMessage `json:"payload,omitempty"`
+	Version   int             `json:"v"`
+	Type      MessageType     `json:"type"`
+	RequestID string          `json:"rid,omitempty"` // client-issued; server echoes verbatim
+	Seq       uint64          `json:"seq,omitempty"` // monotonic per workspace (event envelopes)
+	Payload   json.RawMessage `json:"payload,omitempty"`
+}
+
+// Validate rejects protocol violations fail-closed: unknown versions
+// are refused (no downgrade), and correlation-bearing messages must
+// carry a RequestID.
+func (e *Envelope) Validate() error {
+	if e.Version != ProtocolVersion {
+		return fmt.Errorf("protocol version %d unsupported (want %d)", e.Version, ProtocolVersion)
+	}
+	switch e.Type {
+	case MsgCommandRequest, MsgCommandResponse:
+		if e.RequestID == "" {
+			return fmt.Errorf("%s envelope requires a request id", e.Type)
+		}
+	}
+	return nil
+}
+
+// NewRequestID mints a client-side correlation identifier.
+func NewRequestID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return fmt.Sprintf("rid-%d", time.Now().UnixNano())
+	}
+	return hex.EncodeToString(b[:])
 }
 
 // WriteFrame writes a length-prefixed JSON envelope to w.
@@ -84,7 +131,8 @@ func WriteFrame(w io.Writer, env *Envelope) error {
 	return err
 }
 
-// ReadFrame reads one length-prefixed JSON envelope from r.
+// ReadFrame reads one length-prefixed JSON envelope from r and
+// validates the protocol header (version, correlation).
 func ReadFrame(r *bufio.Reader) (*Envelope, error) {
 	var lenBuf [4]byte
 	if _, err := io.ReadFull(r, lenBuf[:]); err != nil {
@@ -103,6 +151,9 @@ func ReadFrame(r *bufio.Reader) (*Envelope, error) {
 	env := &Envelope{}
 	if err := json.Unmarshal(data, env); err != nil {
 		return nil, fmt.Errorf("decode envelope: %w", err)
+	}
+	if err := env.Validate(); err != nil {
+		return nil, err
 	}
 	return env, nil
 }

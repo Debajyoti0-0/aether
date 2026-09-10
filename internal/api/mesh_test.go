@@ -1,30 +1,31 @@
-package api
+﻿package api
 
 import (
-	"crypto/tls"
 	"sync"
 	"testing"
 	"time"
 )
 
 func TestPublishFansOutToAllSubscribers(t *testing.T) {
-	serverCert, _ := GenerateServerCert([]string{"127.0.0.1"})
-	srv, err := NewTeamserver("127.0.0.1:0", serverCert, func(req *CommandRequest) (*CommandResponse, error) {
-		return &CommandResponse{OK: true}, nil
+	// Two independently issued operators (real CA hierarchy, T1).
+	srvCert, clientCAs, _, caDir := testPKI(t)
+	srv, err := NewTeamserver("127.0.0.1:0", srvCert, clientCAs, "", nil, func(op *Operator, req *CommandRequest) (*CommandResponse, error) {
+		return &CommandResponse{Status: "completed"}, nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv.TLSConf.ClientAuth = tls.RequireAnyClientCert
 	go srv.Serve()
 	defer srv.Close()
 
-	op1, err := Dial(srv.Listener.Addr().String(), genClientCert(t, "op1"), nil, true)
+	pairA := issueOperatorPair(t, caDir, "op-a")
+	pairB := issueOperatorPair(t, caDir, "op-b")
+	op1, err := Dial(srv.Listener.Addr().String(), pairA, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer op1.Close()
-	op2, err := Dial(srv.Listener.Addr().String(), genClientCert(t, "op2"), nil, true)
+	op2, err := Dial(srv.Listener.Addr().String(), pairB, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,6 @@ func TestPublishFansOutToAllSubscribers(t *testing.T) {
 		}
 	}
 }
-
 func TestSubscribeReplacesOldChannel(t *testing.T) {
 	// Subscribers accumulate per workspace and can be removed
 	// individually without affecting others.
@@ -111,8 +111,8 @@ func TestSubscribeReplacesOldChannel(t *testing.T) {
 }
 
 // TestPublishUnsubscribeRace hammers Publish against subscribe/
-// unsubscribe cycles. The historical bug — Publish sending on a channel
-// closed by unsubscribe — crashed the process with a send-on-closed-
+// unsubscribe cycles. The historical bug â€” Publish sending on a channel
+// closed by unsubscribe â€” crashed the process with a send-on-closed-
 // channel panic. The lifecycle fix (single closure owner, done-guarded
 // sends, never-closed event channels) must survive this hammering under
 // -race.

@@ -105,7 +105,7 @@ func runIntent(ctx context.Context, ws *workspace.Workspace, command string, act
 		return nil, fmt.Errorf("intent %q: want a whitelisted mutating command (exec azure|aws|github|gcp, simulate stream)", strings.Join(fields, " "))
 	}
 
-	mut, kind, target, err := buildIntentMutation(ctx, fields)
+	mut, kind, target, err := buildIntentMutation(fields)
 	if err != nil {
 		return nil, fmt.Errorf("intent %q refused: %w", strings.Join(fields, " "), err)
 	}
@@ -162,7 +162,7 @@ func runIntentOrDispatch(ctx context.Context, ws *workspace.Workspace, line stri
 
 // buildIntentMutation parses the whitelisted intent grammar into a
 // spine mutation. Flags mirror the corresponding CLI commands.
-func buildIntentMutation(ctx context.Context, fields []string) (mutation.Mutation, string, string, error) {
+func buildIntentMutation(fields []string) (mutation.Mutation, string, string, error) {
 	switch fields[0] + " " + fields[1] {
 	case "exec azure":
 		fs := newIntentFlagSet("exec azure")
