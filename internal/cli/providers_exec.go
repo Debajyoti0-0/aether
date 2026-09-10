@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/Debajyoti0-0/aether/pkg/plugins/sdk"
 )
 
 // execOktaUsers enumerates Okta users with the raw REST shape used by
@@ -69,6 +67,3 @@ func min(a, b int) int {
 
 // defaultStderr indirection keeps output testable.
 var defaultStderr = func() io.Writer { return os.Stderr }
-
-// sdkResultAlias keeps the sdk import referenced by shared helpers.
-var _ = sdk.Result{}

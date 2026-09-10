@@ -71,7 +71,6 @@ func Dir() string {
 }
 
 // Paths of interest inside a workspace.
-func (w *Workspace) DBPath() string    { return filepath.Join(w.Root, "db", "vault.aedb") }
 func (w *Workspace) Artifacts() string { return filepath.Join(w.Root, "artifacts") }
 func (w *Workspace) Reports() string   { return filepath.Join(w.Root, "reports") }
 

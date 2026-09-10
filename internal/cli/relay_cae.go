@@ -27,7 +27,8 @@ var relayCAECmd = &cobra.Command{
 var relayFIDO2Cmd = &cobra.Command{
 	Use:     "fido2-downgrade",
 	Aliases: []string{"fido2"},
-	Short:   "Force password/SMS auth class via WS-Trust wauth spoof",
+	Short:   "Build and preview a WS-Trust wauth spoof RST (password/SMS class) — not sent",
+	Long:    `Constructs the downgrade RST for offline analysis and prints it. The RST is NOT submitted to the STS endpoint.`,
 	RunE:    runRelayFIDO2,
 }
 

@@ -363,7 +363,8 @@ func storeSaveConfig(path string, cfg *store.Config) error {
 
 var tunnelCmd = &cobra.Command{
 	Use:   "tunnel",
-	Short: "Route aether traffic through an external proxy (HTTP/SOCKS5)",
+	Short: "Single proxy reachability probe via an external proxy (HTTP/SOCKS5) — not a tunnel",
+	Long:  `Sends ONE GET request through the configured proxy and reports the status code and TLS preset used. There is no persistent tunnel; use this to verify proxy routing before other commands.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client, err := transport.NewClientWithOptions(transport.Options{
 			Preset:  tunnelPreset,
@@ -428,7 +429,7 @@ func init() {
 	_ = rollbackPushCmd.MarkFlagRequired("kind")
 	_ = rollbackPushCmd.MarkFlagRequired("target")
 
-	exportAttckCmd.Flags().StringVar(&attckWorkspace, "workspace", "", "Workspace name (required)")
+	exportAttckCmd.Flags().StringVar(&attckWorkspace, "workspace", "", "Engagement label for the Navigator layer title (inputs come from --actions)")
 	exportAttckCmd.Flags().StringVar(&attckActions, "actions", "", "Comma-separated actions (required)")
 	exportAttckCmd.Flags().StringVar(&attckOut, "output", "", "Output Navigator JSON file")
 	_ = exportAttckCmd.MarkFlagRequired("workspace")

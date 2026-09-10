@@ -471,7 +471,7 @@ var (
 
 func init() {
 	rootCmd.AddCommand(watchCmd, dashboardCmd, auditCmd, pluginsCmd2)
-	auditCmd.AddCommand(auditVerifyCmd, auditRecordCmd, exportAuditCmd)
+	auditCmd.AddCommand(auditVerifyCmd, auditRecordCmd)
 	exportCmd.AddCommand(exportAuditCmd)
 	pluginsCmd2.AddCommand(pluginsSearchCmd, pluginsInstallCmd, pluginsInstalledCmd)
 	execCmd.AddCommand(execGCPCmd)
@@ -513,7 +513,7 @@ func init() {
 	_ = execGCPCmd.MarkFlagRequired("target")
 	_ = execGCPCmd.MarkFlagRequired("cmd")
 
-	exportPDFCmd.Flags().StringVar(&pdfWorkspace, "workspace", "", "Workspace name (required)")
+	exportPDFCmd.Flags().StringVar(&pdfWorkspace, "workspace", "", "Engagement label for the PDF title (report inputs come from --bh-json)")
 	exportPDFCmd.Flags().StringVar(&pdfPathFile, "bh-json", "", "BloodHound path JSON to include")
 	exportPDFCmd.Flags().StringVar(&pdfOut, "output", "", "Output PDF file")
 	_ = exportPDFCmd.MarkFlagRequired("workspace")

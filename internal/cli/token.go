@@ -90,7 +90,7 @@ func init() {
 	tokenConfuseCmd.Flags().StringVar(&confuseJWT, "jwt", "", "RS256 JWT to confuse (required)")
 	tokenConfuseCmd.Flags().StringVar(&confuseN, "n", "", "RSA modulus hex (public key)")
 	tokenConfuseCmd.Flags().StringVar(&confuseE, "e", "", "RSA exponent hex (public key)")
-	tokenConfuseCmd.Flags().StringVar(&confuseClaims, "set-claim", "", "key=value claim override (repeatable)")
+	tokenConfuseCmd.Flags().StringSliceVar(&confuseClaimList, "set-claim", nil, "key=value claim override (repeatable)")
 	_ = tokenConfuseCmd.MarkFlagRequired("jwt")
 	_ = tokenConfuseCmd.MarkFlagRequired("n")
 
@@ -146,7 +146,6 @@ var (
 	confuseJWT       string
 	confuseN         string
 	confuseE         string
-	confuseClaims    string
 	confuseClaimList []string
 )
 

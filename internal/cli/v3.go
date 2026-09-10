@@ -322,7 +322,7 @@ var (
 
 func init() {
 	exportCmd.AddCommand(exportExecutiveCmd)
-	exportExecutiveCmd.Flags().StringVar(&execKPIWorkspace, "workspace", "", "Workspace name (required)")
+	exportExecutiveCmd.Flags().StringVar(&execKPIWorkspace, "workspace", "", "Engagement label for report titles (report inputs come from --bh-json/--actions, not workspace records)")
 	exportExecutiveCmd.Flags().StringVar(&execKPIPathFile, "bh-json", "", "BloodHound path JSON to validate and include")
 	exportExecutiveCmd.Flags().StringVar(&execKPIOut, "output", "", "Base output path (writes .md and .json)")
 	_ = exportExecutiveCmd.MarkFlagRequired("workspace")

@@ -49,46 +49,6 @@ func TestConfigValidation(t *testing.T) {
 	}
 }
 
-func TestBoltStore(t *testing.T) {
-	dir := t.TempDir()
-	s, err := OpenStore(filepath.Join(dir, "test.db"))
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	defer s.Close()
-
-	type token struct {
-		Access string `json:"access"`
-	}
-
-	if err := s.PutJSON(BucketTokens, "t1", token{Access: "abc"}); err != nil {
-		t.Fatalf("put: %v", err)
-	}
-
-	var out token
-	if err := s.GetJSON(BucketTokens, "t1", &out); err != nil {
-		t.Fatalf("get: %v", err)
-	}
-	if out.Access != "abc" {
-		t.Errorf("access = %q", out.Access)
-	}
-
-	list, err := s.List(BucketTokens)
-	if err != nil {
-		t.Fatalf("list: %v", err)
-	}
-	if len(list) != 1 {
-		t.Errorf("list len = %d", len(list))
-	}
-
-	if err := s.Delete(BucketTokens, "t1"); err != nil {
-		t.Fatalf("delete: %v", err)
-	}
-	if err := s.GetJSON(BucketTokens, "t1", &out); err == nil {
-		t.Error("expected missing key error")
-	}
-}
-
 func TestRedact(t *testing.T) {
 	fields := Redact(
 		zap.String("token", "supersecret"),

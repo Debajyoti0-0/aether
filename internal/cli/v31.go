@@ -21,16 +21,6 @@ func behaviorPacer() *behavior.Pacer {
 	return behavior.NewPacer(behavior.Persona(runPersonaName), runSeed)
 }
 
-// behaviorWait sleeps a human-like delay between run steps when
-// --behavior realistic is set (no-op otherwise).
-func behaviorWait(ctx context.Context, p *behavior.Pacer, step int) error {
-	if runBehavior != "realistic" || p == nil {
-		return nil
-	}
-	fmt.Fprintf(os.Stderr, "[behavior] persona=%s step=%d pausing…\n", p.Profile().Name, step)
-	return p.Wait(ctx)
-}
-
 // behaviorWaitActive aligns execution with the persona's active window.
 func behaviorWaitActive(ctx context.Context, p *behavior.Pacer, now time.Time) error {
 	if runBehavior != "realistic" || p == nil {
@@ -43,8 +33,6 @@ func behaviorWaitActive(ctx context.Context, p *behavior.Pacer, now time.Time) e
 	}
 	return p.WaitActive(ctx, now)
 }
-
-var _ = runSeed // set via --seed
 
 // ---------------------------------------------------------- cap predict
 

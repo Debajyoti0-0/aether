@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Debajyoti0-0/aether/internal/engine/validate"
-	"github.com/Debajyoti0-0/aether/internal/transport"
 	"github.com/Debajyoti0-0/aether/internal/workspace"
 )
 
@@ -158,9 +157,6 @@ func transportBrowserPreset(p string) bool {
 	}
 	return false
 }
-
-// _ keeps the transport Jitter types linked for the checklist text.
-var _ transport.Jitter = transport.NoJitter{}
 
 func init() {
 	validateCmd.AddCommand(validateStealthCmd)

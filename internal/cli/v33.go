@@ -55,7 +55,8 @@ var ztnaDetectCmd = &cobra.Command{
 
 var ztnaExecCmd = &cobra.Command{
 	Use:   "exec",
-	Short: "Execute against an internal target via the broker route",
+	Short: "Broker-routed reachability probe of an internal target (does not execute commands)",
+	Long:  `Routes one request through the detected ZTNA broker and reports what the internal target returns for the request body. The command string is recorded in the probe request but no command execution occurs.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		hc, err := transportClientFor(ztnaPreset)
 		if err != nil {
@@ -172,56 +173,7 @@ var (
 	relayZAppliesTo string
 )
 
-// ---------------------------------------------------------------- token confuse --downgrade-pqc
-
-var confuseDowngradePQC bool
-var confuseJWKSURL string
-
-func init() {
-	tokenConfuseCmd.Flags().BoolVar(&confuseDowngradePQC, "downgrade-pqc", false, "Detect PQC algs in JWKS and pick the classic fallback")
-	tokenConfuseCmd.Flags().StringVar(&confuseJWKSURL, "jwks-url", "", "Issuer jwks_uri to fetch and analyze")
-}
-
-// pqcCheck runs before the confusion forge when --downgrade-pqc is set.
-func pqcCheck(ctx context.Context) error {
-	if !confuseDowngradePQC {
-		return nil
-	}
-	if confuseJWKSURL == "" {
-		return fmt.Errorf("--downgrade-pqc requires --jwks-url")
-	}
-	jwks, err := oauth2.FetchJWKS(ctx, nil, confuseJWKSURL)
-	if err != nil {
-		return err
-	}
-	d, err := oauth2.DetectAndDowngrade(jwks)
-	if err != nil {
-		return err
-	}
-	out := map[string]any{
-		"pqc_detected":     d.PQCDetected,
-		"pqc_algs":         d.PQCAlgs,
-		"downgrade_alg":    d.DowngradeAlg,
-		"fallback_viable":  d.FallbackViable,
-	}
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(out); err != nil {
-		return err
-	}
-	if d.DowngradeAlg == "HS256" && d.RSAPubKey != nil {
-		// The confusion forge already signs with HS256; print the
-		// decision context and continue.
-		fmt.Fprintf(os.Stderr, "[pqc] downgrade to %s viable — continuing with alg-confusion forge\n", d.DowngradeAlg)
-		return nil
-	}
-	fmt.Fprintf(os.Stderr, "[pqc] no HS256 path (no RSA key in JWKS); RS256 classic fallback only\n")
-	return nil
-}
-
-// ---------------------------------------------------------------- export attck / run --prioritize
-
-var runPrioritize bool
+// ---------------------------------------------------------------- export attck
 
 // intelPrioritizeCmd — CISA KEV-aware path prioritization.
 var intelPrioritizeCmd = &cobra.Command{
