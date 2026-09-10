@@ -1,5 +1,37 @@
 # Changelog
 
+## v3.3.0-stage2 — Storage & Spine (Stage 2 of the v4.0.0 roadmap) (2026-09-10)
+
+Infrastructure sprint — no new offensive capabilities.
+
+### T1 — Canonical storage contract (P1)
+- **Single vault per workspace** (`internal/store/vault.go`): bbolt `vault.db` with `meta/records/journal/audit/rollback/rollback_failed` buckets; ACID transactions; cross-process file locking (a second concurrent open fails with a locked-vault error); schema versioning (`meta/schema_version`, newer vaults refuse to open); records and journal entries remain per-record AES-256-GCM sealed with the workspace master key.
+- **Journal rewritten as append-only** with monotonic sequence numbers minted in the write transaction — the Stage 1 read-modify-rewrite blob (O(N²), unlocked, self-destructing on corrupt read) is gone; corrupt entries fail closed.
+- **Audit durability**: the Ed25519-signed chain (Stage 1 format, frozen) now fsyncs on every append and persists in the vault; the backend is pluggable (JSONL kept for legacy import/export); concurrent openers converge on one signing key atomically.
+- **Rollback hardening**: `Pop` is a single atomic transaction (the rewrite-before-validate corruption window is gone); corrupt entries are retained, not destroyed; **failed reversals are preserved in `rollback_failed`** and surfaced (`RetainedFailed`), never silently discarded.
+- **Idempotent migration**: existing `db/`-directory workspaces are imported into the vault on first open and preserved as `db.pre-vault-imported` — no user data destroyed.
+
+### T2 — Canonical Action spine (P1)
+- **`internal/engine/spine`**: every mutation flows through one governed lifecycle — AuthZ → Risk → Policy → Approval → before-state → AUDIT(before) → pre-execution rollback registration → Execute → Evidence → AUDIT(after) → journal — with statuses `completed | failed | aborted | completed_state_unknown | aborted_rollback_registration`.
+- **Approval semantics**: automation (`auto`) removes only the human prompt; authorization, risk, policy, audit, rollback, and evidence always run and are audited (`approval_mode` is recorded in every audit entry).
+- **DAG native**: `run plan` nodes and `rollback undo` commands execute through the spine via a strict intent whitelist (`exec azure|aws|github|gcp`, `simulate stream`) — unrepresentable commands fail closed; the CLI root is no longer the mutation execution path.
+- **Race fix**: parallel DAG nodes share one serialized audit chain (per-workspace cached log + atomic key initialization) — verified with a parallel 2-node plan (10 entries VERIFIED).
+
+### T3 — Evidence seed (P3)
+- `types.EvidenceRecord` with epistemic classes (`observed | inferred | predicted | unknown`) and a confidence discipline enforced at validation: a prediction can never carry confidence 1.0; the spine writes one evidence record per Action.
+- **CAP predictor honesty**: zero observations → `confidence 0%, class: UNKNOWN` (was the fabricated `100%`); with data the ceiling is `0.66, PREDICTED`.
+
+### T4 — Dead-layer removal (P3)
+- Deleted `pkg/providers` (dead abstraction), `internal/store/bolt.go` (superseded by the vault), assertion-free `debug_test.go`, phantom `vault.aedb` path, dead flags (`--downgrade-pqc`, `runPrioritize`, `behaviorWait`), import-keeper vars, duplicate `audit audit` registration.
+- Wired for real: `token confuse --set-claim`; truthful help for `tunnel`, `ztna exec`, `relay fido2-downgrade`, and export `--workspace` label flags.
+
+### T5 — Integration tier (P2)
+- Eight end-to-end integration tests (`go test -tags=integration ./test/integration/...`): spine audit chain, risk/policy aborts, vault lock concurrency, crash recovery, rollback undo retention, DAG-through-spine, evidence classes.
+
+### Fixed
+- Parallel DAG audit race (mixed Ed25519 signers) — chain now verifies VERIFIED under concurrency.
+- `token confuse --set-claim` was bound to an unregistered variable; claim overrides now apply.
+
 ## v3.2.1-stage1 — Safety Wiring (Stage 1 of the v4.0.0 roadmap) (2026-09-10)
 
 Hardening sprint — no new offensive capabilities.

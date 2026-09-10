@@ -1,8 +1,39 @@
-# Aether v3.2.1-stage1
+# Aether v3.3.0-stage2
 
 > **Authorized-testing engineering platform for hybrid identity fabrics**
 
 Aether is a unified, low-level protocol toolkit for modern identity fabrics (Entra ID, OAuth2, OIDC, SAML, WS-Trust, and cloud APIs). It is designed for **authorized penetration testing and red team operations** against hybrid cloud environments.
+
+## Stage 2: Storage & Spine
+
+Every mutation flows through one **Action spine** (`internal/engine/spine`):
+
+```
+AUTHZ → RISK → POLICY → APPROVAL → before-state → AUDIT(before)
+      → ROLLBACK REGISTRATION → EXECUTE → after-state
+      → EVIDENCE → AUDIT(after) → journal
+```
+
+- Automation (`approval auto`) removes only the human prompt — no stage is ever skipped, and `approval_mode` is recorded in every signed audit entry.
+- DAG plans (`run plan`), rollback undo, and replay/watch mutating intents execute through the same spine via a strict intent whitelist; unrepresentable commands fail closed.
+- Every Action produces: an Action ID, two signed audit entries, one typed evidence record (epistemic class: observed/inferred/predicted/unknown), and a journal entry.
+- `cap predict` never claims certainty: zero observations render `confidence 0% (UNKNOWN)`; predictions cap at 66%.
+
+All workspace state persists through one **canonical storage contract** (`internal/store/vault.go`):
+
+```
+workspaces/<name>/
+├── vault.db      # bbolt: meta | records | journal | audit | rollback | rollback_failed
+├── salt.bin      # random Argon2id salt + HMAC tag (Stage 1)
+├── KEYLESS       # marker only for explicitly keyless workspaces (Stage 1)
+├── artifacts/    # large raw artifacts
+└── reports/      # exported reports
+```
+
+- ACID transactions, cross-process file locking (two processes cannot open the same workspace), schema versioning (newer vaults refuse to open), and crash-safe pages.
+- The journal is append-only with monotonic sequence numbers; records and journal entries stay per-record AES-256-GCM sealed.
+- Rollback `Pop` is atomic; failed reversals are retained in `rollback_failed` and surfaced — never silently discarded.
+- Legacy `db/`-directory workspaces migrate idempotently on first open (original directory preserved as `db.pre-vault-imported`).
 
 ## Core Modules
 
@@ -68,10 +99,10 @@ Dashboard security:
 ## Architecture
 
 ```
-CLI (Cobra) → mutation pipeline (audit → rollback → execute) → Engines
+CLI (Cobra) → Action spine (authz → risk → policy → approval → audit → rollback → execute → evidence)
             → Protocol layer (OAuth2/OIDC, SAML, WS-Trust, MS-OAPX)
             → Transport (uTLS browser presets, HTTP/2)
-            → Persistence (AES-256-GCM workspace records, signed audit JSONL)
+            → Vault (bbolt: sealed records, append-only journal, signed audit, rollback)
 ```
 
 ## Build
