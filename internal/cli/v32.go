@@ -65,14 +65,38 @@ var (
 	trainOut      string
 )
 
-// planExportCmd — export workspace operations as RL episodes.
+// planExportCmd — export workspace operations as RL episodes. Stage 3
+// (T5): the default destination is the workspace vault; --output keeps
+// the JSONL interchange format for cross-machine training sets.
+// A legacy <workspace>-episodes.jsonl in the working directory is
+// imported into the vault and preserved (idempotent migration).
 var planExportCmd = &cobra.Command{
 	Use:   "export",
-	Short: "Export workspace operations as RL training episodes (JSONL)",
+	Short: "Export workspace operations as RL training episodes (vault; --output for JSONL)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ws, err := workspaceOpen(expWorkspace)
 		if err != nil {
 			return err
+		}
+
+		// Legacy migration: import a sibling JSONL if present.
+		legacyPath := ws.Name + "-episodes.jsonl"
+		if data, err := os.ReadFile(legacyPath); err == nil {
+			legacy := planner.NewEpisodeStoreBytes(data)
+			episodes, err := legacy.Load()
+			if err != nil {
+				return fmt.Errorf("parse legacy %s: %w", legacyPath, err)
+			}
+			vs := planner.NewVaultEpisodeStore(ws.Vault())
+			for _, ep := range episodes {
+				if err := vs.Append(ep); err != nil {
+					return err
+				}
+			}
+			if err := os.Rename(legacyPath, legacyPath+".pre-vault-imported"); err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "Migrated legacy %s into the workspace vault (%d episodes)\n", legacyPath, len(episodes))
 		}
 
 		events, err := ws.Events()
@@ -88,21 +112,26 @@ var planExportCmd = &cobra.Command{
 			return fmt.Errorf("workspace journal is empty — nothing to export")
 		}
 
-		s := planner.NewEpisodeStore(expOut)
-		if expOut == "" {
-			expOut = ws.Name + "-episodes.jsonl"
-		}
-		s = planner.NewEpisodeStore(expOut)
-
 		ep := planner.BuildEpisode(ws.Name, journal)
 		if len(ep.Steps) == 0 {
 			return fmt.Errorf("journal events mapped to no known actions")
 		}
-		if err := s.Append(ep); err != nil {
-			return err
+
+		if expOut != "" {
+			s := planner.NewEpisodeStore(expOut)
+			if err := s.Append(ep); err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "Exported 1 episode (%d steps) to %s\n", len(ep.Steps), expOut)
+			return nil
 		}
 
-		fmt.Fprintf(os.Stderr, "Exported 1 episode (%d steps) to %s\n", len(ep.Steps), expOut)
+		vs := planner.NewVaultEpisodeStore(ws.Vault())
+		if err := vs.Append(ep); err != nil {
+			return err
+		}
+		n, _ := vs.Count()
+		fmt.Fprintf(os.Stderr, "Exported 1 episode (%d steps) into workspace %q vault (%d episodes total)\n", len(ep.Steps), ws.Name, n)
 		return nil
 	},
 }
