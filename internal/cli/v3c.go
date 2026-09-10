@@ -166,6 +166,36 @@ var dashboardCmd = &cobra.Command{
 		fmt.Fprintf(os.Stderr, "Dashboard: %s://%s/?token=%s (workspace %s: %d nodes, %d edges)\n",
 			map[bool]string{true: "https", false: "http"}[withTLS], addr, d.Token(), dashWorkspace, len(g.Nodes), len(g.Edges))
 
+		// T8: live mode — consume the canonical teamserver event stream
+		// when --teamserver is configured; otherwise run honestly
+		// offline (static snapshot + workspace journal).
+		if dashTeamserver != "" {
+			go func() {
+				pair, cas, err := api.LoadOperatorTLS(dashOpCert, dashOpKey, dashServerCA)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "[OFFLINE] Teamserver unreachable — event stream is static (%v)\n", err)
+					return
+				}
+				client, err := api.Dial(dashTeamserver, pair, cas, false)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "[OFFLINE] Teamserver unreachable — event stream is static (%v)\n", err)
+					return
+				}
+				defer client.Close()
+				updates, err := client.StreamWorkspaceFrom(dashWorkspace, 0)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "[OFFLINE] Teamserver unreachable — event stream is static (%v)\n", err)
+					return
+				}
+				fmt.Fprintf(os.Stderr, "[LIVE] Streaming teamserver events for workspace %q\n", dashWorkspace)
+				for ev := range updates {
+					d.Publish(api.DashboardEvent{Time: time.Unix(ev.Timestamp, 0).UTC(), Kind: ev.Kind, Detail: ev.Payload})
+				}
+			}()
+		} else {
+			fmt.Fprintln(os.Stderr, "[OFFLINE] Teamserver unreachable — event stream is static (pass --teamserver with operator credentials for live mode)")
+		}
+
 		handler := d.Handler(html, g)
 		if withTLS {
 			return d.ServeTLS(addr, dashTLSCert, dashTLSKey, handler)
@@ -181,6 +211,10 @@ var (
 	dashBind      string
 	dashTLSCert   string
 	dashTLSKey    string
+	dashTeamserver string
+	dashOpCert    string
+	dashOpKey     string
+	dashServerCA  string
 )
 
 // ---------------------------------------------------------------- audit
@@ -476,6 +510,10 @@ func init() {
 	dashboardCmd.Flags().StringVar(&dashBind, "bind", "127.0.0.1", "Bind address (default 127.0.0.1; non-loopback requires TLS)")
 	dashboardCmd.Flags().StringVar(&dashTLSCert, "tls-cert", "", "TLS certificate (required for non-loopback binds)")
 	dashboardCmd.Flags().StringVar(&dashTLSKey, "tls-key", "", "TLS key (required for non-loopback binds)")
+	dashboardCmd.Flags().StringVar(&dashTeamserver, "teamserver", "", "Teamserver address for live events (optional; offline banner otherwise)")
+	dashboardCmd.Flags().StringVar(&dashOpCert, "operator-cert", "", "Operator client certificate (required with --teamserver)")
+	dashboardCmd.Flags().StringVar(&dashOpKey, "operator-key", "", "Operator client key (required with --teamserver)")
+	dashboardCmd.Flags().StringVar(&dashServerCA, "server-ca", "", "Teamserver CA certificate (default: <operator-cert dir>/teamserver-ca.crt)")
 	_ = dashboardCmd.MarkFlagRequired("workspace")
 	_ = dashboardCmd.MarkFlagRequired("graph")
 

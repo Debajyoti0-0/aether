@@ -117,14 +117,20 @@ func (d *Dashboard) Handler(graphHTML string, graphJSON any) http.Handler {
 			d.deny(w)
 			return
 		}
+		// Per-workspace event filtering (T8).
+		wsFilter := r.URL.Query().Get("workspace")
 		w.Header().Set("Content-Type", "application/json")
 		d.mu.RLock()
 		events := d.events
 		d.mu.RUnlock()
 		// Newest first.
-		out := make([]DashboardEvent, len(events))
-		for i, e := range events {
-			out[len(events)-1-i] = e
+		out := make([]DashboardEvent, 0, len(events))
+		for i := len(events) - 1; i >= 0; i-- {
+			e := events[i]
+			if wsFilter != "" && !strings.Contains(e.Detail, wsFilter) {
+				continue
+			}
+			out = append(out, e)
 		}
 		json.NewEncoder(w).Encode(out)
 	})
