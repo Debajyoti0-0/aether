@@ -1,5 +1,40 @@
 # Changelog
 
+## v3.2.1-stage1 — Safety Wiring (Stage 1 of the v4.0.0 roadmap) (2026-09-10)
+
+Hardening sprint — no new offensive capabilities.
+
+### F1 — Workspace path validation (P0, SECURITY)
+- Centralized validation (`internal/workspace/validate.go`): workspace names, record keys, and artifact names are checked before any filesystem operation — traversal (`..`), absolute/UNC/drive-letter paths, separators, NUL/control bytes, Windows reserved names, and trailing dot/space are rejected; `SafeJoin` resolves symlinks and refuses escapes from the workspace root. Wired into Create/Open/Delete/Exists/records/artifacts/Rekey. (`aether workspace delete "../etc"` now fails with a validation error.)
+
+### F2 — Fail-closed workspace keys (P0, SECURITY)
+- Random 16-byte Argon2id salt per workspace, persisted as `salt.bin` with an HMAC tag keyed by the derived key (tamper-evident); the key is no longer derivable from the workspace name.
+- Empty passphrases are rejected at open unless the workspace was explicitly created with `--allow-empty-passphrase` (KEYLESS marker; loud stderr warning on every open). `workspace create` requires a passphrase.
+- Legacy (pre-salt) workspaces fail closed with migration instructions; `workspace rekey` migrates legacy and keyless workspaces (`--confirm-keyless` gate).
+- The teamserver refuses to attach a workspace without a passphrase and reports remote commands honestly as logged-not-executed.
+
+### F3 — Dashboard authentication (P0, SECURITY)
+- Per-start 32-byte random access token; every route (including `/api/health`) requires it; constant-time comparison.
+- Binds to `127.0.0.1` by default (`--bind` to override); non-loopback binds refuse to start without `--tls-cert`/`--tls-key`.
+
+### F4 — Teamserver race hardening (P0, RELIABILITY)
+- Subscriber lifecycle ownership: the event channel is never closed; `unsubscribe` is the single teardown owner (under the server lock) and `Publish` sends are done-guarded — the send-on-closed-channel panic is eliminated.
+- New hammer test (`TestPublishUnsubscribeRace`) covering 100 publishers against 100 subscribe/unsubscribe churners.
+
+### F5 — Mutation pipeline (P0, SECURITY/AUDIT)
+- New `internal/engine/mutation`: a single governed execution boundary (before-state → signed audit(before) → pre-execution rollback registration → execute → after-state → signed audit(after)) with explicit `completed` / `failed` / `completed_state_unknown` / `aborted_rollback_registration` states.
+- Fail-closed: mutations refuse to run if the audit chain or rollback stack cannot be written; irreversible mutations are recorded as irreversible (no fake undo).
+- Wired: `exec azure`, `exec aws`, `exec github`, `exec gcp`, `exec parallel` (per-target), `providers exec`, `simulate stream`, `plugins install`, `prt import`, `pivot cloud-to-onprem` — all require `--workspace`.
+
+### F13 — Release truth (P2, RELEASE)
+- Version single-sourced via `internal/version` + repo-root `VERSION` file; injected by Makefile, build.sh, build.ps1 (previously missing), and debian rules; SARIF driver version reads the injected value; LICENSE (MIT) and SECURITY.md added.
+
+### F14 — CI foundation (P2, TESTING)
+- `.github/workflows/ci.yml`: build matrix (linux/windows/macos), `go vet`, `go test -race` (ubuntu + windows), golangci-lint, govulncheck, tagged integration job, and a governance job that fails if VERSION/LICENSE/SECURITY.md are absent; local `make ci` gate.
+
+### Documentation truth
+- README rewritten against verified behavior (removed: "signed manifest" plugin claim, impacket/ccache usability claim, JA3/JA4 spoofing and BoltDB architecture claims, Go 1.22 requirement); Known Limitations section added; misleading `pivot cloud-to-onprem` impacket instructions replaced with the placeholder-key caveat.
+
 ## v3.2.0 — Reinforcement Learning Planner (Sprint 2 of the v4.0.0 roadmap) (2026-09-09)
 
 ### RL Planner (P0)
