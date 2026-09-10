@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+# Debian packaging rules (cross-distro: works on Debian, Kali, Ubuntu).
+
+export GO111MODULE=on
+export GOPROXY=https://proxy.golang.org
+export CGO_ENABLED=0
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Static binary, no CGO — runs on any libc/musl distro.
+	# Version is read from the repo-root VERSION file (single source of truth).
+	VER=$$(for f in ../../VERSION ../VERSION VERSION; do [ -f $$f ] && cat $$f && break; done); \
+	VER=$${VER:-dev}; \
+	COMMIT=$$(git rev-parse --short HEAD 2>/dev/null || echo unknown); \
+	go build -ldflags="-s -w -X github.com/Debajyoti0-0/aether/internal/version.Version=$$VER -X github.com/Debajyoti0-0/aether/internal/version.Commit=$$COMMIT" -o aether ./cmd/aether
+
+override_dh_auto_install:
+	install -D -m 0755 aether debian/aether/usr/bin/aether
+	install -D -m 0644 README.md debian/aether/usr/share/doc/aether/README.md
+	install -D -m 0644 CHANGELOG.md debian/aether/usr/share/doc/aether/CHANGELOG.md
+	# Man pages (generated via `make man` before packaging).
+	if [ -d docs/man ]; then \
+	  find docs/man -name '*.1' -exec install -D -m 0644 {} \
+	    debian/aether/usr/share/man/man1/ \; ; \
+	fi
+	# Shell completions.
+	install -D -m 0644 bin/aether.bash debian/aether/usr/share/bash-completion/completions/aether 2>/dev/null || true
+	install -D -m 0644 bin/_aether debian/aether/usr/share/zsh/vendor-completions/_aether 2>/dev/null || true
+
+override_dh_auto_test:
+	# Tests run via `make test` in CI; skip during package build.

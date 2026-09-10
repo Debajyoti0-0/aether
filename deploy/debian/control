@@ -1,0 +1,22 @@
+Source: aether
+Section: net
+Priority: optional
+Maintainer: Aether Team <aether@example.com>
+Build-Depends: debhelper (>= 12), golang-go (>= 1.22)
+Standards-Version: 4.6.0
+Homepage: https://github.com/Debajyoti0-0/aether
+Vcs-Browser: https://github.com/Debajyoti0-0/aether
+Vcs-Git: https://github.com/Debajyoti0-0/aether.git
+
+Package: aether
+Architecture: amd64 arm64
+Depends: ${misc:Depends}
+Description: Modern Identity Protocol Exploitation Toolkit
+ Aether is a low-level protocol exploitation toolkit for modern
+ identity fabrics. It provides PRT→OAuth conversion, WS-Trust/SAML
+ relaying, Conditional Access policy evaluation, cloud VM command
+ execution, cross-cloud Kerberos pivoting, and encrypted engagement
+ workspaces — all from a single static binary.
+ .
+ It is designed for authorized penetration testing and red team
+ operations against hybrid cloud environments.

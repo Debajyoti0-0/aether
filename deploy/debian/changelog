@@ -1,0 +1,13 @@
+aether (3.2.1-stage1) unstable; urgency=medium
+
+  Stage 1 "Safety Wiring": workspace path validation, keyless-mode
+  removal, dashboard authentication, teamserver race hardening,
+  audit+rollback wiring for mutating commands, CI foundation.
+  Version now single-sourced from the repo-root VERSION file.
+
+-- Aether Team <aether@example.com>  Thu, 10 Sep 2026 09:30:00 +0000
+
+aether (1.0.0) unstable; urgency=medium
+
+Initial release (v1.0.0)
+-- Your Name debajyoti@example.com Mon, 02 Sep 2026 00:00:00 +0000

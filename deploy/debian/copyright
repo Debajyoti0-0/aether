@@ -1,0 +1,6 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: aether
+Source: https://github.com/Debajyoti0-0/aether
+Files: *
+Copyright: 2026 Your Name Debajyoti0-0
+License: MIT

