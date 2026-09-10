@@ -45,10 +45,13 @@ func (w *Workspace) Reports() string     { return filepath.Join(w.Root, "reports
 
 // Create makes the workspace directory structure.
 func Create(name string) (*Workspace, error) {
-	if name == "" {
-		return nil, fmt.Errorf("workspace name is required")
+	if err := ValidateName(name); err != nil {
+		return nil, err
 	}
-	root := filepath.Join(Dir(), name)
+	root, err := SafeJoin(Dir(), name)
+	if err != nil {
+		return nil, fmt.Errorf("workspace %q: %w", name, err)
+	}
 
 	for _, dir := range []string{
 		filepath.Join(root, "db"),
@@ -63,10 +66,15 @@ func Create(name string) (*Workspace, error) {
 }
 
 // Open loads an existing workspace and derives its crypto key from the
-// passphrase (Argon2id). An empty passphrase derives a key from the
-// workspace name alone (weak; convenience mode only).
+// passphrase (Argon2id). See DeriveKey for key-derivation policy.
 func Open(name, passphrase string) (*Workspace, error) {
-	root := filepath.Join(Dir(), name)
+	if err := ValidateName(name); err != nil {
+		return nil, err
+	}
+	root, err := SafeJoin(Dir(), name)
+	if err != nil {
+		return nil, fmt.Errorf("workspace %q: %w", name, err)
+	}
 	if _, err := os.Stat(root); err != nil {
 		return nil, fmt.Errorf("workspace %q not found: %w", name, err)
 	}
@@ -95,14 +103,24 @@ func List() ([]string, error) {
 
 // Exists reports whether a workspace is present.
 func Exists(name string) bool {
+	if ValidateName(name) != nil {
+		return false
+	}
 	_, err := os.Stat(filepath.Join(Dir(), name))
 	return err == nil
 }
 
 // Delete securely removes a workspace: files are overwritten with
-// zeros before unlinking.
+// zeros before unlinking. The name is validated first so a traversal
+// name can never reach the shred/remove path.
 func Delete(name string) error {
-	root := filepath.Join(Dir(), name)
+	if err := ValidateName(name); err != nil {
+		return err
+	}
+	root, err := SafeJoin(Dir(), name)
+	if err != nil {
+		return fmt.Errorf("workspace %q: %w", name, err)
+	}
 	if _, err := os.Stat(root); err != nil {
 		return fmt.Errorf("workspace %q not found", name)
 	}
@@ -214,6 +232,9 @@ func (w *Workspace) Open(sealed []byte) ([]byte, error) {
 
 // SaveRecord encrypts and stores a JSON record under bucket/key.
 func (w *Workspace) SaveRecord(bucket, key string, v any) error {
+	if err := ValidateRecordKey(key); err != nil {
+		return err
+	}
 	data, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -227,6 +248,9 @@ func (w *Workspace) SaveRecord(bucket, key string, v any) error {
 
 // LoadRecord loads and decrypts a JSON record into out.
 func (w *Workspace) LoadRecord(bucket, key string, out any) error {
+	if err := ValidateRecordKey(key); err != nil {
+		return err
+	}
 	sealed, err := os.ReadFile(w.recordPath(bucket, key))
 	if err != nil {
 		return err
@@ -240,6 +264,9 @@ func (w *Workspace) LoadRecord(bucket, key string, out any) error {
 
 // ListRecords enumerates keys in a bucket.
 func (w *Workspace) ListRecords(bucket string) ([]string, error) {
+	if err := ValidateRecordKey(bucket); err != nil {
+		return nil, err
+	}
 	dir := w.recordPath(bucket, "")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -259,6 +286,9 @@ func (w *Workspace) ListRecords(bucket string) ([]string, error) {
 
 // DeleteRecord removes a record.
 func (w *Workspace) DeleteRecord(bucket, key string) error {
+	if err := ValidateRecordKey(key); err != nil {
+		return err
+	}
 	err := os.Remove(w.recordPath(bucket, key))
 	if os.IsNotExist(err) {
 		return nil
@@ -267,11 +297,20 @@ func (w *Workspace) DeleteRecord(bucket, key string) error {
 }
 
 func (w *Workspace) recordPath(bucket, key string) string {
+	if err := ValidateRecordKey(bucket); err != nil {
+		// Buckets are package constants; an invalid bucket name is a
+		// programming error. Fail closed rather than write outside the
+		// workspace.
+		return filepath.Join(w.Root, "db", "INVALID_BUCKET")
+	}
 	dir := filepath.Join(w.Root, "db", bucket)
 	// Ensure the bucket dir exists lazily.
 	_ = os.MkdirAll(dir, 0o700)
 	if key == "" {
 		return dir
+	}
+	if err := ValidateRecordKey(key); err != nil {
+		return filepath.Join(dir, "INVALID_KEY")
 	}
 	return filepath.Join(dir, key)
 }
@@ -324,12 +363,19 @@ func (w *Workspace) Events() ([]Event, error) {
 }
 
 // SaveArtifact stores a raw artifact (ccache, dumps) unencrypted on
-// disk but tracked in the journal.
+// disk but tracked in the journal. The artifact name is validated to
+// prevent path traversal outside the artifacts directory.
 func (w *Workspace) SaveArtifact(name string, data []byte) (string, error) {
+	if err := ValidateArtifactName(name); err != nil {
+		return "", err
+	}
 	if err := os.MkdirAll(w.Artifacts(), 0o700); err != nil {
 		return "", err
 	}
-	path := filepath.Join(w.Artifacts(), name)
+	path, err := SafeJoin(w.Artifacts(), name)
+	if err != nil {
+		return "", fmt.Errorf("artifact %q: %w", name, err)
+	}
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return "", err
 	}
