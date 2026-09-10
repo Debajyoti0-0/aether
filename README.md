@@ -1,8 +1,28 @@
-# Aether v3.3.0-stage2
+# Aether v3.4.0-stage3
 
 > **Authorized-testing engineering platform for hybrid identity fabrics**
 
 Aether is a unified, low-level protocol toolkit for modern identity fabrics (Entra ID, OAuth2, OIDC, SAML, WS-Trust, and cloud APIs). It is designed for **authorized penetration testing and red team operations** against hybrid cloud environments.
+
+## Stage 3: Teamserver V2 — trusted distributed control
+
+Remote execution is architecturally subordinate to the same governance boundary as local execution:
+
+```
+operator cert (CA-issued, URI SAN aether:operator:<name>)
+  → mTLS (TLS 1.3, ClientCAs, revocation list)
+  → cert-derived operator identity + capability set
+  → intent whitelist → ACTION SPINE (authz → risk → policy → approval → execute → evidence → audit → rollback)
+  → correlated response (RequestID ⇄ ActionID)
+```
+
+- `serve cert init` bootstraps the CA + server cert; `serve cert issue --operator alice --caps exec.azure` mints credentials; `serve cert revoke` fails closed on new connections.
+- `serve` refuses to start without the PKI files; it attaches exactly one passphrase-protected workspace.
+- Every remote action produces the same signed audit entries (with `actor=operator:<name>`), evidence record, and rollback registration as local execution.
+- Protocol v2: `Version` + `RequestID` on every frame (v1 rejected — no downgrade); 8 in-flight commands per connection; event subscriptions resume from a persisted, sequence-numbered store.
+- `connect --operator-cert alice.crt --operator-key alice.key --server-ca teamserver-ca.crt`; `--insecure` requires `--i-know-what-im-doing` and prints a loud warning.
+
+Known limitations (truthful): revocation is connection-time file-based (no OCSP); request idempotency is not provided — retried mutating commands may double-execute (audit-visible); event payloads are transport-authenticated, with the signed audit chain as the integrity anchor. See `docs/stage3-threat-model.md`.
 
 ## Stage 2: Storage & Spine
 
@@ -52,7 +72,7 @@ workspaces/<name>/
 | `aether replay` | Dry-run or confirmed replay of saved operation runbooks |
 | `aether export` | Engagement reports (markdown/PDF), SARIF 2.1.0, ATT&CK Navigator, graph topology |
 | `aether simulate` | SOC telemetry emulation and fuzzing for detection engineering |
-| `aether serve` / `aether connect` | mTLS teamserver (remote command journaling; remote execution is not implemented yet) |
+| `aether serve` / `aether connect` | mTLS teamserver v2: CA-issued operator certificates (`serve cert init/issue/revoke`), cert-bound identity, per-operator capability authorization, RequestID-correlated multiplexed commands, resumable event subscriptions, spine-routed execution |
 | `aether audit` | Tamper-evident Ed25519-signed audit chain (`verify`/`record`) |
 | `aether rollback` | Rollback stack for reversible mutations |
 | `aether plugins` | Plugin registry search/install (SHA-256 checksum when the manifest declares one; manifests are currently unsigned) |
@@ -176,13 +196,15 @@ aether workspace delete ClientX --force
 - The Kerberos ccache produced by `pivot cloud-to-onprem` carries a
   placeholder session key: readable by `klist`, **not** usable for
   Kerberos authentication.
-- `token confuse` is an offline artifact forge; `--set-claim` is not
-  applied (flag currently ignored).
+- `token confuse` is an offline artifact forge; `--set-claim` overrides
+  apply to the forged token only (no live token manipulation).
 - `relay fido2-downgrade` builds and previews an RST; it does not send
   anything.
 - `ztna exec` performs a broker-routed reachability probe; it does not
   execute commands.
-- The teamserver journals remote commands; it does not execute them.
+- Remote commands execute through the Action spine with cert-bound
+  capability checks; request idempotency is not provided — retried
+  mutating commands may double-execute (audit-visible).
 - Plugin manifests are verified by SHA-256 only when a checksum is
   declared; there is no publisher signature yet.
 

@@ -1,5 +1,42 @@
 # Changelog
 
+## v3.4.0-stage3 — Teamserver V2 (Stage 3 of the v4.0.0 roadmap) (2026-09-11)
+
+Distributed control plane — no new offensive capabilities.
+
+### T1 — mTLS & cert-bound operator identity (P1)
+- Real CA hierarchy: `aether serve cert init` (CA + server cert, never overwritten), `serve cert issue --operator <name>` (URI SAN `aether:operator:<name>`, capability file), `serve cert revoke` (revoked.txt, checked per connection).
+- Server enforces `RequireAndVerifyClientCert` against the CA pool; every self-signed fallback and every test downgrade is gone; `serve` refuses to start without the PKI files.
+- Operator identity is derived exclusively from the client certificate (the client-asserted `operator` field was removed from the wire); audit entries carry `actor=operator:<cert-name>`.
+- Capability authorization: per-operator capability files (execute caps granted explicitly; defaults are read-only; `-cap` denials) enforced server-side and double-checked by the spine AuthZ stage.
+- `connect` requires operator credentials; `--insecure` is gated behind `--i-know-what-im-doing` with a loud warning.
+
+### T2 — Protocol v2 (P1)
+- Every envelope carries `Version` + `RequestID`; v1 clients are rejected (no downgrade); correlation-less command frames are refused.
+- Multiplexing: up to 8 in-flight commands per connection with backpressure rejection; per-connection write mutex; responses always echo the request ID.
+- Persistent event store in the workspace vault: monotonic per-workspace sequences (gap-detectable), cursor-based subscribe (`subscribe(ws, lastSeq)` → replay → live), reconnect/resume, 100k retention.
+- ping/pong liveness; connection cap (`--max-conns`).
+
+### T3 — Spine-routed remote execution (P1)
+- The teamserver is a transport/authz layer: commands parse through the intent whitelist, check the operator's capabilities, and execute through the canonical Action spine (audit, evidence, rollback automatic).
+- The `"logged (not executed)"` stub is gone — responses carry the real Action ID, status, spine stage, and provider operation ID.
+
+### T4 — Explicit Action state machine (P2)
+- Transition table (`internal/engine/spine/state.go`) with terminal-state invariants: `CREATED→EXECUTING` and `FAILED→COMPLETED` are impossible; `completed_state_unknown` cannot silently become success.
+- Every action records its full transition sequence (`state_seq`) in the result and journal.
+
+### T5 — Planner vault migration (P2)
+- `VaultEpisodeStore` (`planner_episodes` bucket); `plan export` defaults to the vault (JSONL `--output` remains the interchange format); legacy episode files migrate idempotently with the original preserved.
+
+### T7 — Parallel integration tests (P2)
+- TestMain-owned config dir + unique workspace names; all 8 integration tests run `t.Parallel()`.
+
+### T8 — Dashboard live mode (P3)
+- `dashboard --teamserver` consumes the canonical event stream with operator credentials; without it the dashboard prints an honest `[OFFLINE]` banner; `/api/events` supports per-workspace filtering.
+
+### Fixed
+- OneDrive sync race repeatedly deleted `internal/planner/` working-tree files mid-sprint; recovered fully from git history (recommendation: keep the repo out of OneDrive-synced paths).
+
 ## v3.3.0-stage2 — Storage & Spine (Stage 2 of the v4.0.0 roadmap) (2026-09-10)
 
 Infrastructure sprint — no new offensive capabilities.
