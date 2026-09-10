@@ -1,0 +1,13 @@
+{
+  // The extension-less VERSION file is a build metadata file (read by
+  // Makefile / build scripts / ldflags injection), not C/C++ source.
+  // These associations stop the C/C++ extension from parsing it and
+  // producing false "expected a declaration" errors.
+  "files.associations": {
+    "VERSION": "plaintext"
+  },
+  "C_Cpp.files.exclude": {
+    "**/VERSION": true
+  },
+  "go.useLanguageServer": true
+}
