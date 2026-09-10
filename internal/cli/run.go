@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/Debajyoti0-0/aether/internal/behavior"
 	"github.com/Debajyoti0-0/aether/internal/engine/orchestrate"
 	"github.com/Debajyoti0-0/aether/internal/transport"
 	"github.com/Debajyoti0-0/aether/internal/workspace"
@@ -24,13 +26,29 @@ Each phase is gated by the operator risk ceiling and paced by
 }
 
 var (
-	runWorkspace     string
-	runPoliciesFile  string
-	runPathFile      string
-	runMaxRisk       int
-	runLowSlow       bool
-	runPassphrase    string
+	runWorkspace    string
+	runPoliciesFile string
+	runPathFile     string
+	runMaxRisk      int
+	runLowSlow      bool
+	runPassphrase   string
+	runAuto         bool
+	runPRTFile      string
+	runBehavior     string
+	runPersonaName  string
+	runSeed         int64
+	runRespectHours bool
 )
+
+// behaviorJitter adapts the human pacer to the orchestrator's Jitter
+// interface (delays drawn from the persona's Gaussian model).
+type behaviorJitter struct {
+	pacer *behavior.Pacer
+}
+
+func (j *behaviorJitter) Wait(ctx context.Context) error {
+	return j.pacer.Wait(ctx)
+}
 
 func init() {
 	rootCmd.AddCommand(runCmd)
@@ -38,12 +56,18 @@ func init() {
 	runCmd.Flags().StringVar(&runWorkspace, "workspace", "", "Workspace name (required)")
 	runCmd.Flags().StringVar(&runPoliciesFile, "policies", "", "CAP export JSON (optional)")
 	runCmd.Flags().StringVar(&runPathFile, "bh-json", "", "BloodHound path JSON (optional)")
+	runCmd.Flags().StringVar(&runPRTFile, "prt-file", "", "PRT JSON to convert in the chain (optional; auto mode uses the stored PRT)")
 	runCmd.Flags().IntVar(&runMaxRisk, "risk-threshold", 50, "Risk ceiling 0-100")
 	runCmd.Flags().BoolVar(&runLowSlow, "low-slow", false, "Randomize 1-5s jitter between phases")
+	runCmd.Flags().BoolVar(&runAuto, "auto", false, "Autonomous mode: continue past risk gates, use stored PRT")
 	_ = runCmd.MarkFlagRequired("workspace")
 }
 
 func runKillChain(cmd *cobra.Command, args []string) error {
+	if err := validateBehaviorFlags(); err != nil {
+		return err
+	}
+
 	ws, err := workspace.Open(runWorkspace, os.Getenv("AETHER_PASSPHRASE"))
 	if err != nil {
 		return err
@@ -54,8 +78,23 @@ func runKillChain(cmd *cobra.Command, args []string) error {
 		MaxRisk:      runMaxRisk,
 		PoliciesFile: runPoliciesFile,
 		PathFile:     runPathFile,
+		PRTFile:      runPRTFile,
+		Auto:         runAuto,
 	}
-	if runLowSlow {
+
+	// Behavioral mimicry: human pacing + active-window alignment.
+	var pacer *behavior.Pacer
+	if runBehavior == "realistic" {
+		pacer = behaviorPacer()
+		o.LowSlow = &behaviorJitter{pacer: pacer}
+		if runRespectHours {
+			if err := behaviorWaitActive(context.Background(), pacer, time.Now()); err != nil {
+				return err
+			}
+		}
+		fmt.Fprintf(os.Stderr, "[behavior] realistic mode: persona=%s session=%s\n",
+			pacer.Profile().Name, pacer.SessionLength().Round(time.Minute))
+	} else if runLowSlow {
 		o.LowSlow = transport.NewLowSlowJitter()
 	}
 

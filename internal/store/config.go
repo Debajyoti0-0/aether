@@ -17,6 +17,7 @@ type Config struct {
 
 	BrowserPreset    string `json:"browser_preset"`
 	MaxRiskThreshold int    `json:"max_risk_threshold"`
+	LowSlow          bool   `json:"low_slow"`
 
 	Azure struct {
 		SubscriptionID string `json:"subscription_id"`

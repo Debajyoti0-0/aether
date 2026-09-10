@@ -93,9 +93,21 @@ func runPRTConvert(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	_ = binding // applied per-request inside the exchange path
+	// Wire the binding into the actual exchange (Token Protection bypass).
+	var bind *msoapx.ChannelBinding
+	if prtBinding != "" {
+		bindData, err := os.ReadFile(prtBinding)
+		if err != nil {
+			return fmt.Errorf("read tls binding: %w", err)
+		}
+		bind, err = msoapx.LoadChannelBinding(string(bindData))
+		if err != nil {
+			return fmt.Errorf("tls binding: %w", err)
+		}
+	}
 
 	converter := token.NewPRTConverter(client)
+	converter.Binding = bind
 	tokens, err := converter.ConvertPRTToOAuth(context.Background(), prt, prtClientID, prtResource)
 	if err != nil {
 		return err

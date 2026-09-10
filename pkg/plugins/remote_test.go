@@ -1,0 +1,131 @@
+package plugins
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func testIndex() Index {
+	artifact, _ := json.Marshal(map[string]string{"type": "provider", "provider": "gcp"})
+	sum := sha256.Sum256(artifact)
+	return Index{
+		Updated: "2026-09-09",
+		Plugins: []PluginManifest{
+			{Name: "aether-gcp", Version: "1.0.0", Provider: "gcp",
+				Description: "Google Cloud execution + IAM discovery",
+				DownloadURL: "/artifacts/aether-gcp.json", SHA256: hex.EncodeToString(sum[:])},
+			{Name: "aether-vmware", Version: "0.9.0", Provider: "vmware",
+				Description: "VMware Cloud SDDC operations",
+				DownloadURL: "/artifacts/aether-vmware.json"},
+		},
+	}
+}
+
+func TestRemoteRegistrySearch(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(testIndex())
+	}))
+	defer srv.Close()
+
+	reg := NewRemoteRegistry(srv.URL, filepath.Join(t.TempDir(), "plugins"))
+
+	all, err := reg.Search(context.Background(), "")
+	if err != nil || len(all) != 2 {
+		t.Fatalf("search all = %d err=%v", len(all), err)
+	}
+
+	gcp, err := reg.Search(context.Background(), "gcp")
+	if err != nil || len(gcp) != 1 || gcp[0].Name != "aether-gcp" {
+		t.Fatalf("search gcp = %+v err=%v", gcp, err)
+	}
+}
+
+func TestRemoteRegistryInstallVerified(t *testing.T) {
+	artifact, _ := json.Marshal(map[string]string{"type": "provider", "provider": "gcp"})
+	sum := sha256.Sum256(artifact)
+	want := hex.EncodeToString(sum[:])
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/index.json":
+			json.NewEncoder(w).Encode(testIndex())
+		case r.URL.Path == "/artifacts/aether-gcp.json":
+			w.Write(artifact)
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer srv.Close()
+
+	dir := filepath.Join(t.TempDir(), "plugins")
+	reg := NewRemoteRegistry(srv.URL+"/index.json", dir)
+
+	idx, _ := reg.Fetch(context.Background())
+	path, err := reg.Install(context.Background(), idx.Plugins[0])
+	if err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	if !strings.Contains(path, "aether-gcp-1.0.0.json") {
+		t.Errorf("installed path = %q", path)
+	}
+
+	// The stored entry records the verified checksum.
+	data, _ := os.ReadFile(path)
+	if !strings.Contains(string(data), want) {
+		t.Errorf("verified sha not recorded: %s", data)
+	}
+
+	installed, err := reg.Installed()
+	if err != nil || len(installed) != 1 || installed[0].Name != "aether-gcp" {
+		t.Errorf("installed = %+v err=%v", installed, err)
+	}
+}
+
+func TestRemoteRegistryInstallChecksumMismatch(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/index.json":
+			json.NewEncoder(w).Encode(testIndex())
+		case r.URL.Path == "/artifacts/aether-gcp.json":
+			w.Write([]byte(`{"tampered":true}`))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer srv.Close()
+
+	dir := filepath.Join(t.TempDir(), "plugins")
+	reg := NewRemoteRegistry(srv.URL+"/index.json", dir)
+
+	idx, _ := reg.Fetch(context.Background())
+	_, err := reg.Install(context.Background(), idx.Plugins[0])
+	if err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
+		t.Fatalf("expected checksum mismatch, got %v", err)
+	}
+}
+
+func TestRemoteRegistryNoURL(t *testing.T) {
+	reg := NewRemoteRegistry("", filepath.Join(t.TempDir(), "plugins"))
+	if _, err := reg.Search(context.Background(), ""); err == nil {
+		t.Error("missing URL should fail")
+	}
+}
+
+func TestRenderSearch(t *testing.T) {
+	out := RenderSearch(testIndex().Plugins)
+	if !strings.Contains(out, "aether-gcp") || !strings.Contains(out, "DESCRIPTION") {
+		t.Errorf("render = %q", out)
+	}
+	empty := RenderSearch(nil)
+	if !strings.Contains(empty, "No plugins matched") {
+		t.Errorf("empty render = %q", empty)
+	}
+}

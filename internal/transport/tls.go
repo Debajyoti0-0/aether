@@ -41,10 +41,13 @@ func clientHelloID(p BrowserPreset) utls.ClientHelloID {
 
 // TLSDialer dials TLS connections with a spoofed browser fingerprint
 // (JA3/JA4) using uTLS. It satisfies http.Transport's DialTLSContext.
+// When Pool is set, the fingerprint rotates per connection instead of
+// using the fixed Preset.
 type TLSDialer struct {
 	Preset   BrowserPreset
 	Insecure bool
 	Timeout  time.Duration
+	Pool     *JA4Pool
 }
 
 // DialTLSContext dials addr and performs a uTLS handshake.
@@ -52,6 +55,11 @@ func (d *TLSDialer) DialTLSContext(ctx context.Context, network, addr string) (n
 	timeout := d.Timeout
 	if timeout == 0 {
 		timeout = 15 * time.Second
+	}
+
+	preset := d.Preset
+	if d.Pool != nil {
+		preset = presetFromHello(d.Pool.Next())
 	}
 
 	raw, err := (&net.Dialer{Timeout: timeout}).DialContext(ctx, network, addr)
@@ -71,10 +79,24 @@ func (d *TLSDialer) DialTLSContext(ctx context.Context, network, addr string) (n
 		NextProtos:         []string{"h2", "http/1.1"},
 	}
 
-	conn := utls.UClient(raw, cfg, clientHelloID(d.Preset))
+	conn := utls.UClient(raw, cfg, clientHelloID(preset))
 	if err := conn.HandshakeContext(ctx); err != nil {
 		raw.Close()
 		return nil, fmt.Errorf("tls handshake %s: %w", addr, err)
 	}
 	return conn, nil
+}
+
+// presetFromHello maps a rotation profile back to the dialer's preset
+// switch. Rotation profiles are a superset; unknown profiles map to
+// Chrome (the safest default that still works against Entra).
+func presetFromHello(hello utls.ClientHelloID) BrowserPreset {
+	switch hello {
+	case utls.HelloEdge_Auto:
+		return Edge
+	case utls.HelloFirefox_Auto:
+		return Firefox
+	default:
+		return Chrome
+	}
 }
