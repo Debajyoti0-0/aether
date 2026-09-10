@@ -141,7 +141,7 @@ func TestCreateOpenRejectTraversal(t *testing.T) {
 	t.Setenv("AETHER_CONFIG_DIR", t.TempDir())
 
 	for _, bad := range []string{"../evil", "a/b", `..\evil`, "/abs", "CON"} {
-		if _, err := Create(bad); err == nil {
+		if _, err := Create(bad, "pw"); err == nil {
 			t.Errorf("Create(%q) = nil error, want rejection", bad)
 		}
 		if _, err := Open(bad, "pass"); err == nil {
@@ -153,7 +153,7 @@ func TestCreateOpenRejectTraversal(t *testing.T) {
 	}
 
 	// Records and artifacts must not escape either.
-	ws, err := Create("traversal-guard")
+	ws, err := Create("traversal-guard", "pw")
 	if err != nil {
 		t.Fatal(err)
 	}

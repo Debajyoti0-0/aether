@@ -138,11 +138,10 @@ func workspaceRoundtripCheck() check {
 	defer os.Unsetenv("AETHER_CONFIG_DIR")
 
 	name := "doctor-probe"
-	w, err := workspace.Create(name)
+	w, err := workspace.Create(name, "doctor-probe-passphrase")
 	if err != nil {
 		return check{name: "workspace roundtrip", ok: false, detail: "create: " + err.Error()}
 	}
-	w.DeriveKey("probe")
 	type rec struct {
 		V string `json:"v"`
 	}

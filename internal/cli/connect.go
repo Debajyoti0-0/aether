@@ -20,16 +20,18 @@ var connectCmd = &cobra.Command{
 // serveCmd implements the teamserver (`aether serve`).
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Start the mTLS teamserver for multi-operator sync",
+	Short: "Start the mTLS teamserver (remote command journaling; execution lands in Stage 2)",
 	RunE:  runServe,
 }
 
 var (
-	tsAddr       string
-	tsWorkspace  string
-	tsCommand    string
-	tsListenAddr string
-	tsInsecure   bool
+	tsAddr        string
+	tsWorkspace   string
+	tsCommand     string
+	tsListenAddr  string
+	tsInsecure    bool
+	tsPassphrase  string
+	tsWorkspaceOp *workspace.Workspace
 )
 
 func init() {
@@ -41,6 +43,8 @@ func init() {
 	connectCmd.Flags().BoolVar(&tsInsecure, "insecure", false, "Skip server cert verification (self-signed)")
 
 	serveCmd.Flags().StringVar(&tsListenAddr, "listen", "127.0.0.1:7788", "Listen address")
+	serveCmd.Flags().StringVar(&tsWorkspace, "workspace", "", "Workspace to attach (remote commands are journaled here)")
+	serveCmd.Flags().StringVar(&tsPassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env); required with --workspace")
 }
 
 // apiDial connects with a generated operator certificate. Production
@@ -104,18 +108,38 @@ func runConnect(cmd *cobra.Command, args []string) error {
 }
 
 func runServe(cmd *cobra.Command, args []string) error {
+	// Fail closed: the teamserver is network-exposed. It must never
+	// open a workspace in keyless (empty-passphrase) mode.
+	if tsWorkspace != "" {
+		pass := tsPassphrase
+		if pass == "" {
+			pass = os.Getenv("AETHER_PASSPHRASE")
+		}
+		if pass == "" {
+			return fmt.Errorf("teamserver workspace requires --passphrase or AETHER_PASSPHRASE; " +
+				"keyless mode is not permitted for network-exposed workspaces")
+		}
+		w, err := workspace.Open(tsWorkspace, pass)
+		if err != nil {
+			return fmt.Errorf("attach workspace %q: %w", tsWorkspace, err)
+		}
+		tsWorkspaceOp = w
+	}
+
 	cert, err := api.GenerateServerCert([]string{"127.0.0.1", "localhost"})
 	if err != nil {
 		return err
 	}
 
 	srv, err := api.NewTeamserver(tsListenAddr, cert, func(req *api.CommandRequest) (*api.CommandResponse, error) {
-		if req.WorkspaceID != "" && workspace.Exists(req.WorkspaceID) {
-			if w, err := workspace.Open(req.WorkspaceID, ""); err == nil {
-				_ = w.LogEvent("remote_command", req.CommandLine)
-			}
+		// Stage 1: the teamserver journals remote commands into the
+		// attached workspace. It does NOT execute them — honest status,
+		// not fabricated success. Real remote execution lands in Stage 2.
+		if tsWorkspaceOp != nil {
+			_ = tsWorkspaceOp.LogEvent("remote_command", req.CommandLine)
+			return &api.CommandResponse{OK: true, Output: "logged (not executed): " + req.CommandLine}, nil
 		}
-		return &api.CommandResponse{OK: true, Output: "queued: " + req.CommandLine}, nil
+		return &api.CommandResponse{OK: true, Output: "logged (no workspace attached; not executed): " + req.CommandLine}, nil
 	})
 	if err != nil {
 		return err

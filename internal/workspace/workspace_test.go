@@ -13,7 +13,7 @@ func TestCreateAndOpen(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	w, err := Create("ClientX")
+	w, err := Create("ClientX", "pw")
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestCreateAndOpen(t *testing.T) {
 		}
 	}
 
-	opened, err := Open("ClientX", "hunter2")
+	opened, err := Open("ClientX", "pw")
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -47,9 +47,8 @@ func TestSealOpenRoundTrip(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	w, _ := Create("SealTest")
-	w.DeriveKey("pass")
-	if len(w.pass) != 32 {
+	w, _ := Create("SealTest", "pw")
+		if len(w.pass) != 32 {
 		t.Fatalf("derive: len=%d", len(w.pass))
 	}
 
@@ -83,8 +82,9 @@ func TestSealWithoutKey(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	w, _ := Create("NoKey")
-	// Key intentionally not derived.
+	w, _ := Create("NoKey", "pw")
+	// Key intentionally cleared.
+	w.pass = nil
 	if _, err := w.Seal([]byte("x")); err == nil {
 		t.Error("seal without key should fail")
 	}
@@ -98,9 +98,8 @@ func TestRecords(t *testing.T) {
 
 	w, _ := Open("RecWS", "pw")
 	if w == nil {
-		w, _ = Create("RecWS")
-		w.DeriveKey("pw")
-	}
+		w, _ = Create("RecWS", "pw")
+			}
 
 	type token struct {
 		Access string `json:"access"`
@@ -143,9 +142,8 @@ func TestEventJournal(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	w, _ := Create("EventWS")
-	w.DeriveKey("pw")
-
+	w, _ := Create("EventWS", "pw")
+	
 	if err := w.LogEvent("token_added", "graph"); err != nil {
 		t.Fatalf("log: %v", err)
 	}
@@ -171,9 +169,8 @@ func TestSaveArtifact(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	w, _ := Create("ArtWS")
-	w.DeriveKey("pw")
-
+	w, _ := Create("ArtWS", "pw")
+	
 	path, err := w.SaveArtifact("aether.ccache", []byte("krb5-ccache-data"))
 	if err != nil {
 		t.Fatalf("save artifact: %v", err)
@@ -190,9 +187,8 @@ func TestDeleteShreds(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	w, _ := Create("DoomedWS")
-	w.DeriveKey("pw")
-	if err := w.SaveRecord(BucketTokens, "graph", map[string]string{"access": "tok-1"}); err != nil {
+	w, _ := Create("DoomedWS", "pw")
+		if err := w.SaveRecord(BucketTokens, "graph", map[string]string{"access": "tok-1"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -210,10 +206,10 @@ func TestListWorkspaces(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	if _, err := Create("WS-1"); err != nil {
+	if _, err := Create("WS-1", "pw"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Create("WS-2"); err != nil {
+	if _, err := Create("WS-2", "pw"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -227,7 +223,7 @@ func TestListWorkspaces(t *testing.T) {
 }
 
 func TestCreateEmptyName(t *testing.T) {
-	if _, err := Create(""); err == nil {
+	if _, err := Create("", "pw"); err == nil {
 		t.Error("empty name should fail")
 	}
 }

@@ -24,9 +24,20 @@ var wsCreateCmd = &cobra.Command{
 		if name == "" && len(args) > 0 {
 			name = args[0]
 		}
-		w, err := workspace.Create(name)
+		pass := wsCreatePassphrase
+		if pass == "" {
+			pass = os.Getenv("AETHER_PASSPHRASE")
+		}
+		if pass == "" && !wsAllowKeyless {
+			return fmt.Errorf("a passphrase is required: pass --passphrase or set AETHER_PASSPHRASE. " +
+				"Keyless mode (no passphrase) is explicitly discouraged; if you truly need it pass --allow-empty-passphrase")
+		}
+		w, err := workspace.Create(name, pass)
 		if err != nil {
 			return err
+		}
+		if w.Keyless {
+			fmt.Fprintln(os.Stderr, "WARNING: workspace created in KEYLESS mode; the encryption key is trivially derivable. Rekey as soon as possible.")
 		}
 		fmt.Printf("Workspace %q created at %s\n", w.Name, w.Root)
 		return nil
@@ -80,7 +91,7 @@ var wsReportCmd = &cobra.Command{
 		if name == "" && len(args) > 0 {
 			name = args[0]
 		}
-		w, err := workspace.Open(name, wsPassphrase)
+		w, err := workspace.Open(name, passphraseOrEnv(wsPassphrase))
 		if err != nil {
 			return err
 		}
@@ -117,7 +128,7 @@ var wsStatsCmd = &cobra.Command{
 		if name == "" && len(args) > 0 {
 			name = args[0]
 		}
-		w, err := workspace.Open(name, wsPassphrase)
+		w, err := workspace.Open(name, passphraseOrEnv(wsPassphrase))
 		if err != nil {
 			return err
 		}
@@ -134,11 +145,22 @@ var wsStatsCmd = &cobra.Command{
 }
 
 var (
-	wsName       string
-	wsForce      bool
-	wsPassphrase string
-	wsOutput     string
+	wsName             string
+	wsForce            bool
+	wsPassphrase       string
+	wsCreatePassphrase string
+	wsAllowKeyless     bool
+	wsOutput           string
 )
+
+// passphraseOrEnv returns the explicit passphrase or the
+// AETHER_PASSPHRASE environment fallback.
+func passphraseOrEnv(pass string) string {
+	if pass == "" {
+		return os.Getenv("AETHER_PASSPHRASE")
+	}
+	return pass
+}
 
 func init() {
 	rootCmd.AddCommand(workspaceCmd)
@@ -147,7 +169,10 @@ func init() {
 	for _, c := range []*cobra.Command{wsDeleteCmd, wsReportCmd, wsStatsCmd} {
 		c.Flags().StringVar(&wsName, "workspace", "", "Workspace name (or pass as arg)")
 	}
+	wsCreateCmd.Flags().StringVar(&wsCreatePassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env)")
+	wsCreateCmd.Flags().BoolVar(&wsAllowKeyless, "allow-empty-passphrase", false, "Explicitly create a keyless workspace (strongly discouraged; emits warnings on every open)")
 	wsDeleteCmd.Flags().BoolVar(&wsForce, "force", false, "Confirm deletion")
 	wsReportCmd.Flags().StringVar(&wsPassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env)")
 	wsReportCmd.Flags().StringVar(&wsOutput, "output", "", "Write report to file")
+	wsStatsCmd.Flags().StringVar(&wsPassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env)")
 }
