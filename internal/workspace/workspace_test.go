@@ -17,21 +17,30 @@ func TestCreateAndOpen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
+	closeLater(t, w)
 	if !Exists("ClientX") {
 		t.Fatal("workspace should exist")
 	}
 
 	// Directory layout.
-	for _, sub := range []string{"db", "artifacts", "reports"} {
+	for _, sub := range []string{"artifacts", "reports"} {
 		if _, err := os.Stat(filepath.Join(w.Root, sub)); err != nil {
 			t.Errorf("missing dir %s", sub)
 		}
 	}
+	if _, err := os.Stat(filepath.Join(w.Root, "vault.db")); err != nil {
+		t.Errorf("missing vault.db: %v", err)
+	}
 
+	// The vault holds an exclusive lock: close before reopening.
+	if err := w.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
 	opened, err := Open("ClientX", "pw")
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
+	closeLater(t, opened)
 	if opened.Name != "ClientX" {
 		t.Errorf("name = %q", opened.Name)
 	}
@@ -48,7 +57,8 @@ func TestSealOpenRoundTrip(t *testing.T) {
 	t.Setenv("HOME", dir)
 
 	w, _ := Create("SealTest", "pw")
-		if len(w.pass) != 32 {
+	closeLater(t, w)
+	if len(w.pass) != 32 {
 		t.Fatalf("derive: len=%d", len(w.pass))
 	}
 
@@ -83,6 +93,7 @@ func TestSealWithoutKey(t *testing.T) {
 	t.Setenv("HOME", dir)
 
 	w, _ := Create("NoKey", "pw")
+	closeLater(t, w)
 	// Key intentionally cleared.
 	w.pass = nil
 	if _, err := w.Seal([]byte("x")); err == nil {
@@ -96,10 +107,8 @@ func TestRecords(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	w, _ := Open("RecWS", "pw")
-	if w == nil {
-		w, _ = Create("RecWS", "pw")
-			}
+	w, _ := Create("RecWS", "pw")
+	closeLater(t, w)
 
 	type token struct {
 		Access string `json:"access"`
@@ -122,10 +131,11 @@ func TestRecords(t *testing.T) {
 		t.Errorf("keys = %v err=%v", keys, err)
 	}
 
-	// On-disk bytes must not contain the plaintext.
-	data, _ := os.ReadFile(filepath.Join(w.Root, "db", BucketTokens, "graph"))
+	// On-disk bytes must not contain the plaintext (records are sealed
+	// before they reach the vault).
+	data, _ := os.ReadFile(filepath.Join(w.Root, "vault.db"))
 	if strings.Contains(string(data), "tok-1") {
-		t.Fatal("record stored unencrypted")
+		t.Fatal("record stored unencrypted in vault")
 	}
 
 	if err := w.DeleteRecord(BucketTokens, "graph"); err != nil {
@@ -143,7 +153,8 @@ func TestEventJournal(t *testing.T) {
 	t.Setenv("HOME", dir)
 
 	w, _ := Create("EventWS", "pw")
-	
+	closeLater(t, w)
+
 	if err := w.LogEvent("token_added", "graph"); err != nil {
 		t.Fatalf("log: %v", err)
 	}
@@ -170,7 +181,8 @@ func TestSaveArtifact(t *testing.T) {
 	t.Setenv("HOME", dir)
 
 	w, _ := Create("ArtWS", "pw")
-	
+	closeLater(t, w)
+
 	path, err := w.SaveArtifact("aether.ccache", []byte("krb5-ccache-data"))
 	if err != nil {
 		t.Fatalf("save artifact: %v", err)
@@ -188,7 +200,11 @@ func TestDeleteShreds(t *testing.T) {
 	t.Setenv("HOME", dir)
 
 	w, _ := Create("DoomedWS", "pw")
-		if err := w.SaveRecord(BucketTokens, "graph", map[string]string{"access": "tok-1"}); err != nil {
+	if err := w.SaveRecord(BucketTokens, "graph", map[string]string{"access": "tok-1"}); err != nil {
+		t.Fatal(err)
+	}
+	// Release the vault lock before shredding.
+	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -206,12 +222,16 @@ func TestListWorkspaces(t *testing.T) {
 	t.Setenv("AppData", dir)
 	t.Setenv("HOME", dir)
 
-	if _, err := Create("WS-1", "pw"); err != nil {
+	w1, err := Create("WS-1", "pw")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Create("WS-2", "pw"); err != nil {
+	closeLater(t, w1)
+	w2, err := Create("WS-2", "pw")
+	if err != nil {
 		t.Fatal(err)
 	}
+	closeLater(t, w2)
 
 	names, err := List()
 	if err != nil {
@@ -225,5 +245,24 @@ func TestListWorkspaces(t *testing.T) {
 func TestCreateEmptyName(t *testing.T) {
 	if _, err := Create("", "pw"); err == nil {
 		t.Error("empty name should fail")
+	}
+}
+
+// Stage 2: two handles on the same workspace vault cannot coexist —
+// the second open must fail with the locked-vault error (cross-process
+// and intra-process safety via bbolt's flock).
+func TestVaultLockExclusive(t *testing.T) {
+	t.Setenv("AETHER_CONFIG_DIR", t.TempDir())
+
+	w, err := Create("LockedWS", "pw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeLater(t, w)
+
+	if _, err := Open("LockedWS", "pw"); err == nil {
+		t.Fatal("second concurrent open succeeded; expected locked-vault error")
+	} else if !strings.Contains(err.Error(), "locked") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

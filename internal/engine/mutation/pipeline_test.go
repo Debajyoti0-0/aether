@@ -3,18 +3,14 @@ package mutation
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/Debajyoti0-0/aether/internal/engine/rollback"
+	"github.com/Debajyoti0-0/aether/internal/engine/spine"
 	"github.com/Debajyoti0-0/aether/internal/store"
 	"github.com/Debajyoti0-0/aether/internal/workspace"
 )
-
-func writeFile(path string, data []byte) error { return os.WriteFile(path, data, 0o600) }
-func mkDirAll(path string) error               { return os.MkdirAll(path, 0o700) }
 
 func testWorkspace(t *testing.T, name string) *workspace.Workspace {
 	t.Helper()
@@ -27,6 +23,7 @@ func testWorkspace(t *testing.T, name string) *workspace.Workspace {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = w.Close() })
 	return w
 }
 
@@ -54,38 +51,6 @@ func (f *fakeMutation) Execute(ctx context.Context) (string, error) {
 }
 func (f *fakeMutation) AfterState() ([]byte, error) { return f.after, f.afterErr }
 func (f *fakeMutation) UndoRecipe() *UndoSpec       { return f.undo }
-
-func auditPath(ws *workspace.Workspace) string { return filepath.Join(ws.Root, "db", "audit.jsonl") }
-func rollbackPath(ws *workspace.Workspace) string {
-	return filepath.Join(ws.Root, "db", "rollback.jsonl")
-}
-
-func readAudit(t *testing.T, ws *workspace.Workspace) []store.Entry {
-	t.Helper()
-	log, err := store.New(auditPath(ws), filepath.Join(ws.Root, "db", "audit.key"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	entries, err := log.Entries()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return entries
-}
-
-func readRollbackStack(t *testing.T, ws *workspace.Workspace) []rollback.Action {
-	t.Helper()
-	stack := rollback.New(rollbackPath(ws))
-	var out []rollback.Action
-	for {
-		a, err := stack.Pop()
-		if err != nil {
-			break
-		}
-		out = append(out, *a)
-	}
-	return out
-}
 
 func mutationEntries(entries []store.Entry, kind string) []string {
 	var out []string
@@ -115,7 +80,7 @@ func TestPipelineSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if res.Status != statusCompleted {
+	if res.Status != "completed" {
 		t.Errorf("status = %q, want completed", res.Status)
 	}
 	if res.OperationID != "op-1" {
@@ -123,7 +88,14 @@ func TestPipelineSuccess(t *testing.T) {
 	}
 
 	// 2 audit entries: before + after, both with the action id.
-	entries := readAudit(t, ws)
+	log, err := ws.AuditLog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := log.Entries()
+	if err != nil {
+		t.Fatal(err)
+	}
 	mut := mutationEntries(entries, "exec.test")
 	if len(mut) != 2 {
 		t.Fatalf("audit entries for mutation = %d, want 2", len(mut))
@@ -135,31 +107,43 @@ func TestPipelineSuccess(t *testing.T) {
 		if !strings.Contains(r, res.ActionID) {
 			t.Errorf("audit entry missing action id: %s", r)
 		}
+		if !strings.Contains(r, `"approval_mode":"auto"`) {
+			t.Errorf("audit entry missing approval mode: %s", r)
+		}
 	}
 
 	// 1 rollback entry with the action id and the declared recipe.
-	stack := readRollbackStack(t, ws)
-	if len(stack) != 1 {
-		t.Fatalf("rollback entries = %d, want 1", len(stack))
-	}
-	if stack[0].ID != res.ActionID {
-		t.Errorf("rollback id = %q, want %q", stack[0].ID, res.ActionID)
-	}
-	if stack[0].Undo.Op != "undo_test" {
-		t.Errorf("undo op = %q", stack[0].Undo.Op)
-	}
-
-	// The signed audit chain must verify end-to-end.
-	log, err := store.New(auditPath(ws), filepath.Join(ws.Root, "db", "audit.key"))
+	stack := ws.RollbackStack()
+	actions, err := stack.List()
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(actions) != 1 {
+		t.Fatalf("rollback entries = %d, want 1", len(actions))
+	}
+	if actions[0].ID != res.ActionID {
+		t.Errorf("rollback id = %q, want %q", actions[0].ID, res.ActionID)
+	}
+	if actions[0].Undo.Op != "undo_test" {
+		t.Errorf("undo op = %q", actions[0].Undo.Op)
+	}
+
+	// The signed audit chain must verify end-to-end.
 	vr, err := log.Verify()
 	if err != nil {
 		t.Fatalf("audit chain verify error: %v", err)
 	}
 	if !vr.ValidAll {
 		t.Fatalf("audit chain verification failed: %+v", vr)
+	}
+
+	// One evidence record exists for the action (Stage 2 T3 seed).
+	var ev map[string]any
+	if err := ws.LoadRecord(workspace.BucketEvidence, res.ActionID+"-ev1", &ev); err != nil {
+		t.Fatalf("evidence record missing: %v", err)
+	}
+	if ev["epistemic_class"] != "observed" || ev["confidence"] != 1.0 {
+		t.Errorf("evidence = %+v", ev)
 	}
 }
 
@@ -179,11 +163,13 @@ func TestPipelineExecuteFailure(t *testing.T) {
 	if err == nil || err.Error() != "provider exploded" {
 		t.Fatalf("err = %v, want provider exploded", err)
 	}
-	if res.Status != statusFailed {
+	if res.Status != "failed" {
 		t.Errorf("status = %q, want failed", res.Status)
 	}
 
-	mut := mutationEntries(readAudit(t, ws), "exec.test")
+	log, _ := ws.AuditLog()
+	entries, _ := log.Entries()
+	mut := mutationEntries(entries, "exec.test")
 	if len(mut) != 2 {
 		t.Fatalf("audit entries = %d, want 2 (before+after even on failure)", len(mut))
 	}
@@ -198,19 +184,14 @@ func TestPipelineExecuteFailure(t *testing.T) {
 	}
 
 	// The rollback entry survives the failure (registered pre-execution).
-	stack := readRollbackStack(t, ws)
-	if len(stack) != 1 {
-		t.Errorf("rollback entries after failure = %d, want 1", len(stack))
+	actions, _ := ws.RollbackStack().List()
+	if len(actions) != 1 {
+		t.Errorf("rollback entries after failure = %d, want 1", len(actions))
 	}
 }
 
 func TestPipelineAuditFailureRefusesMutation(t *testing.T) {
 	ws := testWorkspace(t, "PipeNoAudit")
-
-	// A corrupt JSONL line breaks log appends.
-	if err := writeFile(auditPath(ws), []byte("not-json\n")); err != nil {
-		t.Fatal(err)
-	}
 
 	executed := false
 	m := &fakeMutation{
@@ -222,7 +203,17 @@ func TestPipelineAuditFailureRefusesMutation(t *testing.T) {
 			return "op-x", nil
 		},
 	}
-	if _, err := Run(context.Background(), ws, m); err == nil {
+
+	// Inject a broken audit chain via the spine's failure-injection seam
+	// (the production default uses the workspace vault).
+	s := spine.New(ws)
+	s.Hooks.AuditLog = func() (*store.Log, error) {
+		return nil, errors.New("audit chain unavailable")
+	}
+	if _, err := s.Run(context.Background(), &spine.Action{
+		Kind: m.Kind(), Target: m.Target(), Actor: "cli", Mutation: m,
+		ApprovalMode: spine.ApprovalAuto,
+	}); err == nil {
 		t.Fatal("Run with broken audit chain = nil error, want refusal")
 	}
 	if executed {
@@ -232,11 +223,6 @@ func TestPipelineAuditFailureRefusesMutation(t *testing.T) {
 
 func TestPipelineRollbackRegistrationFailureRefusesMutation(t *testing.T) {
 	ws := testWorkspace(t, "PipeNoRollback")
-
-	// Make rollback.jsonl a directory so the stack's OpenFile fails.
-	if err := mkDirAll(rollbackPath(ws)); err != nil {
-		t.Fatal(err)
-	}
 
 	executed := false
 	m := &fakeMutation{
@@ -248,14 +234,30 @@ func TestPipelineRollbackRegistrationFailureRefusesMutation(t *testing.T) {
 			return "op-x", nil
 		},
 	}
-	res, err := Run(context.Background(), ws, m)
+
+	s := spine.New(ws)
+	s.Hooks.RollbackStack = func() *rollback.Stack {
+		// A stack bound to a CLOSED vault fails every write (bbolt:
+		// "database not open") — the production default uses the live
+		// workspace vault; this seam only simulates the failure.
+		closed, err := store.OpenVault(ws.Root + "/closed-vault.db")
+		if err != nil {
+			panic(err)
+		}
+		_ = closed.Close()
+		return rollback.New(closed)
+	}
+	res, err := s.Run(context.Background(), &spine.Action{
+		Kind: m.Kind(), Target: m.Target(), Actor: "cli", Mutation: m,
+		ApprovalMode: spine.ApprovalAuto,
+	})
 	if err == nil {
 		t.Fatal("Run with broken rollback stack = nil error, want refusal")
 	}
 	if executed {
 		t.Fatal("mutation EXECUTED despite rollback registration failure — governance bypass")
 	}
-	if res.Status != statusAbortedRollbackReg {
+	if res.Status != spine.StatusAbortedRBReg {
 		t.Errorf("status = %q, want aborted_rollback_registration", res.Status)
 	}
 }
@@ -273,17 +275,27 @@ func TestPipelineStateUnknownIsNotSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if res.Status != statusStateUnknown {
+	if res.Status != "completed_state_unknown" {
 		t.Errorf("status = %q, want completed_state_unknown", res.Status)
 	}
+	log, _ := ws.AuditLog()
+	entries, _ := log.Entries()
 	found := false
-	for _, r := range mutationEntries(readAudit(t, ws), "exec.test") {
+	for _, r := range mutationEntries(entries, "exec.test") {
 		if strings.Contains(r, "AFTER_STATE_UNAVAILABLE") {
 			found = true
 		}
 	}
 	if !found {
 		t.Error("audit is missing AFTER_STATE_UNAVAILABLE")
+	}
+	// Unknown after-state ⇒ evidence must be ClassUnknown, confidence 0.
+	var ev map[string]any
+	if err := ws.LoadRecord(workspace.BucketEvidence, res.ActionID+"-ev1", &ev); err != nil {
+		t.Fatal(err)
+	}
+	if ev["epistemic_class"] != "unknown" || ev["confidence"] != 0.0 {
+		t.Errorf("evidence = %+v, want unknown/0.0", ev)
 	}
 }
 
@@ -305,12 +317,15 @@ func TestPipelineCrashMidExecuteLeavesRollbackTrace(t *testing.T) {
 
 	// The rollback entry was registered BEFORE execution, so the crash
 	// leaves a recoverable trace.
-	stack := readRollbackStack(t, ws)
-	if len(stack) != 1 {
-		t.Fatalf("rollback entries after crash = %d, want 1 (pre-execution registration)", len(stack))
+	actions, err := ws.RollbackStack().List()
+	if err != nil {
+		t.Fatal(err)
 	}
-	if stack[0].Target != "vm-6" {
-		t.Errorf("rollback target = %q", stack[0].Target)
+	if len(actions) != 1 {
+		t.Fatalf("rollback entries after crash = %d, want 1 (pre-execution registration)", len(actions))
+	}
+	if actions[0].Target != "vm-6" {
+		t.Errorf("rollback target = %q", actions[0].Target)
 	}
 }
 
@@ -326,11 +341,13 @@ func TestPipelineIrreversibleRecordedHonestly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if res.Status != statusCompleted {
+	if res.Status != "completed" {
 		t.Errorf("status = %q", res.Status)
 	}
+	log, _ := ws.AuditLog()
+	entries, _ := log.Entries()
 	found := false
-	for _, r := range mutationEntries(readAudit(t, ws), "simulate.stream") {
+	for _, r := range mutationEntries(entries, "simulate.stream") {
 		if strings.Contains(r, `"rollback":"irreversible"`) {
 			found = true
 		}
@@ -338,16 +355,16 @@ func TestPipelineIrreversibleRecordedHonestly(t *testing.T) {
 	if !found {
 		t.Error("audit must record irreversibility explicitly")
 	}
-	stack := readRollbackStack(t, ws)
-	if len(stack) != 0 {
-		t.Errorf("irreversible mutation pushed %d rollback entries, want 0", len(stack))
+	actions, _ := ws.RollbackStack().List()
+	if len(actions) != 0 {
+		t.Errorf("irreversible mutation pushed %d rollback entries, want 0", len(actions))
 	}
 }
 
 func TestNewActionIDUnique(t *testing.T) {
 	seen := map[string]bool{}
 	for i := 0; i < 100; i++ {
-		id, err := newActionID()
+		id, err := spine.NewActionID()
 		if err != nil {
 			t.Fatal(err)
 		}

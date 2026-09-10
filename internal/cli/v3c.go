@@ -199,9 +199,7 @@ var auditVerifyCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		l, err := store.New(
-			ws.Root+string(os.PathSeparator)+"db"+string(os.PathSeparator)+"audit.jsonl",
-			ws.Root+string(os.PathSeparator)+"db"+string(os.PathSeparator)+"audit.key")
+		l, err := ws.AuditLog()
 		if err != nil {
 			return err
 		}
@@ -227,9 +225,7 @@ var auditRecordCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		l, err := store.New(
-			ws.Root+string(os.PathSeparator)+"db"+string(os.PathSeparator)+"audit.jsonl",
-			ws.Root+string(os.PathSeparator)+"db"+string(os.PathSeparator)+"audit.key")
+		l, err := ws.AuditLog()
 		if err != nil {
 			return err
 		}
@@ -250,9 +246,7 @@ var exportAuditCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		l, err := store.New(
-			ws.Root+string(os.PathSeparator)+"db"+string(os.PathSeparator)+"audit.jsonl",
-			ws.Root+string(os.PathSeparator)+"db"+string(os.PathSeparator)+"audit.key")
+		l, err := ws.AuditLog()
 		if err != nil {
 			return err
 		}

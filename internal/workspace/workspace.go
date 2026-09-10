@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
@@ -11,9 +12,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/Debajyoti0-0/aether/internal/engine/rollback"
 	"github.com/Debajyoti0-0/aether/internal/paths"
+	"github.com/Debajyoti0-0/aether/internal/store"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -55,13 +59,17 @@ const (
 )
 
 // Workspace is an engagement-scoped data plane. All artifacts, tokens,
-// and logs belong to exactly one workspace.
+// and logs belong to exactly one workspace. Stage 2: all state persists
+// through the canonical vault (vault.db, bbolt) behind the store.Store
+// contract — records and journal entries remain per-record AES-256-GCM
+// sealed with the master key.
 type Workspace struct {
 	Name    string
 	Root    string // OS config dir /aether/workspaces/<Name>
 	Keyless bool   // opened with the explicit keyless marker
 	pass    []byte // derived key (never persisted)
 	salt    []byte // per-workspace random salt
+	vault   *store.Vault
 }
 
 // Dir returns the aether workspace root for the current OS profile
@@ -73,6 +81,9 @@ func Dir() string {
 // Paths of interest inside a workspace.
 func (w *Workspace) Artifacts() string { return filepath.Join(w.Root, "artifacts") }
 func (w *Workspace) Reports() string   { return filepath.Join(w.Root, "reports") }
+
+// VaultPath returns the canonical storage file for this workspace.
+func (w *Workspace) VaultPath() string { return filepath.Join(w.Root, "vault.db") }
 
 // saltFilePath returns the workspace key-file path.
 func (w *Workspace) saltFilePath() string { return filepath.Join(w.Root, saltFileName) }
@@ -91,7 +102,6 @@ func Create(name, passphrase string) (*Workspace, error) {
 	}
 
 	for _, dir := range []string{
-		filepath.Join(root, "db"),
 		filepath.Join(root, "artifacts"),
 		filepath.Join(root, "reports"),
 	} {
@@ -114,7 +124,140 @@ func Create(name, passphrase string) (*Workspace, error) {
 		}
 	}
 
-	return &Workspace{Name: name, Root: root, pass: key, salt: salt, Keyless: passphrase == ""}, nil
+	w := &Workspace{Name: name, Root: root, pass: key, salt: salt, Keyless: passphrase == ""}
+	if err := w.attachVault(); err != nil {
+		return nil, err
+	}
+	return w, nil
+}
+
+// attachVault opens (creating if needed) the workspace vault and runs
+// the legacy-layout migration. It is called by Create and Open.
+func (w *Workspace) attachVault() error {
+	if w.vault != nil {
+		return nil
+	}
+	v, err := store.OpenVault(w.VaultPath())
+	if err != nil {
+		return err
+	}
+	w.vault = v
+	return w.migrateLegacyLayout()
+}
+
+// migrateLegacyLayout imports the pre-Stage-2 `db/` directory layout
+// (per-file records, journal blob, audit.jsonl, rollback.jsonl) into
+// the vault, then renames the directory to db.pre-vault-imported. The
+// migration is idempotent: a completed import leaves no `db/` dir.
+// No user data is deleted — the original directory is preserved.
+func (w *Workspace) migrateLegacyLayout() error {
+	legacyDir := filepath.Join(w.Root, "db")
+	if _, err := os.Stat(legacyDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	// 1. Records: db/<bucket>/<key> files.
+	buckets, err := os.ReadDir(legacyDir)
+	if err != nil {
+		return err
+	}
+	for _, b := range buckets {
+		if !b.IsDir() || b.Name() == "events" {
+			continue
+		}
+		keys, err := os.ReadDir(filepath.Join(legacyDir, b.Name()))
+		if err != nil {
+			return err
+		}
+		for _, k := range keys {
+			if k.IsDir() {
+				continue
+			}
+			sealed, err := os.ReadFile(filepath.Join(legacyDir, b.Name(), k.Name()))
+			if err != nil {
+				return err
+			}
+			if err := w.vault.PutRecord(b.Name(), k.Name(), sealed); err != nil {
+				return err
+			}
+		}
+	}
+
+	// 2. Journal blob → individual sealed entries.
+	journalPath := filepath.Join(legacyDir, BucketEvents, "journal")
+	if sealed, err := os.ReadFile(journalPath); err == nil {
+		data, err := w.Open(sealed)
+		if err != nil {
+			return fmt.Errorf("journal migration: %w", err)
+		}
+		var events []Event
+		if err := json.Unmarshal(data, &events); err != nil {
+			return fmt.Errorf("journal migration parse: %w", err)
+		}
+		for _, ev := range events {
+			if err := w.appendEvent(ev); err != nil {
+				return err
+			}
+		}
+	}
+
+	// 3. Audit chain.
+	auditPath := filepath.Join(legacyDir, "audit.jsonl")
+	if entries, err := store.ReadJSONLEntries(auditPath); err == nil && len(entries) > 0 {
+		for _, e := range entries {
+			raw, err := json.Marshal(e)
+			if err != nil {
+				return err
+			}
+			if err := w.vault.AppendAuditEntry(raw, uint64(e.Seq)); err != nil {
+				return fmt.Errorf("audit migration: %w", err)
+			}
+		}
+	}
+	keyPath := filepath.Join(legacyDir, "audit.key")
+	if keyRaw, err := os.ReadFile(keyPath); err == nil {
+		if cur, _ := w.vault.AuditMetaGet(store.MetaAuditKeyName); len(cur) == 0 {
+			_ = w.vault.AuditMetaSet(store.MetaAuditKeyName, bytes.TrimSpace(keyRaw))
+		}
+	}
+
+	// 4. Rollback stack.
+	rbPath := filepath.Join(legacyDir, "rollback.jsonl")
+	if raw, err := os.ReadFile(rbPath); err == nil {
+		for _, line := range strings.Split(string(raw), "\n") {
+			if line = strings.TrimSpace(line); line == "" {
+				continue
+			}
+			if _, err := w.vault.RollbackPush([]byte(line)); err != nil {
+				return fmt.Errorf("rollback migration: %w", err)
+			}		}
+	}
+
+	// 5. Preserve the original directory (no user data destroyed).
+	return os.Rename(legacyDir, filepath.Join(w.Root, "db.pre-vault-imported"))
+}
+
+// Close releases the workspace vault and its file lock.
+func (w *Workspace) Close() error {
+	if w.vault == nil {
+		return nil
+	}
+	err := w.vault.Close()
+	w.vault = nil
+	return err
+}
+
+// AuditLog returns the signed audit chain persisted in the vault.
+func (w *Workspace) AuditLog() (*store.Log, error) {
+	if w.vault == nil {
+		return nil, fmt.Errorf("workspace %q: vault not open", w.Name)
+	}
+	return store.NewVaultLog(w.vault)
+}
+
+// RollbackStack returns the rollback stack persisted in the vault.
+func (w *Workspace) RollbackStack() *rollback.Stack {
+	return rollback.New(w.vault)
 }
 
 // Open loads an existing workspace and derives its crypto key from the
@@ -166,6 +309,9 @@ func openWorkspace(name, passphrase string, migration bool) (*Workspace, error) 
 		w := &Workspace{Name: name, Root: root}
 		w.salt = legacySalt(name)
 		w.pass = deriveKeyArgon2(passphrase, w.salt)
+		if err := w.attachVault(); err != nil {
+			return nil, err
+		}
 		return w, nil
 	}
 	if err != nil {
@@ -193,6 +339,9 @@ func openWorkspace(name, passphrase string, migration bool) (*Workspace, error) 
 	}
 
 	w := &Workspace{Name: name, Root: root, pass: key, salt: salt, Keyless: keyless}
+	if err := w.attachVault(); err != nil {
+		return nil, err
+	}
 	if keyless {
 		warnKeyless(name)
 	}
@@ -421,7 +570,7 @@ func (w *Workspace) SaveRecord(bucket, key string, v any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(w.recordPath(bucket, key), sealed, 0o600)
+	return w.vault.PutRecord(bucket, key, sealed)
 }
 
 // LoadRecord loads and decrypts a JSON record into out.
@@ -429,7 +578,7 @@ func (w *Workspace) LoadRecord(bucket, key string, out any) error {
 	if err := ValidateRecordKey(key); err != nil {
 		return err
 	}
-	sealed, err := os.ReadFile(w.recordPath(bucket, key))
+	sealed, err := w.vault.GetRecord(bucket, key)
 	if err != nil {
 		return err
 	}
@@ -445,21 +594,7 @@ func (w *Workspace) ListRecords(bucket string) ([]string, error) {
 	if err := ValidateRecordKey(bucket); err != nil {
 		return nil, err
 	}
-	dir := w.recordPath(bucket, "")
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	var out []string
-	for _, e := range entries {
-		if !e.IsDir() {
-			out = append(out, e.Name())
-		}
-	}
-	return out, nil
+	return w.vault.ListRecords(bucket)
 }
 
 // DeleteRecord removes a record.
@@ -467,64 +602,28 @@ func (w *Workspace) DeleteRecord(bucket, key string) error {
 	if err := ValidateRecordKey(key); err != nil {
 		return err
 	}
-	err := os.Remove(w.recordPath(bucket, key))
-	if os.IsNotExist(err) {
-		return nil
-	}
-	return err
+	return w.vault.DeleteRecord(bucket, key)
 }
 
-func (w *Workspace) recordPath(bucket, key string) string {
-	if err := ValidateRecordKey(bucket); err != nil {
-		// Buckets are package constants; an invalid bucket name is a
-		// programming error. Fail closed rather than write outside the
-		// workspace.
-		return filepath.Join(w.Root, "db", "INVALID_BUCKET")
-	}
-	dir := filepath.Join(w.Root, "db", bucket)
-	// Ensure the bucket dir exists lazily.
-	_ = os.MkdirAll(dir, 0o700)
-	if key == "" {
-		return dir
-	}
-	if err := ValidateRecordKey(key); err != nil {
-		return filepath.Join(dir, "INVALID_KEY")
-	}
-	return filepath.Join(dir, key)
-}
-
-// LogEvent appends a timestamped JSON event to the workspace journal
-// (encrypted per record).
+// LogEvent appends a timestamped JSON event to the workspace journal.
+// Stage 2 semantics (forensic F9): the event is appended to the vault
+// journal with a monotonic sequence number in a single transaction.
+// The previous read-modify-rewrite blob (which silently destroyed all
+// history on a corrupt read and raced concurrent writers) is gone.
+// A corrupt entry fails closed with an error — history is never
+// discarded.
 type Event struct {
-	Time    time.Time `json:"time"`
-	Kind    string    `json:"kind"`
-	Detail  string    `json:"detail"`
+	Time   time.Time `json:"time"`
+	Kind   string    `json:"kind"`
+	Detail string    `json:"detail"`
 }
 
 func (w *Workspace) LogEvent(kind, detail string) error {
-	events, _ := w.loadEvents()
-	events = append(events, Event{Time: time.Now().UTC(), Kind: kind, Detail: detail})
-	return w.storeEvents(events)
+	return w.appendEvent(Event{Time: time.Now().UTC(), Kind: kind, Detail: detail})
 }
 
-func (w *Workspace) loadEvents() ([]Event, error) {
-	sealed, err := os.ReadFile(w.recordPath(BucketEvents, "journal"))
-	if err != nil {
-		return nil, nil
-	}
-	data, err := w.Open(sealed)
-	if err != nil {
-		return nil, err
-	}
-	var events []Event
-	if err := json.Unmarshal(data, &events); err != nil {
-		return nil, err
-	}
-	return events, nil
-}
-
-func (w *Workspace) storeEvents(events []Event) error {
-	data, err := json.Marshal(events)
+func (w *Workspace) appendEvent(ev Event) error {
+	data, err := json.Marshal(ev)
 	if err != nil {
 		return err
 	}
@@ -532,12 +631,30 @@ func (w *Workspace) storeEvents(events []Event) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(w.recordPath(BucketEvents, "journal"), sealed, 0o600)
+	_, err = w.vault.AppendJournal(sealed)
+	return err
 }
 
-// Events returns the decrypted journal.
+// Events returns the decrypted journal oldest-first.
 func (w *Workspace) Events() ([]Event, error) {
-	return w.loadEvents()
+	sealedEntries, err := w.vault.ReadJournal()
+	if err != nil {
+		return nil, err
+	}
+	var events []Event
+	for i, sealed := range sealedEntries {
+		data, err := w.Open(sealed)
+		if err != nil {
+			// Fail closed: never silently drop history.
+			return nil, fmt.Errorf("journal entry %d is corrupt: %w", i+1, err)
+		}
+		var ev Event
+		if err := json.Unmarshal(data, &ev); err != nil {
+			return nil, fmt.Errorf("journal entry %d is malformed: %w", i+1, err)
+		}
+		events = append(events, ev)
+	}
+	return events, nil
 }
 
 // SaveArtifact stores a raw artifact (ccache, dumps) unencrypted on

@@ -2,27 +2,24 @@ package workspace
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
-// recordRef identifies one encrypted record during rekey.
-type recordRef struct{ bucket, key string }
-
-// Rekey re-encrypts every record in the workspace under a new
-// passphrase (open with the old key, seal with the new key).
+// Rekey re-encrypts every record and journal entry in the workspace
+// under a new passphrase. Stage 2: all persistence flows through the
+// vault — the fresh salt is minted first, then records are re-sealed
+// one by one and the journal is atomically replaced (single bbolt
+// transaction), so an interrupted rekey cannot mix keys.
 //
-// Stage 1 (F2) semantics:
+// Stage 1 (F2) semantics preserved:
 //   - the old passphrase may be empty only when the workspace is
-//     keyless (KEYLESS marker) or in the legacy deterministic layout —
-//     this is the sanctioned migration path;
-//   - the workspace receives a fresh random salt on every rekey and the
-//     key file (salt.bin) is rewritten with a tag under the new key;
-//   - migrating off keyless removes the KEYLESS marker;
-//   - decryption of every record and the journal is verified before any
-//     record is rewritten, so a wrong old passphrase cannot corrupt the
-//     vault.
+//     keyless (KEYLESS marker) or in the legacy deterministic layout;
+//   - decryption of everything is verified BEFORE anything is
+//     rewritten, so a wrong old passphrase cannot corrupt the vault;
+//   - migrating off keyless removes the KEYLESS marker.
 func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 	if err := ValidateName(w.Name); err != nil {
 		return 0, err
@@ -40,6 +37,9 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 				"empty old passphrase is only permitted for keyless or legacy workspaces; " +
 					"supply the current passphrase instead")
 		}
+	}
+	if w.vault == nil {
+		return 0, fmt.Errorf("workspace %q: vault not open", w.Name)
 	}
 
 	// Determine the OLD key: stored salt, or the legacy name-derived salt.
@@ -59,6 +59,7 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 	// Phase 1 — decrypt everything under the old key BEFORE writing
 	// anything, so a wrong passphrase fails without corrupting the vault.
 	buckets := []string{BucketTokens, BucketIdentities, BucketSessions, BucketEvidence}
+	type recordRef struct{ bucket, key string }
 	plaintexts := make(map[recordRef][]byte)
 	migrated := 0
 
@@ -68,11 +69,11 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 			return migrated, err
 		}
 		for _, key := range recordKeys {
-			data, err := osReadFile(w.recordPath(bucket, key))
+			sealed, err := w.vault.GetRecord(bucket, key)
 			if err != nil {
 				return migrated, err
 			}
-			plain, err := w.Open(data)
+			plain, err := w.Open(sealed)
 			if err != nil {
 				return migrated, fmt.Errorf("%s/%s: %w (wrong passphrase?)", bucket, key, err)
 			}
@@ -80,7 +81,7 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 			migrated++
 		}
 	}
-	events, err := w.loadEvents()
+	oldEvents, err := w.Events()
 	if err != nil {
 		return migrated, fmt.Errorf("journal: %w (wrong passphrase?)", err)
 	}
@@ -100,17 +101,37 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 	}
 
 	for _, bucket := range buckets {
-		for _, key := range recordKeysFor(plaintexts, bucket) {
-			resealed, err := w.Seal(plaintexts[recordRef{bucket, key}])
+		for ref, plain := range plaintexts {
+			if ref.bucket != bucket {
+				continue
+			}
+			resealed, err := w.Seal(plain)
 			if err != nil {
 				return migrated, err
 			}
-			if err := osWriteFile(w.recordPath(bucket, key), resealed); err != nil {
+			if err := w.vault.PutRecord(bucket, ref.key, resealed); err != nil {
 				return migrated, err
 			}
 		}
 	}
-	if err := w.storeEvents(events); err != nil {
+
+	// Journal: re-seal every event and swap atomically.
+	resealed := make([][]byte, 0, len(oldEvents))
+	for _, ev := range oldEvents {
+		data, err := json.Marshal(ev)
+		if err != nil {
+			return migrated, err
+		}
+		s, err := w.Seal(data)
+		if err != nil {
+			return migrated, err
+		}
+		resealed = append(resealed, s)
+	}
+	if err := w.vault.ReplaceJournal(resealed); err != nil {
+		return migrated, err
+	}
+	if err := w.vault.Sync(); err != nil {
 		return migrated, err
 	}
 
@@ -122,17 +143,8 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 	return migrated, nil
 }
 
-// recordKeysFor returns the record keys recorded for a bucket during
-// the decrypt phase.
-func recordKeysFor(plaintexts map[recordRef][]byte, bucket string) []string {
-	var out []string
-	for ref := range plaintexts {
-		if ref.bucket == bucket {
-			out = append(out, ref.key)
-		}
-	}
-	return out
-}
+// recordKeysFor was removed with the vault migration: rekey iterates
+// the plaintext map directly.
 
 func (w *Workspace) hasKeylessMarker() (bool, error) {
 	_, err := os.Stat(filepath.Join(w.Root, keylessMarker))

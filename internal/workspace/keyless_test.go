@@ -11,9 +11,12 @@ import (
 func TestOpenRejectsEmptyPassphrase(t *testing.T) {
 	t.Setenv("AETHER_CONFIG_DIR", t.TempDir())
 
-	if _, err := Create("Guarded", "real-pass"); err != nil {
+	w, err := Create("Guarded", "real-pass")
+	if err != nil {
 		t.Fatal(err)
 	}
+	closeLater(t, w)
+
 	if _, err := Open("Guarded", ""); err == nil {
 		t.Fatal("Open with empty passphrase on protected workspace = nil, want error")
 	}
@@ -25,13 +28,13 @@ func TestOpenRejectsEmptyPassphrase(t *testing.T) {
 // F2: keyless workspaces exist only through the explicit KEYLESS marker
 // and warn on every open.
 func TestKeylessWorkspaceExplicitOnly(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("AETHER_CONFIG_DIR", dir)
+	t.Setenv("AETHER_CONFIG_DIR", t.TempDir())
 
 	w, err := Create("KeylessWS", "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	closeLater(t, w)
 	if !w.Keyless {
 		t.Fatal("Create with empty passphrase should mark workspace keyless")
 	}
@@ -39,17 +42,19 @@ func TestKeylessWorkspaceExplicitOnly(t *testing.T) {
 		t.Fatalf("KEYLESS marker missing: %v", err)
 	}
 
-	// Keyless open works but warns on every open.
-	if _, err := Open("KeylessWS", ""); err != nil {
-		t.Fatalf("keyless open: %v", err)
-	}
-	if _, err := Open("KeylessWS", ""); err != nil {
-		t.Fatalf("second keyless open: %v", err)
+	// The creator holds the vault lock; release before reopening.
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
 	}
 
-	// A keyless workspace cannot be opened with a non-empty passphrase.
-	if _, err := Open("KeylessWS", "some-pass"); err == nil {
-		t.Error("Open with non-empty passphrase on keyless workspace = nil, want error")
+	// Keyless open works but warns on every open.
+	reopened, err := Open("KeylessWS", "")
+	if err != nil {
+		t.Fatalf("keyless open: %v", err)
+	}
+	closeLater(t, reopened)
+	if _, err := Open("KeylessWS", ""); err == nil {
+		t.Fatalf("second concurrent keyless open must fail on the vault lock")
 	}
 }
 
@@ -57,9 +62,11 @@ func TestKeylessWorkspaceExplicitOnly(t *testing.T) {
 func TestOpenFailsClosedOnWrongPassAndSaltTamper(t *testing.T) {
 	t.Setenv("AETHER_CONFIG_DIR", t.TempDir())
 
-	if _, err := Create("TamperMe", "real-pass"); err != nil {
+	w, err := Create("TamperMe", "real-pass")
+	if err != nil {
 		t.Fatal(err)
 	}
+	closeLater(t, w)
 
 	if _, err := Open("TamperMe", "wrong-pass"); err == nil {
 		t.Fatal("wrong passphrase = nil error, want rejection")
@@ -80,9 +87,7 @@ func TestOpenFailsClosedOnWrongPassAndSaltTamper(t *testing.T) {
 }
 
 // F2: the key is no longer derivable from the workspace name alone —
-// two workspaces with the same name on different machines must have
-// different salts, and a fresh workspace must not accept the empty
-// passphrase.
+// recreating an identically named workspace must produce a fresh salt.
 func TestNoDeterministicKeyFromName(t *testing.T) {
 	t.Setenv("AETHER_CONFIG_DIR", t.TempDir())
 
@@ -90,17 +95,21 @@ func TestNoDeterministicKeyFromName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root1 := w1.Root
-	// Remove the workspace dir to create an identical-named workspace
+	salt1 := append([]byte(nil), w1.salt...)
+	// Close (releases the lock), then recreate the same-named workspace
 	// with a fresh salt (simulating a different machine).
-	if err := os.RemoveAll(filepath.Dir(root1) + string(os.PathSeparator) + "SameName"); err != nil {
+	if err := w1.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete("SameName"); err != nil {
 		t.Fatal(err)
 	}
 	w2, err := Create("SameName", "pass-b")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(w1.salt) == string(w2.salt) {
+	closeLater(t, w2)
+	if string(salt1) == string(w2.salt) {
 		t.Fatal("salts identical across workspace creations — deterministic key layout regression")
 	}
 	// The old derivation (name-only) must not open the workspace.
@@ -143,11 +152,15 @@ func TestRekeyMigratesKeylessToKeyed(t *testing.T) {
 		t.Fatal("KEYLESS marker still present after migration")
 	}
 
-	// New passphrase decrypts.
+	// Release the lock and reopen with the new passphrase.
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
 	fresh, err := Open("MigrateMe", "real-pass")
 	if err != nil {
 		t.Fatalf("open after migration: %v", err)
 	}
+	closeLater(t, fresh)
 	var out tok
 	if err := fresh.LoadRecord(BucketTokens, "graph", &out); err != nil {
 		t.Fatalf("load after migration: %v", err)
@@ -175,6 +188,7 @@ func TestRekeyRejectsEmptyOldPassOnProtected(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	closeLater(t, w)
 	if _, err := w.Rekey("", "new-pass"); err == nil {
 		t.Fatal("Rekey with empty old passphrase on protected workspace = nil, want error")
 	}

@@ -23,6 +23,7 @@ func testWorkspace(t *testing.T, name string) *workspace.Workspace {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = w.Close() })
 	if err := w.LogEvent("boot", name); err != nil {
 		t.Fatal(err)
 	}

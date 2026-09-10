@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Debajyoti0-0/aether/internal/store"
 )
 
 // Action is one reversible operation recorded during an engagement.
+// The JSON shape is Stage-1 frozen.
 type Action struct {
 	ID        string            `json:"id"`
 	Timestamp time.Time         `json:"timestamp"`
@@ -35,16 +36,19 @@ type UndoAction struct {
 }
 
 // Stack is a persistent LIFO of recorded actions supporting deterministic
-// undo. The stack is stored as a JSONL file (one action per line) inside
-// the workspace so it survives process restarts.
+// undo. Stage 2: the stack lives in the workspace vault (bbolt) — Pop is
+// a single atomic transaction (the Stage 1 rewrite-before-validate
+// corruption window is gone), failed reversals are retained in the
+// rollback_failed bucket instead of being silently discarded, and the
+// workspace file lock protects cross-process access.
 type Stack struct {
-	mu   sync.Mutex
-	path string
+	mu sync.Mutex
+	v  *store.Vault
 }
 
-// New builds a rollback stack backed by path.
-func New(path string) *Stack {
-	return &Stack{path: path}
+// New builds a stack over a workspace vault.
+func New(v *store.Vault) *Stack {
+	return &Stack{v: v}
 }
 
 // Push records a reversible action.
@@ -55,9 +59,6 @@ func (s *Stack) Push(a Action) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o700); err != nil {
-		return err
-	}
 	if a.ID == "" {
 		a.ID = fmt.Sprintf("act-%d", time.Now().UnixNano())
 	}
@@ -69,36 +70,27 @@ func (s *Stack) Push(a Action) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(s.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.Write(append(data, '\n'))
+	_, err = s.v.RollbackPush(data)
 	return err
 }
 
-// Pop removes and returns the most recent action (LIFO).
+// Pop atomically removes and returns the most recent action (LIFO).
 func (s *Stack) Pop() (*Action, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.popLocked()
+}
 
-	lines, err := s.readLines()
+func (s *Stack) popLocked() (*Action, error) {
+	data, err := s.v.RollbackPop()
 	if err != nil {
 		return nil, err
 	}
-	if len(lines) == 0 {
-		return nil, fmt.Errorf("rollback stack is empty")
-	}
-
-	last := lines[len(lines)-1]
-	if err := os.WriteFile(s.path, []byte(strings.Join(lines[:len(lines)-1], "\n")+"\n"), 0o600); err != nil {
-		return nil, err
-	}
-
 	a := &Action{}
-	if err := json.Unmarshal([]byte(last), a); err != nil {
-		return nil, fmt.Errorf("corrupt rollback entry: %w", err)
+	if err := json.Unmarshal(data, a); err != nil {
+		// Corrupt entry: retain it for inspection instead of dropping it.
+		_ = s.v.RollbackRetainFailed(data)
+		return nil, fmt.Errorf("corrupt rollback entry (retained in rollback_failed): %w", err)
 	}
 	return a, nil
 }
@@ -108,15 +100,12 @@ func (s *Stack) Peek() (*Action, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	lines, err := s.readLines()
+	data, err := s.v.RollbackPeek()
 	if err != nil {
 		return nil, err
 	}
-	if len(lines) == 0 {
-		return nil, fmt.Errorf("rollback stack is empty")
-	}
 	a := &Action{}
-	if err := json.Unmarshal([]byte(lines[len(lines)-1]), a); err != nil {
+	if err := json.Unmarshal(data, a); err != nil {
 		return nil, err
 	}
 	return a, nil
@@ -127,14 +116,39 @@ func (s *Stack) List() ([]Action, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	lines, err := s.readLines()
+	raws, err := s.v.RollbackList()
 	if err != nil {
 		return nil, err
 	}
-	out := make([]Action, 0, len(lines))
-	for _, l := range lines {
+	out := make([]Action, 0, len(raws))
+	for _, raw := range raws {
 		a := Action{}
-		if err := json.Unmarshal([]byte(l), &a); err != nil {
+		if err := json.Unmarshal(raw, &a); err != nil {
+			// Fail closed on corruption rather than silently skipping.
+			return nil, fmt.Errorf("corrupt rollback entry: %w", err)
+		}
+		out = append(out, a)
+	}
+	return out, nil
+}
+
+// ListFailed returns retained failed-reversal actions (newest-first).
+// Unparseable retained entries are returned as raw diagnostic markers
+// rather than silently skipped.
+func (s *Stack) ListFailed() ([]Action, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	raws, err := s.v.RollbackListFailed()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Action, 0, len(raws))
+	for _, raw := range raws {
+		a := Action{}
+		if err := json.Unmarshal(raw, &a); err != nil {
+			// A corrupt retained entry still counts as retained history.
+			out = append(out, Action{Kind: "CORRUPT", Target: "retained-unparseable", Detail: string(raw)})
 			continue
 		}
 		out = append(out, a)
@@ -146,11 +160,11 @@ func (s *Stack) List() ([]Action, error) {
 func (s *Stack) Len() (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	lines, err := s.readLines()
+	raws, err := s.v.RollbackList()
 	if err != nil {
 		return 0, err
 	}
-	return len(lines), nil
+	return len(raws), nil
 }
 
 // UndoRunner executes the reversal for one action. The CLI injects the
@@ -158,17 +172,23 @@ func (s *Stack) Len() (int, error) {
 type UndoRunner func(ctx context.Context, a *Action) error
 
 // UndoAll pops and reverses every action newest-first, recording
-// per-action outcomes. Failed reversals do not abort the run.
+// per-action outcomes. Failed reversals are RETAINED in the
+// rollback_failed bucket and surfaced — never silently discarded.
 func (s *Stack) UndoAll(ctx context.Context, run UndoRunner) ([]UndoOutcome, error) {
 	var outcomes []UndoOutcome
 	for {
 		if ctx.Err() != nil {
 			return outcomes, ctx.Err()
 		}
-		a, err := s.Pop()
+
+		s.mu.Lock()
+		a, err := s.popLocked()
 		if err != nil {
+			s.mu.Unlock()
 			break // empty
 		}
+		var raw []byte
+		raw, _ = json.Marshal(a)
 		o := UndoOutcome{ActionID: a.ID, Kind: a.Kind, Target: a.Target}
 		if run == nil {
 			o.Error = "no undo runner configured"
@@ -177,6 +197,13 @@ func (s *Stack) UndoAll(ctx context.Context, run UndoRunner) ([]UndoOutcome, err
 		} else {
 			o.Reverted = true
 		}
+		s.mu.Unlock()
+
+		if !o.Reverted {
+			// Stage 2 invariant: a failed reversal is never discarded.
+			_ = s.v.RollbackRetainFailed(raw)
+			o.RetainedFailed = true
+		}
 		outcomes = append(outcomes, o)
 	}
 	return outcomes, nil
@@ -184,28 +211,12 @@ func (s *Stack) UndoAll(ctx context.Context, run UndoRunner) ([]UndoOutcome, err
 
 // UndoOutcome is the result of one reversal.
 type UndoOutcome struct {
-	ActionID string `json:"action_id"`
-	Kind     string `json:"kind"`
-	Target   string `json:"target"`
-	Reverted bool   `json:"reverted"`
-	Error    string `json:"error,omitempty"`
-}
-
-func (s *Stack) readLines() ([]string, error) {
-	data, err := os.ReadFile(s.path)
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var lines []string
-	for _, l := range strings.Split(string(data), "\n") {
-		if l = strings.TrimSpace(l); l != "" {
-			lines = append(lines, l)
-		}
-	}
-	return lines, nil
+	ActionID       string `json:"action_id"`
+	Kind           string `json:"kind"`
+	Target         string `json:"target"`
+	Reverted       bool   `json:"reverted"`
+	Error          string `json:"error,omitempty"`
+	RetainedFailed bool   `json:"retained_failed,omitempty"`
 }
 
 // RenderOutcomes formats undo outcomes for the terminal.
@@ -220,7 +231,11 @@ func RenderOutcomes(outcomes []UndoOutcome) string {
 		} else {
 			ok++
 		}
-		fmt.Fprintf(&b, "[%s] %-18s %-20s %s\n", mark, o.Kind, o.Target, o.Error)
+		retained := ""
+		if o.RetainedFailed {
+			retained = " [retained]"
+		}
+		fmt.Fprintf(&b, "[%s] %-18s %-20s %s%s\n", mark, o.Kind, o.Target, o.Error, retained)
 	}
 	fmt.Fprintf(&b, "\n%d reverted, %d failed of %d\n", ok, fail, len(outcomes))
 	return b.String()

@@ -157,6 +157,7 @@ func TestCreateOpenRejectTraversal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	closeLater(t, ws)
 	if err := ws.SaveRecord(BucketTokens, "../escape", map[string]string{"x": "y"}); err == nil {
 		t.Error("SaveRecord with traversal key = nil, want error")
 	}

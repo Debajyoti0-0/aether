@@ -30,20 +30,83 @@ type Entry struct {
 	Signature string    `json:"signature"`
 }
 
-// Log is an append-only signed audit trail stored as JSONL.
+// Log is an append-only signed audit trail (Stage 1 chain format,
+// frozen). Stage 2 adds a second backend: the same chain can persist
+// to the workspace vault (bbolt) instead of a JSONL file; the Entry
+// format, hash computation, and signature scheme are identical.
 type Log struct {
 	mu       sync.Mutex
-	path     string
+	backend  auditBackend
 	key      ed25519.PrivateKey
 	prevHash string
 	seq      int64
 }
 
+// auditBackend persists Entry structs. Implementations must preserve
+// sequence order and must not silently drop or repair entries.
+type auditBackend interface {
+	append(e Entry) error
+	readAll() ([]Entry, error)
+}
+
+// jsonlBackend persists entries as one JSON object per line.
+type jsonlBackend struct{ path string }
+
+func (b jsonlBackend) append(e Entry) error {
+	data, err := json.Marshal(e)
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(b.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err := f.Write(append(data, '\n')); err != nil {
+		return err
+	}
+	return f.Sync() // audit durability: fsync per append
+}
+
+func (b jsonlBackend) readAll() ([]Entry, error) { return readJSONLEntries(b.path) }
+
+// vaultBackend persists entries in the workspace vault's audit bucket
+// (bbolt transaction + explicit Sync per append).
+type vaultBackend struct{ v *Vault }
+
+func (b vaultBackend) append(e Entry) error {
+	data, err := json.Marshal(e)
+	if err != nil {
+		return err
+	}
+	if err := b.v.AppendAuditEntry(data, uint64(e.Seq)); err != nil {
+		return err
+	}
+	return b.v.Sync() // audit durability: fsync per append
+}
+
+func (b vaultBackend) readAll() ([]Entry, error) {
+	raws, err := b.v.ReadAuditEntries()
+	if err != nil {
+		return nil, err
+	}
+	var entries []Entry
+	for _, raw := range raws {
+		var e Entry
+		if err := json.Unmarshal(raw, &e); err != nil {
+			return nil, fmt.Errorf("corrupt audit entry: %w", err)
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
 // GenesisHash is the chain anchor for an empty log.
 const GenesisHash = "0000000000000000000000000000000000000000000000000000000000000000"
 
-// New opens (or creates) an audit log at path. The key is loaded from
-// keyPath if present, otherwise generated and persisted.
+// New opens (or creates) a JSONL-backed audit log at path. The key is
+// loaded from keyPath if present, otherwise generated and persisted.
+// Workspace-scoped logs should use NewVaultLog instead.
 func New(path, keyPath string) (*Log, error) {
 	if err := os.MkdirAll(dir(path), 0o700); err != nil {
 		return nil, err
@@ -54,10 +117,46 @@ func New(path, keyPath string) (*Log, error) {
 		return nil, err
 	}
 
-	l := &Log{path: path, key: key, prevHash: GenesisHash}
+	l := &Log{backend: jsonlBackend{path: path}, key: key, prevHash: GenesisHash}
 
 	// Resume sequence + chain from any existing entries.
-	entries, err := l.readAll()
+	entries, err := l.backend.readAll()
+	if err != nil {
+		return nil, err
+	}
+	if len(entries) > 0 {
+		last := entries[len(entries)-1]
+		l.seq = last.Seq
+		l.prevHash = last.Hash
+	}
+	return l, nil
+}
+
+// NewVaultLog opens the audit chain persisted in the workspace vault.
+// The signing key lives in the vault's meta bucket; the chain resumes
+// from the stored tail exactly like the JSONL backend.
+func NewVaultLog(v *Vault) (*Log, error) {
+	key, err := v.AuditMetaGet(metaAuditKey)
+	if err != nil {
+		return nil, err
+	}
+	if len(key) == 0 {
+		_, priv, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+		if err := v.AuditMetaSet(metaAuditKey, []byte(base64Encode(priv.Seed()))); err != nil {
+			return nil, err
+		}
+		key = []byte(base64Encode(priv.Seed()))
+	}
+	seed, err := base64Decode(strings.TrimSpace(string(key)))
+	if err != nil {
+		return nil, fmt.Errorf("decode audit key: %w", err)
+	}
+
+	l := &Log{backend: vaultBackend{v: v}, key: ed25519.NewKeyFromSeed(seed), prevHash: GenesisHash}
+	entries, err := l.backend.readAll()
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +169,9 @@ func New(path, keyPath string) (*Log, error) {
 }
 
 // Append records a command/result and extends the signature chain.
+// Durability contract: the append is fsync'd before returning, so a
+// caller that observed a successful Append can rely on the entry
+// surviving process termination.
 func (l *Log) Append(command, result string) (*Entry, error) {
 	if command == "" {
 		return nil, fmt.Errorf("command is required")
@@ -91,16 +193,8 @@ func (l *Log) Append(command, result string) (*Entry, error) {
 	sig := ed25519.Sign(l.key, []byte(e.Hash))
 	e.Signature = base64Encode(sig)
 
-	data, err := json.Marshal(e)
-	if err != nil {
-		return nil, err
-	}
-	f, err := os.OpenFile(l.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	if _, err := f.Write(append(data, '\n')); err != nil {
+	if err := l.backend.append(e); err != nil {
+		l.seq-- // the entry was NOT durably persisted
 		return nil, err
 	}
 
@@ -205,7 +299,25 @@ func loadOrCreateKey(keyPath string) (ed25519.PrivateKey, error) {
 }
 
 func (l *Log) readAll() ([]Entry, error) {
-	data, err := os.ReadFile(l.path)
+	return l.backend.readAll()
+}
+
+// readJSONLEntries parses a legacy JSONL audit trail. A torn final
+// line (process killed mid-write) is reported as a truncation error so
+// callers fail closed instead of silently accepting partial history.
+// ReadJSONLEntries parses a legacy JSONL audit trail (exported for the
+// Stage 2 vault migration importer). A torn final line is reported as
+// an error so callers fail closed.
+func ReadJSONLEntries(path string) ([]Entry, error) {
+	return readJSONLEntries(path)
+}
+
+// MetaAuditKeyName is the vault meta key holding the base64 Ed25519
+// seed for the workspace audit chain.
+const MetaAuditKeyName = metaAuditKey
+
+func readJSONLEntries(path string) ([]Entry, error) {
+	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return nil, nil
 	}
@@ -213,13 +325,17 @@ func (l *Log) readAll() ([]Entry, error) {
 		return nil, err
 	}
 	var entries []Entry
-	for _, line := range strings.Split(string(data), "\n") {
+	lines := strings.Split(string(data), "\n")
+	for i, line := range lines {
 		if line = strings.TrimSpace(line); line == "" {
+			if i == len(lines)-1 {
+				continue // trailing newline
+			}
 			continue
 		}
 		var e Entry
 		if err := json.Unmarshal([]byte(line), &e); err != nil {
-			return nil, fmt.Errorf("corrupt audit entry: %w", err)
+			return nil, fmt.Errorf("corrupt audit entry at line %d: %w", i+1, err)
 		}
 		entries = append(entries, e)
 	}
@@ -240,7 +356,7 @@ func VerifyFile(jsonlPath, keyPath string) (*VerifyResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	l := &Log{path: jsonlPath, key: key}
+	l := &Log{backend: jsonlBackend{path: jsonlPath}, key: key}
 	return l.Verify()
 }
 

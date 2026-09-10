@@ -111,7 +111,7 @@ var rollbackPushCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		s := rollback.New(rollbackPath(w))
+		s := w.RollbackStack()
 
 		if err := s.Push(rollback.Action{
 			Kind:   rbKind,
@@ -139,7 +139,7 @@ var rollbackUndoCmd2 = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		s := rollback.New(rollbackPath(w))
+		s := w.RollbackStack()
 
 		outcomes, err := s.UndoAll(context.Background(), func(ctx context.Context, a *rollback.Action) error {
 			// Provider dispatch: shell/undo commands run through the
@@ -171,7 +171,7 @@ var rollbackListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		s := rollback.New(rollbackPath(w))
+		s := w.RollbackStack()
 
 		actions, err := s.List()
 		if err != nil {
