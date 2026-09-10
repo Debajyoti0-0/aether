@@ -56,6 +56,7 @@ func init() {
 	runCmd.AddCommand(runPlanCmd)
 	runPlanCmd.Flags().StringVar(&planFile, "plan", "", "Workflow plan JSON (required)")
 	runPlanCmd.Flags().IntVar(&planParallel, "parallel", 3, "Max concurrent nodes")
+	runPlanCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+evidence records (required)")
 	_ = runPlanCmd.MarkFlagRequired("plan")
 }
 
@@ -75,6 +76,13 @@ type planNode struct {
 }
 
 func runPlan(cmd *cobra.Command, args []string) error {
+	// Stage 2 (F7): every node executes through the Action spine via the
+	// intent whitelist — the CLI root is never re-entered.
+	ws, err := openGovernedWorkspace(execWorkspace)
+	if err != nil {
+		return err
+	}
+
 	data, err := os.ReadFile(planFile)
 	if err != nil {
 		return fmt.Errorf("read plan: %w", err)
@@ -103,15 +111,12 @@ func runPlan(cmd *cobra.Command, args []string) error {
 			Retries:      node.Retries,
 			Critical:     node.Critical,
 			Action: func(ctx context.Context, rec *orchestrator.StepRecorder) error {
-				fields := strings.Fields(strings.TrimPrefix(node.Cmd, "aether "))
-				if len(fields) == 0 {
-					return fmt.Errorf("empty command for node %q", node.ID)
+				res, err := runIntent(ctx, ws, node.Cmd, "dag")
+				if err != nil {
+					return err
 				}
-				root := NewRootCommand()
-				root.SetArgs(fields)
-				root.SetOut(os.Stdout)
-				root.SetErr(os.Stderr)
-				return root.Execute()
+				fmt.Printf("[%s] action %s status %s\n", node.ID, res.ActionID, res.Status)
+				return nil
 			},
 		})
 	}

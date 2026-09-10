@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -118,12 +119,21 @@ func loadRunbook(path string) ([]string, error) {
 	return steps, nil
 }
 
-// executeAetherLine dispatches one "aether <args>" line through the
-// in-process command tree.
+// executeAetherLine dispatches one "aether <args>" line. Stage 2: any
+// mutating intent executes through the Action spine; read-only
+// analysis commands dispatch through the CLI root.
 func executeAetherLine(line string) error {
 	fields := strings.Fields(strings.TrimSpace(strings.TrimPrefix(line, "aether ")))
 	if len(fields) == 0 {
 		return fmt.Errorf("empty command")
+	}
+	if isMutatingIntent(fields) {
+		ws, err := openGovernedWorkspace(execWorkspace)
+		if err != nil {
+			return err
+		}
+		_, err = runIntent(context.Background(), ws, line, "replay")
+		return err
 	}
 
 	root := NewRootCommand()

@@ -142,16 +142,17 @@ var rollbackUndoCmd2 = &cobra.Command{
 		s := w.RollbackStack()
 
 		outcomes, err := s.UndoAll(context.Background(), func(ctx context.Context, a *rollback.Action) error {
-			// Provider dispatch: shell/undo commands run through the
-			// in-process command tree; provider primitives are recorded
-			// for operator execution via the report.
+			// Stage 2 (F7): undo commands execute through the Action
+			// spine via the intent whitelist — the CLI root is never
+			// re-entered. Provider primitives without an executable
+			// command are honestly reported as requiring manual reversal.
 			if a.Undo.Command != "" {
-				fields := strings.Fields(strings.TrimPrefix(a.Undo.Command, "aether "))
-				if len(fields) > 0 {
-					root := NewRootCommand()
-					root.SetArgs(fields)
-					return root.Execute()
+				res, err := runIntent(ctx, w, a.Undo.Command, "rollback-undo")
+				if err != nil {
+					return err
 				}
+				fmt.Printf("undo action %s status %s\n", res.ActionID, res.Status)
+				return nil
 			}
 			return fmt.Errorf("provider %q op %q requires manual reversal (recorded in report)", a.Undo.Provider, a.Undo.Op)
 		})

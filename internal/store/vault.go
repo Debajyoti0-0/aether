@@ -291,6 +291,27 @@ func (v *Vault) AuditMetaSet(name string, val []byte) error {
 	})
 }
 
+// AuditMetaSetIfAbsent atomically stores val only when name is absent,
+// returning the value now stored (pre-existing or val). This makes
+// concurrent audit-key initialization safe: every caller ends up with
+// the SAME key.
+func (v *Vault) AuditMetaSetIfAbsent(name string, val []byte) ([]byte, error) {
+	var out []byte
+	err := v.db.Update(func(tx *bolt.Tx) error {
+		m := tx.Bucket(bucketMeta)
+		if raw := m.Get([]byte(name)); len(raw) > 0 {
+			out = append([]byte(nil), raw...)
+			return nil
+		}
+		if err := m.Put([]byte(name), val); err != nil {
+			return err
+		}
+		out = append([]byte(nil), val...)
+		return nil
+	})
+	return out, err
+}
+
 // ---- rollback (LIFO by seq; failed reversals retained) ----
 
 // RollbackPush appends an action JSON and returns its seq.

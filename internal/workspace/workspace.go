@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Debajyoti0-0/aether/internal/engine/rollback"
@@ -70,6 +71,10 @@ type Workspace struct {
 	pass    []byte // derived key (never persisted)
 	salt    []byte // per-workspace random salt
 	vault   *store.Vault
+
+	auditMu     sync.Mutex
+	auditChain  *store.Log // lazily created, shared by all spine runs
+	rollbackStk *rollback.Stack
 }
 
 // Dir returns the aether workspace root for the current OS profile
@@ -247,17 +252,35 @@ func (w *Workspace) Close() error {
 	return err
 }
 
-// AuditLog returns the signed audit chain persisted in the vault.
+// AuditLog returns the signed audit chain persisted in the vault. The
+// chain instance is cached per workspace so concurrent spine runs
+// serialize on one Log (its mutex preserves seq/hash continuity);
+// the signing key itself is initialized atomically in the vault.
 func (w *Workspace) AuditLog() (*store.Log, error) {
+	w.auditMu.Lock()
+	defer w.auditMu.Unlock()
+	if w.auditChain != nil {
+		return w.auditChain, nil
+	}
 	if w.vault == nil {
 		return nil, fmt.Errorf("workspace %q: vault not open", w.Name)
 	}
-	return store.NewVaultLog(w.vault)
+	l, err := store.NewVaultLog(w.vault)
+	if err != nil {
+		return nil, err
+	}
+	w.auditChain = l
+	return l, nil
 }
 
 // RollbackStack returns the rollback stack persisted in the vault.
 func (w *Workspace) RollbackStack() *rollback.Stack {
-	return rollback.New(w.vault)
+	w.auditMu.Lock()
+	defer w.auditMu.Unlock()
+	if w.rollbackStk == nil {
+		w.rollbackStk = rollback.New(w.vault)
+	}
+	return w.rollbackStk
 }
 
 // Open loads an existing workspace and derives its crypto key from the

@@ -133,24 +133,26 @@ func New(path, keyPath string) (*Log, error) {
 }
 
 // NewVaultLog opens the audit chain persisted in the workspace vault.
-// The signing key lives in the vault's meta bucket; the chain resumes
-// from the stored tail exactly like the JSONL backend.
+// The signing key lives in the vault's meta bucket and is initialized
+// atomically (concurrent openers converge on one key); the chain
+// resumes from the stored tail exactly like the JSONL backend.
 func NewVaultLog(v *Vault) (*Log, error) {
-	key, err := v.AuditMetaGet(metaAuditKey)
+	seed, err := v.AuditMetaGet(metaAuditKey)
 	if err != nil {
 		return nil, err
 	}
-	if len(key) == 0 {
+	if len(seed) == 0 {
 		_, priv, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {
 			return nil, err
 		}
-		if err := v.AuditMetaSet(metaAuditKey, []byte(base64Encode(priv.Seed()))); err != nil {
+		// Atomic ensure: concurrent openers converge on one key.
+		seed, err = v.AuditMetaSetIfAbsent(metaAuditKey, []byte(base64Encode(priv.Seed())))
+		if err != nil {
 			return nil, err
 		}
-		key = []byte(base64Encode(priv.Seed()))
 	}
-	seed, err := base64Decode(strings.TrimSpace(string(key)))
+	seed, err = base64Decode(strings.TrimSpace(string(seed)))
 	if err != nil {
 		return nil, fmt.Errorf("decode audit key: %w", err)
 	}

@@ -75,7 +75,8 @@ func runWatch(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("provide --seed-graph (live provider polling lands with the provider refresh hooks)")
 	}
 
-	// Autopilot executes through the in-process command tree.
+	// Autopilot executes through the Action spine for mutating intents;
+	// read-only runbook steps dispatch through the CLI root.
 	w := watch.NewWatcher(watchInterval, watchMaxRisk, poll)
 	w.Autopilot = watchAutopilot
 	if watchAutopilot {
@@ -90,9 +91,7 @@ func runWatch(cmd *cobra.Command, args []string) error {
 				if len(fields) == 0 {
 					continue
 				}
-				root := NewRootCommand()
-				root.SetArgs(fields)
-				if err := root.Execute(); err != nil {
+				if err := runIntentOrDispatch(ctx, ws, step); err != nil {
 					return err
 				}
 			}
