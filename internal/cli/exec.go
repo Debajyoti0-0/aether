@@ -8,14 +8,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Debajyoti0-0/aether/internal/engine/exec"
+	"github.com/Debajyoti0-0/aether/internal/engine/mutation"
 	"github.com/Debajyoti0-0/aether/internal/transport"
 	"github.com/Debajyoti0-0/aether/internal/types"
 )
 
 var execCmd = &cobra.Command{
 	Use:   "exec",
-	Short: "Cloud command execution",
-	Long:  "Execute commands on cloud VMs and CI runners with valid tokens (authorized testing only).",
+	Short: "Cloud command execution (governed: audit + rollback recorded)",
+	Long:  "Execute commands on cloud VMs and CI runners with valid tokens (authorized testing only). Every execution is written to the signed audit chain and rollback stack of the --workspace it names.",
 }
 
 var execAzureCmd = &cobra.Command{
@@ -28,6 +29,15 @@ var execAWSCmd = &cobra.Command{
 	Use:   "aws",
 	Short: "AWS EC2 SSM RunCommand",
 	RunE:  runExecAWS,
+}
+
+var execIMDSCmd = &cobra.Command{
+	Use:   "imds",
+	Short: "Azure IMDS managed identity exploitation (from a compromised VM)",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// Shares the runner with `aether pivot imds`.
+		return runIMDS(context.Background(), execIMDSResource, execIMDSClientID, execIMDSObjectID, execIMDSOut, execIMDSTimeout)
+	},
 }
 
 var execGitHubCmd = &cobra.Command{
@@ -52,11 +62,20 @@ var (
 	execRef       string
 	execTimeout   int
 	execPreset    string
+	execWorkspace string
 )
 
 func init() {
 	rootCmd.AddCommand(execCmd)
-	execCmd.AddCommand(execAzureCmd, execAWSCmd, execGitHubCmd)
+	execCmd.AddCommand(execAzureCmd, execAWSCmd, execGitHubCmd, execIMDSCmd)
+
+	// exec imds reuses pivot imds flags (registered there), but the
+	// flags live on pivotIMDSCmd; register on this command too via alias.
+	execIMDSCmd.Flags().StringVar(&execIMDSResource, "resource", "https://management.azure.com/", "Resource to request")
+	execIMDSCmd.Flags().StringVar(&execIMDSClientID, "client-id", "", "Pin user-assigned identity by client id")
+	execIMDSCmd.Flags().StringVar(&execIMDSObjectID, "object-id", "", "Pin user-assigned identity by object id")
+	execIMDSCmd.Flags().StringVar(&execIMDSOut, "out", "", "Save token JSON to file")
+	execIMDSCmd.Flags().IntVar(&execIMDSTimeout, "timeout", 30, "Timeout seconds")
 
 	execAzureCmd.Flags().StringVar(&execToken, "token", "", "Access token for management.azure.com (required)")
 	execAzureCmd.Flags().StringVar(&execSubID, "subscription-id", "", "Azure subscription id (required)")
@@ -64,6 +83,8 @@ func init() {
 	execAzureCmd.Flags().StringVar(&execVMID, "vm-id", "", "VM name (required)")
 	execAzureCmd.Flags().StringVar(&execCmdStr, "cmd", "", "Shell command to run (required)")
 	execAzureCmd.Flags().IntVar(&execTimeout, "timeout", 300, "Timeout seconds")
+	execAzureCmd.Flags().StringVar(&execPreset, "browser-preset", "chrome", "TLS fingerprint preset (chrome | edge | firefox)")
+	execAzureCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+rollback records (required)")
 	_ = execAzureCmd.MarkFlagRequired("token")
 	_ = execAzureCmd.MarkFlagRequired("subscription-id")
 	_ = execAzureCmd.MarkFlagRequired("resource-group")
@@ -77,6 +98,7 @@ func init() {
 	execAWSCmd.Flags().StringVar(&execInstance, "instance-id", "", "EC2 instance id (required)")
 	execAWSCmd.Flags().StringVar(&execCmdStr, "cmd", "", "Shell command to run (required)")
 	execAWSCmd.Flags().IntVar(&execTimeout, "timeout", 300, "Timeout seconds")
+	execAWSCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+rollback records (required)")
 	_ = execAWSCmd.MarkFlagRequired("access-key")
 	_ = execAWSCmd.MarkFlagRequired("secret-key")
 	_ = execAWSCmd.MarkFlagRequired("instance-id")
@@ -87,12 +109,18 @@ func init() {
 	execGitHubCmd.Flags().StringVar(&execWorkflow, "workflow", "", "Workflow file name (required)")
 	execGitHubCmd.Flags().StringVar(&execRef, "ref", "main", "Git ref to dispatch")
 	execGitHubCmd.Flags().IntVar(&execTimeout, "timeout", 60, "Timeout seconds")
+	execGitHubCmd.Flags().StringVar(&execPreset, "browser-preset", "chrome", "TLS fingerprint preset (chrome | edge | firefox)")
+	execGitHubCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+rollback records (required)")
 	_ = execGitHubCmd.MarkFlagRequired("token")
 	_ = execGitHubCmd.MarkFlagRequired("repo")
 	_ = execGitHubCmd.MarkFlagRequired("workflow")
 }
 
 func runExecAzure(cmd *cobra.Command, args []string) error {
+	ws, err := openGovernedWorkspace(execWorkspace)
+	if err != nil {
+		return err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(execTimeout)*time.Second)
 	defer cancel()
 
@@ -102,26 +130,60 @@ func runExecAzure(cmd *cobra.Command, args []string) error {
 	}
 
 	e := exec.NewAzureExecutor(execSubID, execToken, hc)
-	result, err := e.ExecuteOnAzureVM(ctx, execGroup, execVMID, execCmdStr)
+	res, err := mutation.Run(ctx, ws, &cliMutation{
+		kindV:   "exec.azure",
+		targetV: fmt.Sprintf("%s/%s (sub %s)", execGroup, execVMID, execSubID),
+		undoV:   irreversibleShell(),
+		execFn: func(ctx context.Context) (string, error) {
+			result, err := e.ExecuteOnAzureVM(ctx, execGroup, execVMID, execCmdStr)
+			if err != nil {
+				return "", err
+			}
+			printResult(result)
+			return "", nil
+		},
+	})
 	if err != nil {
 		return err
 	}
-	return printResult(result)
+	fmt.Printf("Action:   %s\nStatus:   %s\n", res.ActionID, res.Status)
+	return nil
 }
 
 func runExecAWS(cmd *cobra.Command, args []string) error {
+	ws, err := openGovernedWorkspace(execWorkspace)
+	if err != nil {
+		return err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(execTimeout)*time.Second)
 	defer cancel()
 
 	e := exec.NewAWSExecutor(execRegion, execAK, execSK, execSessTok, nil)
-	result, err := e.ExecuteOnEC2(ctx, execInstance, execCmdStr)
+	res, err := mutation.Run(ctx, ws, &cliMutation{
+		kindV:   "exec.aws",
+		targetV: fmt.Sprintf("%s@%s", execInstance, execRegion),
+		undoV:   irreversibleShell(),
+		execFn: func(ctx context.Context) (string, error) {
+			result, err := e.ExecuteOnEC2(ctx, execInstance, execCmdStr)
+			if err != nil {
+				return "", err
+			}
+			printResult(result)
+			return "", nil
+		},
+	})
 	if err != nil {
 		return err
 	}
-	return printResult(result)
+	fmt.Printf("Action:   %s\nStatus:   %s\n", res.ActionID, res.Status)
+	return nil
 }
 
 func runExecGitHub(cmd *cobra.Command, args []string) error {
+	ws, err := openGovernedWorkspace(execWorkspace)
+	if err != nil {
+		return err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(execTimeout)*time.Second)
 	defer cancel()
 
@@ -131,11 +193,24 @@ func runExecGitHub(cmd *cobra.Command, args []string) error {
 	}
 
 	e := exec.NewGitHubExecutor(execToken, hc)
-	result, err := e.ExecuteOnRunner(ctx, execRepo, execWorkflow, execRef, nil)
+	res, err := mutation.Run(ctx, ws, &cliMutation{
+		kindV:   "exec.github",
+		targetV: fmt.Sprintf("%s @%s (%s)", execRepo, execRef, execWorkflow),
+		undoV:   irreversibleShell(),
+		execFn: func(ctx context.Context) (string, error) {
+			result, err := e.ExecuteOnRunner(ctx, execRepo, execWorkflow, execRef, nil)
+			if err != nil {
+				return "", err
+			}
+			printResult(result)
+			return "", nil
+		},
+	})
 	if err != nil {
 		return err
 	}
-	return printResult(result)
+	fmt.Printf("Action:   %s\nStatus:   %s\n", res.ActionID, res.Status)
+	return nil
 }
 
 func printResult(r *types.CommandResult) error {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Debajyoti0-0/aether/internal/api"
 	"github.com/Debajyoti0-0/aether/internal/engine/graph"
+	"github.com/Debajyoti0-0/aether/internal/engine/mutation"
 	"github.com/Debajyoti0-0/aether/internal/engine/validate"
 	"github.com/Debajyoti0-0/aether/internal/engine/watch"
 	"github.com/Debajyoti0-0/aether/internal/store"
@@ -19,6 +20,7 @@ import (
 	"github.com/Debajyoti0-0/aether/internal/workspace"
 	"github.com/Debajyoti0-0/aether/pkg/plugins"
 	"github.com/Debajyoti0-0/aether/pkg/plugins/gcp"
+	"github.com/Debajyoti0-0/aether/pkg/plugins/sdk"
 )
 
 // workspaceOpen opens a workspace with the operator's passphrase env.
@@ -297,6 +299,10 @@ var pluginsInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install a plugin from the registry (checksum-verified)",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ws, err := openGovernedWorkspace(execWorkspace)
+		if err != nil {
+			return err
+		}
 		reg := plugins.NewRemoteRegistry(pluginsIndex, "")
 
 		results, err := reg.Search(context.Background(), pluginsInstallName)
@@ -308,11 +314,33 @@ var pluginsInstallCmd = &cobra.Command{
 		}
 		manifest := results[0]
 
-		path, err := reg.Install(context.Background(), manifest)
+		var installedPath string
+		_, err = mutation.Run(context.Background(), ws, &cliMutation{
+			kindV:   "plugins.install",
+			targetV: manifest.Name + "@" + manifest.Version,
+			undoV: &mutation.UndoSpec{
+				Provider: "plugins",
+				Op:       "uninstall",
+				Args:     map[string]string{"name": manifest.Name, "version": manifest.Version},
+				Detail:   "remove the installed plugin manifest + artifact files",
+			},
+			execFn: func(ctx context.Context) (string, error) {
+				p, err := reg.Install(ctx, manifest)
+				installedPath = p
+				return "", err
+			},
+			afterFn: func() ([]byte, error) {
+				if installedPath == "" {
+					return nil, mutation.ErrStateUnavailable
+				}
+				return []byte(fmt.Sprintf(`{"installed_path":%q,"name":%q,"version":%q}`,
+					installedPath, manifest.Name, manifest.Version)), nil
+			},
+		})
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Installed %s v%s → %s (SHA-256 verified)\n", manifest.Name, manifest.Version, path)
+		fmt.Printf("Installed %s v%s → %s (SHA-256 verified if manifest declared a checksum)\n", manifest.Name, manifest.Version, installedPath)
 		return nil
 	},
 }
@@ -347,6 +375,10 @@ var execGCPCmd = &cobra.Command{
 	Use:   "gcp",
 	Short: "GCP Compute Engine exec staging (OS Login / serial console path)",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ws, err := openGovernedWorkspace(execWorkspace)
+		if err != nil {
+			return err
+		}
 		reg := plugins.NewRegistry()
 		reg.Register(gcp.New(gcpProject, gcpToken))
 
@@ -357,7 +389,23 @@ var execGCPCmd = &cobra.Command{
 		if err := prov.ValidateToken(context.Background()); err != nil {
 			return fmt.Errorf("token validation: %w", err)
 		}
-		res, err := prov.Execute(context.Background(), gcpTarget, gcpCmdStr)
+		res, err := func() (*sdk.Result, error) {
+			var r *sdk.Result
+			_, mErr := mutation.Run(context.Background(), ws, &cliMutation{
+				kindV:   "exec.gcp",
+				targetV: gcpProject + "/" + gcpTarget,
+				// Precautionary record: the current GCP path only stages
+				// execution, but any future live-exec wiring inherits the
+				// governance boundary automatically.
+				undoV: irreversibleShell(),
+				execFn: func(ctx context.Context) (string, error) {
+					out, err := prov.Execute(ctx, gcpTarget, gcpCmdStr)
+					r = out
+					return "", err
+				},
+			})
+			return r, mErr
+		}()
 		if err != nil {
 			return err
 		}
@@ -452,12 +500,14 @@ func init() {
 	pluginsCmd2.PersistentFlags().StringVar(&pluginsIndex, "index", "https://raw.githubusercontent.com/Debajyoti0-0/aether-plugins/main/index.json", "Registry index URL")
 	pluginsSearchCmd.Flags().StringVar(&pluginsQuery, "query", "", "Search substring")
 	pluginsInstallCmd.Flags().StringVar(&pluginsInstallName, "name", "", "Plugin name (required)")
+	pluginsInstallCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+rollback records (required)")
 	_ = pluginsInstallCmd.MarkFlagRequired("name")
 
 	execGCPCmd.Flags().StringVar(&gcpProject, "project", "", "GCP project id (required)")
 	execGCPCmd.Flags().StringVar(&gcpToken, "token", "", "OAuth2 access token (required)")
 	execGCPCmd.Flags().StringVar(&gcpTarget, "target", "", "zone/instance (required)")
 	execGCPCmd.Flags().StringVar(&gcpCmdStr, "cmd", "", "Command to stage (required)")
+	execGCPCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+rollback records (required)")
 	_ = execGCPCmd.MarkFlagRequired("project")
 	_ = execGCPCmd.MarkFlagRequired("token")
 	_ = execGCPCmd.MarkFlagRequired("target")
