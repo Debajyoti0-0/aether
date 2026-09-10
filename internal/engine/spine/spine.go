@@ -143,6 +143,7 @@ type Result struct {
 	Target      string
 	Stage       Stage  // last successful stage
 	Status      Status
+	StateSeq    []State // full transition history (T4 state machine)
 	OperationID string
 	Error       string
 	EvidenceIDs []string
@@ -216,28 +217,46 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 		a.ID = id
 	}
 	res := &Result{ActionID: a.ID, Kind: a.Kind, Target: a.Target}
+	st := NewActionState()
+	defer func() { res.StateSeq = st.Seq }()
 
 	// ---- StageAuthZ ----
 	if err := s.stageAuthz(a); err != nil {
+		_ = st.Transition(StateAborted)
 		return s.abort(res, StageAuthZ, StatusAborted, err)
+	}
+	if err := st.Transition(StateAuthzPassed); err != nil {
+		return nil, err
 	}
 	res.Stage = StageAuthZ
 
 	// ---- StageRisk ----
 	if err := s.stageRisk(a); err != nil {
+		_ = st.Transition(StateAborted)
 		return s.abort(res, StageRisk, StatusAborted, err)
+	}
+	if err := st.Transition(StateRiskPassed); err != nil {
+		return nil, err
 	}
 	res.Stage = StageRisk
 
 	// ---- StagePolicy ----
 	if err := s.stagePolicy(a); err != nil {
+		_ = st.Transition(StateAborted)
 		return s.abort(res, StagePolicy, StatusAborted, err)
+	}
+	if err := st.Transition(StatePolicyPassed); err != nil {
+		return nil, err
 	}
 	res.Stage = StagePolicy
 
 	// ---- StageApproval ----
 	if err := s.stageApproval(a); err != nil {
+		_ = st.Transition(StateAborted)
 		return s.abort(res, StageApproval, StatusAborted, err)
+	}
+	if err := st.Transition(StateApprovalPassed); err != nil {
+		return nil, err
 	}
 	res.Stage = StageApproval
 
@@ -254,9 +273,13 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 	beforeNote := ""
 	if beforeErr != nil {
 		if beforeErr != ErrStateUnavailable {
+			_ = st.Transition(StateAborted)
 			return s.abort(res, StageExecute, StatusAborted, fmt.Errorf("capture before state: %w", beforeErr))
 		}
 		beforeNote = "BEFORE_STATE_UNAVAILABLE"
+	}
+	if err := st.Transition(StateBeforeCaptured); err != nil {
+		return nil, err
 	}
 
 	// rollback registration BEFORE execution
@@ -281,6 +304,7 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 			},
 		}
 		if err := stack.Push(entry); err != nil {
+			_ = st.Transition(StateAborted)
 			_ = appendAudit(auditLog, a, auditPayload{
 				ActionID: a.ID, Phase: "before", Target: a.Target,
 				Status: string(StatusAbortedRBReg), StateNote: beforeNote,
@@ -292,6 +316,9 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 			return res, fmt.Errorf("rollback registration failed; action aborted: %w", err)
 		}
 		rollbackState = "registered"
+		if err := st.Transition(StateRollbackRegistered); err != nil {
+			return nil, err
+		}
 	}
 
 	// AUDIT(before)
@@ -302,9 +329,16 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 		ApprovalMode: string(a.ApprovalMode), ApprovalRef: a.ApprovalRef,
 		Actor: a.Actor,
 	}); err != nil {
+		_ = st.Transition(StateAborted)
 		res.Stage, res.Status = StageAudit, StatusAborted
 		res.Error = err.Error()
 		return res, fmt.Errorf("audit(before) write failed; action aborted: %w", err)
+	}
+	if err := st.Transition(StateAuditedBefore); err != nil {
+		return nil, err
+	}
+	if err := st.Transition(StateExecuting); err != nil {
+		return nil, err
 	}
 	res.Stage = StageAudit
 
@@ -326,10 +360,14 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 	switch {
 	case execErr != nil:
 		res.Status = StatusFailed
+		_ = st.Transition(StateFailed)
 	case afterErr != nil:
 		res.Status = StatusStateUnknown
+		_ = st.Transition(StateExecuted)
+		_ = st.Transition(StateCompletedStateUnknown)
 	default:
 		res.Status = StatusCompleted
+		_ = st.Transition(StateExecuted)
 	}
 	res.Stage = StageExecute
 
@@ -337,6 +375,10 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 	evIDs := s.writeEvidence(a, before, after, afterErr, opID, execErr)
 	res.EvidenceIDs = evIDs
 	res.Stage = StageEvidence
+	if res.Status == StatusCompleted || res.Status == StatusStateUnknown {
+		_ = st.Transition(StateAfterCaptured)
+		_ = st.Transition(StateEvidenceWritten)
+	}
 
 	// AUDIT(after) â€” a missing after-entry must be loud.
 	audErr := appendAudit(auditLog, a, auditPayload{
@@ -355,15 +397,19 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 			return res, fmt.Errorf("action succeeded but AUDIT(after) write failed (%w); status is not fully auditable", audErr)
 		}
 	}
+	if res.Status == StatusCompleted || res.Status == StatusStateUnknown {
+		_ = st.Transition(StateAuditedAfter)
+		_ = st.Transition(StateCompleted)
+	}
 
 	if execErr != nil {
 		res.Error = execErr.Error()
 		return res, execErr
 	}
 
-	// Journal entry.
-	_ = s.ws.LogEvent("action", fmt.Sprintf("%s %s %s (action %s, actor %s, approval %s)",
-		a.Kind, a.Target, res.Status, a.ID, a.Actor, a.ApprovalMode))
+	// Journal entry (includes the state transition sequence — T4).
+	_ = s.ws.LogEvent("action", fmt.Sprintf("%s %s %s (action %s, actor %s, approval %s, states %s)",
+		a.Kind, a.Target, res.Status, a.ID, a.Actor, a.ApprovalMode, stateSeqString(st.Seq)))
 
 	return res, nil
 }
@@ -533,5 +579,17 @@ func errString(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+// stateSeqString renders the transition history for the journal.
+func stateSeqString(seq []State) string {
+	out := ""
+	for i, s := range seq {
+		if i > 0 {
+			out += ">"
+		}
+		out += string(s)
+	}
+	return out
 }
 
