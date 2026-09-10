@@ -14,6 +14,18 @@ import (
 // the in-process command registry; tests substitute fakes.
 type CommandRunner func(req *CommandRequest) (*CommandResponse, error)
 
+// subscriber is one live workspace stream. Lifecycle ownership:
+// the teamserver (unsubscribe) is the ONLY component that closes
+// subscriber.done; the event channel ch is never closed by anyone.
+// Publish sends are guarded by done, so once unsubscribe returns, no
+// future Publish can deliver to this subscriber (invariant: a channel
+// is never sent on after its owner has torn it down, and no channel is
+// ever closed, eliminating send-on-closed-channel panics).
+type subscriber struct {
+	ch   chan *WorkspaceUpdate
+	done chan struct{}
+}
+
 // Teamserver accepts mTLS connections from operator clients.
 type Teamserver struct {
 	Listener net.Listener
@@ -23,9 +35,10 @@ type Teamserver struct {
 	Run CommandRunner
 
 	mu         sync.Mutex
-	events     map[string][]*WorkspaceUpdate // workspace -> updates
-	subs       map[string]chan *WorkspaceUpdate
-	operators  map[string]time.Time // conn remote -> last seen
+	events     map[string][]*WorkspaceUpdate  // workspace -> updates
+	subs       map[string][]*subscriber       // workspace -> live subscribers
+	subByCh    map[chan *WorkspaceUpdate]*subscriber
+	operators  map[string]time.Time           // conn remote -> last seen
 	sessionKey []byte
 }
 
@@ -47,7 +60,8 @@ func NewTeamserver(addr string, cert tls.Certificate, runner CommandRunner) (*Te
 		TLSConf:   tlsConf,
 		Run:       runner,
 		events:    map[string][]*WorkspaceUpdate{},
-		subs:      map[string]chan *WorkspaceUpdate{},
+		subs:      map[string][]*subscriber{},
+		subByCh:   map[chan *WorkspaceUpdate]*subscriber{},
 		operators: map[string]time.Time{},
 	}, nil
 }
@@ -121,23 +135,39 @@ func (s *Teamserver) handleConn(conn net.Conn) {
 				continue
 			}
 
-			// Replay recent events, then stream live ones.
-			ch := s.subscribe(req.WorkspaceID)
+			// Snapshot recent events under the lock, then replay
+			// outside it (no head-of-line blocking for publishers).
 			s.mu.Lock()
-			for _, ev := range s.events[req.WorkspaceID] {
-				payload, _ := EncodePayload(ev)
-				WriteFrame(conn, &Envelope{Type: MsgWorkspaceUpdate, Payload: payload})
-			}
+			snapshot := make([]*WorkspaceUpdate, len(s.events[req.WorkspaceID]))
+			copy(snapshot, s.events[req.WorkspaceID])
 			s.mu.Unlock()
 
-			for ev := range ch {
+			sub := s.subscribe(req.WorkspaceID)
+			for _, ev := range snapshot {
 				payload, _ := EncodePayload(ev)
 				if err := WriteFrame(conn, &Envelope{Type: MsgWorkspaceUpdate, Payload: payload}); err != nil {
-					s.unsubscribe(req.WorkspaceID, ch)
+					s.unsubscribe(req.WorkspaceID, sub)
 					return
 				}
 			}
-			return
+
+			for {
+				select {
+				case ev, ok := <-sub.ch:
+					if !ok {
+						return
+					}
+					payload, _ := EncodePayload(ev)
+					if err := WriteFrame(conn, &Envelope{Type: MsgWorkspaceUpdate, Payload: payload}); err != nil {
+						s.unsubscribe(req.WorkspaceID, sub)
+						return
+					}
+				case <-sub.done:
+					// The subscriber was torn down by its owner; stop
+					// streaming and close the connection.
+					return
+				}
+			}
 
 		default:
 			s.writeError(conn, fmt.Errorf("unknown message type %q", env.Type))
@@ -157,7 +187,13 @@ func decodePayload(raw []byte, out any) error {
 	return jsonUnmarshal(raw, out)
 }
 
-// Publish records and broadcasts a workspace update.
+// Publish records and broadcasts a workspace update to ALL subscribers
+// of that workspace (fan-out). Slow subscribers drop frames instead of
+// blocking the server. Sends are guarded by the subscriber's done
+// channel: after unsubscribe removes and closes it, a racing Publish
+// can no longer deliver (the done branch wins or the send is dropped);
+// the event channel itself is never closed, so a send on it can never
+// panic.
 func (s *Teamserver) Publish(ev *WorkspaceUpdate) {
 	if ev.Timestamp == 0 {
 		ev.Timestamp = time.Now().Unix()
@@ -168,31 +204,56 @@ func (s *Teamserver) Publish(ev *WorkspaceUpdate) {
 	if len(s.events[ev.WorkspaceID]) > 100 {
 		s.events[ev.WorkspaceID] = s.events[ev.WorkspaceID][1:]
 	}
+	subs := make([]*subscriber, len(s.subs[ev.WorkspaceID]))
+	copy(subs, s.subs[ev.WorkspaceID])
 	s.mu.Unlock()
 
-	s.mu.Lock()
-	if ch, ok := s.subs[ev.WorkspaceID]; ok {
+	for _, sub := range subs {
 		select {
-		case ch <- ev:
+		case sub.ch <- ev:
+		case <-sub.done:
 		default:
+			// Slow subscriber: drop rather than block the server.
 		}
 	}
-	s.mu.Unlock()
 }
 
-func (s *Teamserver) subscribe(workspace string) chan *WorkspaceUpdate {
-	ch := make(chan *WorkspaceUpdate, 16)
-	s.mu.Lock()
-	s.subs[workspace] = ch
-	s.mu.Unlock()
-	return ch
-}
-
-func (s *Teamserver) unsubscribe(workspace string, ch chan *WorkspaceUpdate) {
-	s.mu.Lock()
-	if cur, ok := s.subs[workspace]; ok && cur == ch {
-		delete(s.subs, workspace)
+func (s *Teamserver) subscribe(workspace string) *subscriber {
+	sub := &subscriber{
+		ch:   make(chan *WorkspaceUpdate, 16),
+		done: make(chan struct{}),
 	}
+
+	s.mu.Lock()
+	s.subs[workspace] = append(s.subs[workspace], sub)
+	s.subByCh[sub.ch] = sub
 	s.mu.Unlock()
-	close(ch)
+	return sub
+}
+
+// unsubscribe is the single authoritative owner of subscriber teardown.
+// It removes the subscriber from the registry and closes sub.done under
+// the server lock (so concurrent unsubscribes cannot double-close); it
+// never closes sub.ch.
+func (s *Teamserver) unsubscribe(workspace string, sub *subscriber) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if list, ok := s.subs[workspace]; ok {
+		for i, cur := range list {
+			if cur == sub {
+				s.subs[workspace] = append(list[:i], list[i+1:]...)
+				break
+			}
+		}
+		if len(s.subs[workspace]) == 0 {
+			delete(s.subs, workspace)
+		}
+	}
+	delete(s.subByCh, sub.ch)
+	select {
+	case <-sub.done:
+		// already torn down
+	default:
+		close(sub.done)
+	}
 }
