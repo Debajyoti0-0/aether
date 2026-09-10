@@ -115,14 +115,24 @@ func medianHour(hours []int) int {
 	return hours[len(hours)/2]
 }
 
-// confidence grows with distinct observed days, saturating at 3 days
-// (a full business cycle for daily patterns).
+// confidence grows with distinct observed days. Stage 2 (T3) epistemic
+// discipline: a prediction is NEVER certain. With zero observation days
+// the forecast carries confidence 0 (ClassUnknown); with 1 day 0.33,
+// saturating at 0.66 for 3+ days (a full business cycle) — always
+// ClassPredicted. The old 1.0 ceiling represented inference as
+// certainty and is gone.
 func confidence(days int) float64 {
-	c := float64(days) / 3
-	if c > 1 {
-		c = 1
+	if days <= 0 {
+		return 0
 	}
-	return c
+	switch {
+	case days == 1:
+		return 0.33
+	case days == 2:
+		return 0.5
+	default:
+		return 0.66
+	}
 }
 
 // IsActiveAt predicts whether a policy is active at time t.
@@ -158,12 +168,16 @@ func (p *Predictor) Forecast(t time.Time) *Forecast {
 			f.ActivePolicies = append(f.ActivePolicies, w.PolicyID)
 		}
 	}
-	// Confidence = min over predicted policies.
-	f.Confidence = 1
+	// Confidence = min over predicted policies; with NO observations at
+	// all the forecast is ClassUnknown with confidence 0 — never 1.0.
+	f.Confidence = 0.66
 	for _, w := range windows {
 		if w.Confidence < f.Confidence {
 			f.Confidence = w.Confidence
 		}
+	}
+	if len(windows) == 0 {
+		f.Confidence = 0
 	}
 
 	// Best window: scan the next 24h hour-by-hour and pick the hour
@@ -203,11 +217,17 @@ func (p *Predictor) Forecast(t time.Time) *Forecast {
 	return f
 }
 
-// RenderForecast formats a forecast for the terminal.
+// RenderForecast formats a forecast for the terminal. The epistemic
+// class is always labeled: with no observations the forecast is
+// UNKNOWN, otherwise it is a PREDICTED estimate (never certainty).
 func RenderForecast(f *Forecast) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "=== CAP Forecast @ %s (confidence %.0f%%) ===\n",
-		f.At.Format("2006-01-02 15:04 MST"), f.Confidence*100)
+	class := "PREDICTED"
+	if f.Confidence == 0 {
+		class = "UNKNOWN — no observations collected"
+	}
+	fmt.Fprintf(&b, "=== CAP Forecast @ %s (confidence %.0f%%, class: %s) ===\n",
+		f.At.Format("2006-01-02 15:04 MST"), f.Confidence*100, class)
 	if len(f.ActivePolicies) > 0 {
 		fmt.Fprintf(&b, "Active now: %s\n", strings.Join(f.ActivePolicies, ", "))
 	} else {

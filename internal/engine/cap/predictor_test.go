@@ -36,8 +36,9 @@ func TestWindowsInfersBusinessHours(t *testing.T) {
 	if w.AlwaysOn {
 		t.Error("time-bounded policy should not be always-on")
 	}
-	if w.Confidence != 1 {
-		t.Errorf("confidence = %.2f, want 1 (3 full days)", w.Confidence)
+	// Stage 2: predictions are never certain — 3 days saturate at 0.66.
+	if w.Confidence < 0.65 || w.Confidence > 0.67 {
+		t.Errorf("confidence = %.2f, want ~0.66", w.Confidence)
 	}
 }
 
@@ -118,7 +119,9 @@ func TestForecastFindsQuietWindow(t *testing.T) {
 func TestForecastConfidenceAndRender(t *testing.T) {
 	p := NewPredictor(bizHoursHistory())
 	f := p.Forecast(time.Date(2026, 9, 9, 12, 0, 0, 0, time.UTC))
-	if f.Confidence != 1 {
+	// Stage 2: forecast confidence caps at 0.66 (predictions are never
+	// certain).
+	if f.Confidence < 0.65 || f.Confidence > 0.67 {
 		t.Errorf("confidence = %.2f", f.Confidence)
 	}
 
@@ -138,6 +141,11 @@ func TestPredictorEmpty(t *testing.T) {
 	f := p.Forecast(time.Now())
 	if len(f.ActivePolicies) != 0 || f.BestWindowRisk != "low" {
 		t.Errorf("empty forecast = %+v", f)
+	}
+	// Stage 2 (T3): zero observations ⇒ confidence 0 (ClassUnknown),
+	// never the old fabricated 100%.
+	if f.Confidence != 0 {
+		t.Errorf("empty forecast confidence = %.2f, want 0", f.Confidence)
 	}
 }
 
