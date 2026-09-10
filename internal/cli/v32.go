@@ -1,4 +1,4 @@
-package cli
+﻿package cli
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 	"github.com/Debajyoti0-0/aether/internal/workspace"
 )
 
-// planTrainCmd — offline Q-learning from exported episodes.
+// planTrainCmd â€” offline Q-learning from exported episodes.
 var planTrainCmd = &cobra.Command{
 	Use:   "train",
 	Short: "Train the RL planner from exported episodes",
@@ -22,7 +22,7 @@ var planTrainCmd = &cobra.Command{
 (exported via 'aether plan export' or hand-authored). The resulting
 policy JSON is consumed by 'aether plan generate --rl --policy'.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s := planner.NewEpisodeStore(trainEpisodes)
+		s := rl.NewEpisodeStore(trainEpisodes)
 		episodes, err := s.Load()
 		if err != nil {
 			return err
@@ -31,7 +31,7 @@ policy JSON is consumed by 'aether plan generate --rl --policy'.`,
 			return fmt.Errorf("no episodes in %s", trainEpisodes)
 		}
 
-		h := planner.DefaultHyperParams()
+		h := rl.DefaultHyperParams()
 		if trainLR > 0 {
 			h.LearningRate = trainLR
 		}
@@ -39,7 +39,7 @@ policy JSON is consumed by 'aether plan generate --rl --policy'.`,
 			h.Epsilon = trainEpsilon
 		}
 
-		agent, report, err := planner.TrainAgent(episodes, h, trainEpochs)
+		agent, report, err := rl.TrainAgent(episodes, h, trainEpochs)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ var (
 	trainOut      string
 )
 
-// planExportCmd — export workspace operations as RL episodes. Stage 3
+// planExportCmd â€” export workspace operations as RL episodes. Stage 3
 // (T5): the default destination is the workspace vault; --output keeps
 // the JSONL interchange format for cross-machine training sets.
 // A legacy <workspace>-episodes.jsonl in the working directory is
@@ -82,12 +82,12 @@ var planExportCmd = &cobra.Command{
 		// Legacy migration: import a sibling JSONL if present.
 		legacyPath := ws.Name + "-episodes.jsonl"
 		if data, err := os.ReadFile(legacyPath); err == nil {
-			legacy := planner.NewEpisodeStoreBytes(data)
+			legacy := rl.NewEpisodeStoreBytes(data)
 			episodes, err := legacy.Load()
 			if err != nil {
 				return fmt.Errorf("parse legacy %s: %w", legacyPath, err)
 			}
-			vs := planner.NewVaultEpisodeStore(ws.Vault())
+			vs := rl.NewVaultEpisodeStore(ws.Vault())
 			for _, ep := range episodes {
 				if err := vs.Append(ep); err != nil {
 					return err
@@ -104,21 +104,21 @@ var planExportCmd = &cobra.Command{
 			return err
 		}
 
-		var journal []planner.JournalEvent
+		var journal []rl.JournalEvent
 		for _, ev := range events {
-			journal = append(journal, planner.JournalEvent{Kind: ev.Kind, Detail: ev.Detail})
+			journal = append(journal, rl.JournalEvent{Kind: ev.Kind, Detail: ev.Detail})
 		}
 		if len(journal) == 0 {
-			return fmt.Errorf("workspace journal is empty — nothing to export")
+			return fmt.Errorf("workspace journal is empty â€” nothing to export")
 		}
 
-		ep := planner.BuildEpisode(ws.Name, journal)
+		ep := rl.BuildEpisode(ws.Name, journal)
 		if len(ep.Steps) == 0 {
 			return fmt.Errorf("journal events mapped to no known actions")
 		}
 
 		if expOut != "" {
-			s := planner.NewEpisodeStore(expOut)
+			s := rl.NewEpisodeStore(expOut)
 			if err := s.Append(ep); err != nil {
 				return err
 			}
@@ -126,7 +126,7 @@ var planExportCmd = &cobra.Command{
 			return nil
 		}
 
-		vs := planner.NewVaultEpisodeStore(ws.Vault())
+		vs := rl.NewVaultEpisodeStore(ws.Vault())
 		if err := vs.Append(ep); err != nil {
 			return err
 		}
@@ -141,7 +141,7 @@ var (
 	expOut       string
 )
 
-// planGenerateRLCmd — policy-driven plan generation.
+// planGenerateRLCmd â€” policy-driven plan generation.
 var planGenerateRLCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate a plan using the trained RL policy",
@@ -150,13 +150,13 @@ The start state is built from the workspace's current posture (stored
 tokens) and an optional graph file (density). Output is a plan JSON
 consumable by 'aether run plan'.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		agent, err := planner.LoadPolicy(rlPolicy)
+		agent, err := rl.LoadPolicy(rlPolicy)
 		if err != nil {
 			return err
 		}
 
 		// Discretize the start state from workspace + graph inputs.
-		start := planner.State{
+		start := rl.State{
 			TokenBucket:   0,
 			GraphDensity:  "low",
 			CAPStrictness: "medium",
@@ -171,19 +171,19 @@ consumable by 'aether run plan'.`,
 			if w, err := workspaceOpen(rlWorkspace); err == nil {
 				var tokens []map[string]any
 				if err := w.LoadRecord(workspace.BucketTokens, "oauth", &tokens); err == nil && len(tokens) > 0 {
-					start.TokenBucket = planner.BucketTokens(len(tokens))
+					start.TokenBucket = rl.BucketTokens(len(tokens))
 				}
 			}
 		}
 
-		nodes, err := planner.GenerateRLPlan(agent, start, rlMaxSteps)
+		nodes, err := rl.GenerateRLPlan(agent, start, rlMaxSteps)
 		if err != nil {
 			return err
 		}
 
 		plan := struct {
 			MaxParallel int                `json:"max_parallel"`
-			Nodes       []planner.PlanNode `json:"nodes"`
+			Nodes       []rl.PlanNode `json:"nodes"`
 		}{MaxParallel: rlParallel, Nodes: nodes}
 
 		data, err := json.MarshalIndent(plan, "", "  ")
@@ -222,7 +222,7 @@ func workspaceExists(name string) bool {
 }
 
 // graphDensityFromCounts maps counts to a density label (mirrors
-// planner.DensityFromCounts without a planner import cycle).
+// rl.DensityFromCounts without a planner import cycle).
 func graphDensityFromCounts(nodes, edges int) string {
 	if nodes == 0 {
 		return "low"
@@ -238,7 +238,7 @@ func graphDensityFromCounts(nodes, edges int) string {
 	}
 }
 
-// planCmd — RL planner operations.
+// planCmd â€” RL planner operations.
 var planCmd = &cobra.Command{
 	Use:   "plan",
 	Short: "RL planner: train, export episodes, generate adaptive plans",
