@@ -75,7 +75,10 @@ func TestPlannerLegacyMigration(t *testing.T) {
 	if err := os.WriteFile(legacy, []byte(legacyJSON), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
+	t.Cleanup(func() {
+		_ = os.Remove(legacy)
+		_ = os.Remove(legacy + ".pre-vault-imported")
+	})
 
 	// Simulate the CLI migration path.
 	data, err := os.ReadFile(legacy)

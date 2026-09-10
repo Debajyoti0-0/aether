@@ -28,7 +28,7 @@ Per directive §40 (no feature creep): everything discovered but not required fo
 
 ## Operational
 
-13. **Run the repository outside OneDrive-synced paths** (or pause sync during sprints): Stage 3 lost `internal/planner/` working-tree files repeatedly to a OneDrive sync race (recovered from git; commits `442b67e…2faa9b3`). Risk: silent file loss during heavy write bursts.
+13. **~~OneDrive sync race~~ RESOLVED — misdiagnosed:** the recurring deletion of `internal/planner` (then `internal/rl`) working-tree files was **not** OneDrive. Root cause: `TestPlannerLegacyMigration` used `defer os.RemoveAll(dir)` where `dir` was the test's working directory — the deferred cleanup deleted the entire package directory after every test run (commit `7dc8db0` fixes it). The OneDrive recommendation is retracted; however, keeping repos out of synced paths remains good practice.
 14. Full config-path dependency injection (beyond T7's TestMain pattern) to unlock library-level parallel isolation.
 15. `bin/aether.exe` still committed; goreleaser/checksums/SBOM (F21, Stage 7).
 16. Dashboard HTML/JS live-polling of `/api/events` (server-side live feed done in T8; the static HTML does not yet auto-refresh).
