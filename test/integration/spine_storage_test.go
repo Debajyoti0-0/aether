@@ -10,6 +10,7 @@ package integration
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -21,15 +22,30 @@ import (
 	"github.com/Debajyoti0-0/aether/internal/workspace"
 )
 
-// newWorkspace builds a fully isolated workspace per test (t.Parallel
-// safe: every test gets its own config dir).
+// TestMain isolates the workspace root once per process (T7): with a
+// single shared config dir and unique per-test workspace names, tests
+// are parallel-safe without per-test env mutation (t.Setenv forbids
+// t.Parallel). Every test still registers its own cleanup.
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "aether-it-*")
+	if err != nil {
+		panic(err)
+	}
+	os.Setenv("AETHER_CONFIG_DIR", dir)
+	os.Setenv("USERPROFILE", dir)
+	os.Setenv("AppData", dir)
+	os.Setenv("HOME", dir)
+	code := m.Run()
+	os.RemoveAll(dir)
+	os.Exit(code)
+}
+
+// newWorkspace builds a uniquely named workspace for the calling test
+// (parallel-safe: names are unique per test; the vault flock is held
+// only for the life of the handle).
 func newWorkspace(t *testing.T, name string) *workspace.Workspace {
 	t.Helper()
-	dir := t.TempDir()
-	t.Setenv("AETHER_CONFIG_DIR", dir)
-	t.Setenv("USERPROFILE", dir)
-	t.Setenv("AppData", dir)
-	t.Setenv("HOME", dir)
+	name = name + "-" + strings.ReplaceAll(strings.TrimPrefix(t.Name(), "TestEndToEnd_"), "/", "_")
 	w, err := workspace.Create(name, "integration-pass")
 	if err != nil {
 		t.Fatal(err)
@@ -64,6 +80,7 @@ func (f *fakeExec) UndoRecipe() *mutation.UndoSpec { return f.undo }
 // mutation → 2 signed audit entries + evidence record + rollback
 // registration + journal entry, with the chain verifying VERIFIED.
 func TestEndToEnd_SpineAuditChain(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2EAudit")
 
 	m := &fakeExec{
@@ -130,6 +147,7 @@ func TestEndToEnd_SpineAuditChain(t *testing.T) {
 // without any audit "before" entry (abort happens pre-audit) and the
 // refusal must be journaled.
 func TestEndToEnd_SpineRiskAbort(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2ERisk")
 
 	executed := false
@@ -165,6 +183,7 @@ func TestEndToEnd_SpineRiskAbort(t *testing.T) {
 
 // TestEndToEnd_SpinePolicyDeny: a deny rule aborts before execution.
 func TestEndToEnd_SpinePolicyDeny(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2EPolicy")
 
 	executed := false
@@ -189,6 +208,7 @@ func TestEndToEnd_SpinePolicyDeny(t *testing.T) {
 // TestEndToEnd_StorageConcurrency: the vault file lock must reject a
 // second concurrent open of the same workspace (cross-process safety).
 func TestEndToEnd_StorageConcurrency(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2ELock")
 
 	if _, err := workspace.Open(ws.Name, "integration-pass"); err == nil {
@@ -203,6 +223,7 @@ func TestEndToEnd_StorageConcurrency(t *testing.T) {
 // make the file consistent at all times), and the reopened workspace
 // exposes the full journal/audit/records.
 func TestEndToEnd_StorageCrashRecovery(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2ECrash")
 
 	type tok struct{ Access string }
@@ -253,6 +274,7 @@ func TestEndToEnd_StorageCrashRecovery(t *testing.T) {
 // TestEndToEnd_RollbackUndoIdempotence: failed reversals are retained
 // (never discarded) and the stack drains deterministically.
 func TestEndToEnd_RollbackUndo(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2ERollback")
 
 	stack := ws.RollbackStack()
@@ -299,6 +321,7 @@ func TestEndToEnd_RollbackUndo(t *testing.T) {
 // a spine Action; every node produces its own Action ID in the journal
 // and 2 signed audit entries on the chain (T2 acceptance).
 func TestEndToEnd_DAGThroughSpine(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2EDAG")
 
 	w := orchestrator.NewWorkflow()
@@ -361,6 +384,7 @@ func TestEndToEnd_DAGThroughSpine(t *testing.T) {
 // TestEndToEnd_EvidenceClasses: evidence records honor the epistemic
 // contract — unknown after-state never renders as observed.
 func TestEndToEnd_EvidenceClasses(t *testing.T) {
+	t.Parallel()
 	ws := newWorkspace(t, "E2EEvidence")
 
 	res, err := mutation.Run(context.Background(), ws, &fakeExec{
