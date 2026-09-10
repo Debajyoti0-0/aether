@@ -84,6 +84,7 @@ func (es *EventStore) ReadSince(wsID string, afterSeq uint64) ([]WorkspaceUpdate
 		if err := json.Unmarshal(data, &ev); err != nil {
 			return out, latest, fmt.Errorf("corrupt event at seq %d: %w", s, err)
 		}
+		ev.Seq = int64(s) // the seq lives in the bucket key; stamp it on the replay
 		out = append(out, ev)
 	}
 	return out, latest, nil

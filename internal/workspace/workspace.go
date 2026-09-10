@@ -90,6 +90,11 @@ func (w *Workspace) Reports() string   { return filepath.Join(w.Root, "reports")
 // VaultPath returns the canonical storage file for this workspace.
 func (w *Workspace) VaultPath() string { return filepath.Join(w.Root, "vault.db") }
 
+// Vault exposes the workspace's canonical store (read-only handle for
+// subsystems that need vault-backed persistence, e.g. the teamserver
+// event store). Callers must Close the workspace, not the vault.
+func (w *Workspace) Vault() *store.Vault { return w.vault }
+
 // saltFilePath returns the workspace key-file path.
 func (w *Workspace) saltFilePath() string { return filepath.Join(w.Root, saltFileName) }
 
