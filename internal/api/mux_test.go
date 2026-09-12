@@ -164,6 +164,9 @@ func TestMultiOperatorRace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Set in-flight cap higher than client semaphore (8) to avoid false
+	// backpressure during race test (each client respects 8; give server headroom).
+	srv.SetMaxInFlight(16)
 	go srv.Serve()
 	defer srv.Close()
 
