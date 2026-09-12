@@ -82,6 +82,10 @@ func startTestServer(t *testing.T, runner CommandRunner) (*Teamserver, *TeamClie
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Set in-flight cap higher than client semaphore to avoid false
+	// backpressure during multiplexing test (client respects 8; give
+	// server headroom).
+	srv.SetMaxInFlight(16)
 	go srv.Serve()
 	t.Cleanup(func() { _ = srv.Close() })
 

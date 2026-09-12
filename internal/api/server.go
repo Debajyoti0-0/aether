@@ -45,14 +45,15 @@ type Teamserver struct {
 	revoked      *RevocationList
 	eventStore   *EventStore
 
-	mu         sync.Mutex
-	events     map[string][]*WorkspaceUpdate // workspace -> updates (fallback ring when no store)
-	subs       map[string][]*subscriber      // workspace -> live subscribers
-	subByCh    map[chan *WorkspaceUpdate]*subscriber
-	operators  map[string]time.Time // conn remote -> last seen
-	maxConns   int
-	conns      int
-	shutdown   chan struct{}
+	mu           sync.Mutex
+	events       map[string][]*WorkspaceUpdate // workspace -> updates (fallback ring when no store)
+	subs         map[string][]*subscriber      // workspace -> live subscribers
+	subByCh      map[chan *WorkspaceUpdate]*subscriber
+	operators    map[string]time.Time // conn remote -> last seen
+	maxConns     int
+	conns        int
+	maxInFlight  int // per-connection in-flight command cap
+	shutdown     chan struct{}
 }
 
 // SetEventStore attaches the persistent, cursor-addressable event log
@@ -90,6 +91,7 @@ func NewTeamserver(addr string, srvCert tls.Certificate, clientCAs *x509.CertPoo
 		subByCh:      map[chan *WorkspaceUpdate]*subscriber{},
 		operators:    map[string]time.Time{},
 		maxConns:     32,
+		maxInFlight:  8,
 		shutdown:     make(chan struct{}),
 	}, nil
 }
@@ -98,6 +100,13 @@ func NewTeamserver(addr string, srvCert tls.Certificate, clientCAs *x509.CertPoo
 func (s *Teamserver) SetMaxConnections(n int) {
 	if n > 0 {
 		s.maxConns = n
+	}
+}
+
+// SetMaxInFlight sets the per-connection in-flight command cap.
+func (s *Teamserver) SetMaxInFlight(n int) {
+	if n > 0 {
+		s.maxInFlight = n
 	}
 }
 
@@ -205,7 +214,7 @@ func (s *Teamserver) serveConn(conn net.Conn, op *Operator) {
 	}
 
 	// Per-connection in-flight command cap (backpressure).
-	inflight := make(chan struct{}, 8)
+	inflight := make(chan struct{}, s.maxInFlight)
 	var inflightWG sync.WaitGroup
 
 	for {
