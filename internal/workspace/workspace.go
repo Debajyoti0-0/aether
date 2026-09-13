@@ -685,6 +685,35 @@ func (w *Workspace) Events() ([]Event, error) {
 	return events, nil
 }
 
+// --- Idempotency Key-Value Store (for request deduplication) ---
+
+// IdempotencyPut stores a value for the given key, overwriting any
+// existing value. Uses the workspace vault's records bucket.
+func (w *Workspace) IdempotencyPut(key string, value []byte) error {
+	if err := ValidateRecordKey(key); err != nil {
+		return err
+	}
+	return w.vault.PutRecord("idempotency", key, value)
+}
+
+// IdempotencyGet retrieves the value for the given key.
+func (w *Workspace) IdempotencyGet(key string) ([]byte, error) {
+	if err := ValidateRecordKey(key); err != nil {
+		return nil, err
+	}
+	return w.vault.GetRecord("idempotency", key)
+}
+
+// IdempotencyPutIfAbsent stores a value only if the key does not exist.
+// Returns the existing value if present, nil if the key was set.
+// This is atomic within a single vault transaction.
+func (w *Workspace) IdempotencyPutIfAbsent(key string, value []byte) ([]byte, error) {
+	if err := ValidateRecordKey(key); err != nil {
+		return nil, err
+	}
+	return w.vault.PutRecordIfAbsent("idempotency", key, value)
+}
+
 // SaveArtifact stores a raw artifact (ccache, dumps) unencrypted on
 // disk but tracked in the journal. The artifact name is validated to
 // prevent path traversal outside the artifacts directory.

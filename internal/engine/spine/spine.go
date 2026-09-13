@@ -216,6 +216,79 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 		}
 		a.ID = id
 	}
+
+	// --- Idempotency check: look up existing record ---
+	existing, err := s.checkIdempotency(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("idempotency check failed: %w", err)
+	}
+	if existing != nil {
+		// Check status of existing record
+		data, _ := s.ws.IdempotencyGet(a.ID)
+		var record map[string]any
+		json.Unmarshal(data, &record)
+		status := record["status"]
+		
+		switch status {
+		case "pending":
+			// Action already in progress
+			return nil, fmt.Errorf(`action %q already in progress`, a.ID)
+		case "completed":
+			// Return cached result
+			return existing, nil
+		case "failed":
+			// Previous attempt failed; allow re-execution
+			// Fall through to execute
+		}
+	}
+
+	// --- Claim this action ID (atomically set to pending) ---
+	claimRecord := map[string]any{
+		"request_id": a.ID,
+		"status":     "pending",
+		"created_at": time.Now().UTC(),
+	}
+	claimData, _ := json.Marshal(claimRecord)
+	
+	// Check existing record first to handle "failed" status
+	existingData, err := s.ws.IdempotencyGet(a.ID)
+	if err == nil {
+		var existingRecord map[string]any
+		if json.Unmarshal(existingData, &existingRecord) == nil {
+			if existingRecord["status"] == "failed" {
+				// Previous attempt failed; overwrite with pending
+				if err := s.ws.IdempotencyPut(a.ID, claimData); err != nil {
+					return nil, fmt.Errorf("idempotency claim failed: %w", err)
+				}
+				// Proceed to execute
+			} else if existingRecord["status"] == "pending" {
+				return nil, fmt.Errorf(`action %q already in progress`, a.ID)
+			} else if existingRecord["status"] == "completed" {
+				// Already completed; return cached result
+				if existing, err := s.checkIdempotency(a.ID); err == nil && existing != nil {
+					return existing, nil
+				}
+			}
+		}
+	} else {
+		// No existing record; try to atomically claim
+		existingClaim, err := s.ws.IdempotencyPutIfAbsent(a.ID, claimData)
+		if err != nil {
+			return nil, fmt.Errorf("idempotency claim failed: %w", err)
+		}
+		if existingClaim != nil {
+			// Another goroutine beat us to the claim
+			data, _ := s.ws.IdempotencyGet(a.ID)
+			var record map[string]any
+			json.Unmarshal(data, &record)
+			if record["status"] == "pending" {
+				return nil, fmt.Errorf(`action %q already in progress`, a.ID)
+			}
+			// If completed, return the cached result
+			return s.waitForActionResult(a.ID)
+		}
+	}
+
 	res := &Result{ActionID: a.ID, Kind: a.Kind, Target: a.Target}
 	st := NewActionState()
 	defer func() { res.StateSeq = st.Seq }()
@@ -404,7 +477,15 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 
 	if execErr != nil {
 		res.Error = execErr.Error()
+		// Mark as failed
+		_ = s.markIdempotencyFailed(a.ID)
 		return res, execErr
+	}
+
+	// Store result for idempotency (mark as completed)
+	if err := s.storeIdempotencyResult(res); err != nil {
+		// Log but don't fail the action
+		_ = s.ws.LogEvent("idempotency_store_failed", fmt.Sprintf("action %s: %v", a.ID, err))
 	}
 
 	// Journal entry (includes the state transition sequence — T4).
@@ -412,6 +493,87 @@ func (s *Spine) Run(ctx context.Context, a *Action) (*Result, error) {
 		a.Kind, a.Target, res.Status, a.ID, a.Actor, a.ApprovalMode, stateSeqString(st.Seq)))
 
 	return res, nil
+}
+
+// checkIdempotency checks if an action with the given ID has already
+// completed. Returns the existing result if found, nil otherwise.
+func (s *Spine) checkIdempotency(actionID string) (*Result, error) {
+	data, err := s.ws.IdempotencyGet(actionID)
+	if err != nil {
+		// Not found or error - check if it's a "not found" error
+		// The vault returns "record ... not found" for missing keys
+		return nil, nil
+	}
+	var record map[string]any
+	if err := json.Unmarshal(data, &record); err != nil {
+		// Corrupt data - log and treat as not found
+		_ = s.ws.LogEvent("idempotency_corrupt", fmt.Sprintf("action %s: %v", actionID, err))
+		return nil, nil
+	}
+	
+	// Only return result if status is completed
+	if record["status"] == "completed" {
+		var res Result
+		if err := json.Unmarshal(data, &res); err != nil {
+			_ = s.ws.LogEvent("idempotency_corrupt", fmt.Sprintf("action %s: %v", actionID, err))
+			return nil, nil
+		}
+		return &res, nil
+	}
+	// Pending or failed - don't return cached result
+	return nil, nil
+}
+
+// markIdempotencyFailed marks an action as failed (allows retry).
+func (s *Spine) markIdempotencyFailed(actionID string) error {
+	failedRecord := map[string]any{
+		"request_id": actionID,
+		"status":     "failed",
+		"created_at": time.Now().UTC(),
+	}
+	data, _ := json.Marshal(failedRecord)
+	return s.ws.IdempotencyPut(actionID, data)
+}
+
+// storeIdempotencyResult stores the action result for idempotency lookups.
+func (s *Spine) storeIdempotencyResult(res *Result) error {
+	data, err := json.Marshal(res)
+	if err != nil {
+		return err
+	}
+	// Also update the status to completed
+	var record map[string]any
+	json.Unmarshal(data, &record)
+	record["status"] = "completed"
+	updatedData, _ := json.Marshal(record)
+	return s.ws.IdempotencyPut(res.ActionID, updatedData)
+}
+
+// waitForActionResult waits for another goroutine to complete the action
+// and returns the result (or error if still in progress).
+func (s *Spine) waitForActionResult(actionID string) (*Result, error) {
+	// Poll for the result with a reasonable timeout
+	for i := 0; i < 100; i++ { // 10 seconds max
+		data, err := s.ws.IdempotencyGet(actionID)
+		if err == nil {
+			var record map[string]any
+			if json.Unmarshal(data, &record) == nil {
+				switch record["status"] {
+				case "completed":
+					if existing, err := s.checkIdempotency(actionID); err == nil && existing != nil {
+						return existing, nil
+					}
+				case "failed":
+					// Previous attempt failed; caller should retry (not wait)
+					return nil, fmt.Errorf(`action %q already in progress`, actionID)
+				case "pending":
+					// Still in progress; keep waiting
+				}
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil, fmt.Errorf(`action %q already in progress`, actionID)
 }
 
 func (s *Spine) abort(res *Result, stage Stage, status Status, err error) (*Result, error) {

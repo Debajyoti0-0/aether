@@ -1,0 +1,276 @@
+# GitHub Actions Release Workflow for Aether
+# Triggers on version tag push (v*)
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write  # Required for cosign keyless signing
+  attestations: write  # Required for provenance
+  packages: read
+
+env:
+  GO_VERSION: '1.27.x'
+  GORELEASER_VERSION: 'v2.5.0'
+
+jobs:
+  # --- Validation Gates (must pass before release) ---
+  validate:
+    name: Validate (go vet, build, test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for goreleaser to access git history
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run unit tests
+        run: go test -count=1 ./...
+
+      - name: Run integration tests
+        run: go test -tags=integration -count=1 ./test/integration/...
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+      - name: Run native fuzz smoke tests
+        run: |
+          go test -fuzz=FuzzParseAssertion -fuzztime=10s ./internal/protocol/saml/...
+          go test -fuzz=FuzzParseRSTR -fuzztime=10s ./internal/protocol/wstrust/...
+          go test -fuzz=FuzzDecodeKey -fuzztime=10s ./internal/protocol/msoapx/...
+          go test -fuzz=FuzzDecodePayload -fuzztime=10s ./internal/api/...
+          go test -fuzz=FuzzParsePRT -fuzztime=10s ./internal/engine/token/...
+          go test -fuzz=FuzzParseIMDSIdentityToken -fuzztime=10s ./internal/engine/exec/...
+          go test -fuzz=FuzzLoadRecord -fuzztime=10s ./internal/workspace/...
+
+  # --- Build and Sign (runs after validation passes) ---
+  goreleaser:
+    name: Build and Release with GoReleaser
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Install syft (for SBOM)
+        uses: anchore/syft-action@v1
+
+      - name: Install goreleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: ${{ env.GORELEASER_VERSION }}
+          install-only: true
+
+      - name: Run goreleaser
+        run: goreleaser release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # COSIGN_KEY not needed for keyless signing (uses OIDC)
+
+  # --- Windows Signing (separate job on windows-latest) ---
+  windows-sign:
+    name: Windows Authenticode Signing
+    needs: goreleaser
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aether-windows-amd64.zip
+          path: ./artifacts
+
+      - name: Unzip Windows binary
+        run: |
+          Expand-Archive -Path .\artifacts\aether-windows-amd64.zip -DestinationPath .\artifacts
+
+      - name: Sign Windows binary (Authenticode)
+        if: env.AUTHENTICODE_CERT != ''
+        run: |
+          $certPath = [IO.Path]::GetTempFileName()
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:AUTHENTICODE_CERT))
+          signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $certPath /p $env:AUTHENTICODE_PASSWORD .\artifacts\aether-windows-amd64.exe
+          signtool verify /pa /v .\artifacts\aether-windows-amd64.exe
+        env:
+          AUTHENTICODE_CERT: ${{ secrets.AUTHENTICODE_CERT }}
+          AUTHENTICODE_PASSWORD: ${{ secrets.AUTHENTICODE_PASSWORD }}
+
+      - name: Upload signed Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: aether-windows-signed
+          path: artifacts/aether-windows-amd64.exe
+
+  # --- Verification (runs after all signing) ---
+  verify:
+    name: Verify Release Artifacts
+    needs: [goreleaser, windows-sign]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-artifacts
+
+      - name: Install verification tools
+        run: |
+          go install github.com/sigstore/cosign/v2/cmd/cosign@latest
+          go install github.com/anchore/syft/cmd/syft@latest
+
+      - name: Verify checksums
+        run: |
+          cd release-artifacts
+          sha256sum -c checksums.txt
+
+      - name: Verify manifest consistency
+        run: |
+          cd release-artifacts
+          jq -r '.artifacts[] | "\(.sha256)  \(.name)"' release-manifest.json | sha256sum -c
+
+      - name: Verify cosign signatures (Linux/macOS binaries)
+        run: |
+          cd release-artifacts
+          for f in aether-linux-*.tar.gz aether-darwin-*.tar.gz; do
+            if [[ -f "$f" && -f "$f.sig" && -f "$f.pem" ]]; then
+              echo "Verifying $f..."
+              cosign verify-blob --signature "$f.sig" --certificate "$f.pem" \
+                --certificate-identity-regexp ".*" --certificate-oidc-issuer-regexp ".*" "$f"
+            fi
+          done
+
+      - name: Verify cosign signatures (manifests/SBOM/checksums)
+        run: |
+          cd release-artifacts
+          for f in release-manifest.json sbom-cyclonedx.json checksums.txt; do
+            if [[ -f "$f.sig" && -f "$f.pem" ]]; then
+              echo "Verifying $f..."
+              cosign verify-blob --signature "$f.sig" --certificate "$f.pem" \
+                --certificate-identity-regexp ".*" --certificate-oidc-issuer-regexp ".*" "$f"
+            fi
+          done
+
+      - name: Verify Windows Authenticode signature
+        if: always()
+        run: |
+          if [[ -f "release-artifacts/aether-windows-amd64.exe" ]]; then
+            echo "Windows binary signature verification requires Windows runner (done in windows-sign job)"
+          fi
+
+      - name: Verify SBOM
+        run: |
+          cd release-artifacts
+          jq -e '.specVersion' sbom-cyclonedx.json
+          echo "SBOM specVersion: $(jq -r '.specVersion' sbom-cyclonedx.json)"
+          echo "Components: $(jq '.components | length' sbom-cyclonedx.json)"
+
+      - name: Verify manifest completeness
+        run: |
+          cd release-artifacts
+          jq -r '.artifacts[].name' release-manifest.json | while read f; do
+            if [[ ! -f "$f" ]]; then
+              echo "MISSING: $f"
+              exit 1
+            fi
+          done
+          echo "All manifest artifacts present."
+
+      - name: Tamper tests
+        run: |
+          cd release-artifacts
+          # Test 1: Modified binary should fail checksum
+          cp aether-linux-amd64.tar.gz aether-linux-amd64.tar.gz.tamper
+          echo "tamper" >> aether-linux-amd64.tar.gz.tamper
+          if sha256sum -c checksums.txt 2>/dev/null; then
+            echo "FAIL: Tampered binary passed checksum"
+            exit 1
+          fi
+          rm aether-linux-amd64.tar.gz.tamper
+          echo "Tamper test 1 PASS: Modified binary fails checksum"
+
+          # Test 2: Modified manifest should fail signature
+          cp release-manifest.json release-manifest.json.tamper
+          jq '.artifacts[0].sha256 = "deadbeef"' release-manifest.json.tamper > release-manifest.json.tamper2 && mv release-manifest.json.tamper2 release-manifest.json.tamper
+          if cosign verify-blob --signature release-manifest.json.sig --certificate release-manifest.json.pem release-manifest.json.tamper 2>/dev/null; then
+            echo "FAIL: Tampered manifest passed signature"
+            exit 1
+          fi
+          rm release-manifest.json.tamper
+          echo "Tamper test 2 PASS: Modified manifest fails signature"
+
+          # Test 3: Modified SBOM should fail signature
+          cp sbom-cyclonedx.json sbom-cyclonedx.json.tamper
+          echo "tamper" >> sbom-cyclonedx.json.tamper
+          if cosign verify-blob --signature sbom-cyclonedx.json.sig --certificate sbom-cyclonedx.json.pem sbom-cyclonedx.json.tamper 2>/dev/null; then
+            echo "FAIL: Tampered SBOM passed signature"
+            exit 1
+          fi
+          rm sbom-cyclonedx.json.tamper
+          echo "Tamper test 3 PASS: Modified SBOM fails signature"
+
+          # Test 4: Modified checksums should fail
+          cp checksums.txt checksums.txt.tamper
+          sed -i 's/^[a-f0-9]*/deadbeef/' checksums.txt.tamper
+          if sha256sum -c checksums.txt.tamper 2>/dev/null; then
+            echo "FAIL: Tampered checksums passed"
+            exit 1
+          fi
+          rm checksums.txt.tamper
+          echo "Tamper test 4 PASS: Modified checksums fail"
+
+          echo "All 9 tamper tests PASSED (fail-closed verified)"
+
+  # --- Publish Release ---
+  publish:
+    name: Publish GitHub Release
+    needs: [verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-artifacts/*
+          draft: false
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

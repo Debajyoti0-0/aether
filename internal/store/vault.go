@@ -151,6 +151,23 @@ func (v *Vault) PutRecord(bucket, key string, sealed []byte) error {
 	})
 }
 
+// PutRecordIfAbsent atomically stores a sealed record only if the key
+// does not exist. Returns the existing value if present, nil if the
+// key was set. This is atomic within a single bolt transaction.
+func (v *Vault) PutRecordIfAbsent(bucket, key string, sealed []byte) ([]byte, error) {
+	var existing []byte
+	err := v.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketRecords)
+		rk := recordKey(bucket, key)
+		if raw := b.Get(rk); raw != nil {
+			existing = append([]byte(nil), raw...)
+			return nil
+		}
+		return b.Put(rk, sealed)
+	})
+	return existing, err
+}
+
 // GetRecord returns the sealed record bytes.
 func (v *Vault) GetRecord(bucket, key string) ([]byte, error) {
 	var out []byte
