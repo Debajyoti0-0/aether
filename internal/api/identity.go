@@ -68,6 +68,11 @@ func FromClientCert(cert *x509.Certificate, now time.Time) (*Operator, error) {
 
 // validateOperatorName applies the workspace-name identifier policy to
 // operator names (they become file paths under the operators dir).
+//
+// Stage 4 backfill (B4-G11): names must be ASCII-only. x509 URI SANs
+// are IA5String (ASCII), and non-ASCII operator names enable homoglyph
+// confusion between operator identities (e.g. Cyrillic 'о' vs Latin
+// 'o'). The check is a hard fail-closed rejection.
 func validateOperatorName(name string) error {
 	if name == "" || name != strings.TrimSpace(name) {
 		return fmt.Errorf("operator name is empty or has surrounding whitespace")
@@ -78,6 +83,9 @@ func validateOperatorName(name string) error {
 	for _, r := range name {
 		if r < 0x20 || r == 0x7f {
 			return fmt.Errorf("operator name %q contains control characters", name)
+		}
+		if r > 0x7e {
+			return fmt.Errorf("operator name %q contains non-ASCII characters (IA5String/confusable guard)", name)
 		}
 	}
 	return nil

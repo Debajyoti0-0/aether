@@ -117,9 +117,33 @@ func IssueOperatorCert(caCertPath, caKeyPath, name string, days int) (certPEM, k
 		days = 365
 	}
 	uri := OperatorURIPrefix + name
+	// IA5String issuance guard (Stage 4 backfill, B4-G11): x509 URI SANs
+	// are IA5String (ASCII) on the wire. Defense-in-depth at the issuance
+	// boundary — independent of identity-layer validation — so a future
+	// relaxation of the identifier policy can never silently emit a SAN
+	// that violates IA5String or carries confusable homoglyphs.
+	if !isIA5(name) || !isIA5(uri) {
+		return nil, nil, fmt.Errorf("operator name %q is not IA5String-safe (ASCII-only enforcement)", name)
+	}
 	key, der, err := issueCert(caCert, caKey, name, []string{uri}, nil, days)
 	if err != nil {
 		return nil, nil, err
+	}
+	// Post-issue guard: the minted DER must reparse and carry exactly
+	// the operator URI SAN it was issued for.
+	parsed, err := x509.ParseCertificate(der)
+	if err != nil {
+		return nil, nil, fmt.Errorf("issued operator cert failed to reparse: %w", err)
+	}
+	foundSAN := false
+	for _, u := range parsed.URIs {
+		if u != nil && u.String() == uri {
+			foundSAN = true
+			break
+		}
+	}
+	if !foundSAN {
+		return nil, nil, fmt.Errorf("issued operator cert is missing SAN %s", uri)
 	}
 	keyDER, err := x509.MarshalECPrivateKey(key)
 	if err != nil {
@@ -128,6 +152,17 @@ func IssueOperatorCert(caCertPath, caKeyPath, name string, days int) (certPEM, k
 	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 	return certPEM, keyPEM, nil
+}
+
+// isIA5 reports whether s is entirely within the IA5String alphabet
+// (ASCII 0x00–0x7F).
+func isIA5(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > 0x7f {
+			return false
+		}
+	}
+	return true
 }
 
 // LoadServerTLS assembles the server-side TLS inputs: the server

@@ -27,6 +27,11 @@ import (
 // are parallel-safe without per-test env mutation (t.Setenv forbids
 // t.Parallel). Every test still registers its own cleanup.
 func TestMain(m *testing.M) {
+	// Stage 4 backfill: child-process helper dispatch (crash matrix,
+	// lock contention, torn-write probes) runs before the test runner.
+	if name := os.Getenv("AETHER_IT_HELPER"); name != "" {
+		os.Exit(runStorageHelper(name))
+	}
 	dir, err := os.MkdirTemp("", "aether-it-*")
 	if err != nil {
 		panic(err)

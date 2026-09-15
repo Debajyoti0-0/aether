@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,6 +59,13 @@ const (
 // lock before reporting the workspace as locked.
 const lockTimeout = 2 * time.Second
 
+// ErrVaultLocked is returned (wrapped) when another process holds the
+// vault's cross-process file lock. Callers should treat it as a
+// retry-later condition, never as data loss or corruption. Typed via
+// errors.Is so multi-process losers fail cleanly (Stage 4 backfill,
+// B4-G08).
+var ErrVaultLocked = errors.New("vault is locked by another process")
+
 // Vault is a handle to one workspace's vault.db.
 type Vault struct {
 	db   *bolt.DB
@@ -74,7 +82,7 @@ func OpenVault(path string) (*Vault, error) {
 	db, err := bolt.Open(path, 0o600, &bolt.Options{Timeout: lockTimeout})
 	if err != nil {
 		if err == bolt.ErrTimeout {
-			return nil, fmt.Errorf("workspace vault %s is locked by another process", path)
+			return nil, fmt.Errorf("workspace vault %s is locked by another process: %w", path, ErrVaultLocked)
 		}
 		return nil, fmt.Errorf("open vault %s: %w", path, err)
 	}
