@@ -54,6 +54,10 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
+sboms:
+  - artifacts: archive
+    id: cyclonedx
+
 release:
   github:
     owner: Debajyoti0-0
