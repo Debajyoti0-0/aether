@@ -41,10 +41,9 @@ func TestRunFullChain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bhPath := `{"nodes":[{"id":"u1","label":"User"}],"edges":[{"source":"u1","target":"g1","type":"MemberOf"}]}`
 	bhFile := filepath.Join(t.TempDir(), "path.json")
 	// Add matching node for g1 so validation passes.
-	bhPath = `{"nodes":[{"id":"u1","label":"User"},{"id":"g1","label":"Group"}],
+	bhPath := `{"nodes":[{"id":"u1","label":"User"},{"id":"g1","label":"Group"}],
 	  "edges":[{"source":"u1","target":"g1","type":"MemberOf"}]}`
 	if err := os.WriteFile(bhFile, []byte(bhPath), 0o600); err != nil {
 		t.Fatal(err)

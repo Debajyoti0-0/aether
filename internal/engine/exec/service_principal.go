@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // ServicePrincipalClient performs Entra ID service principal credential
@@ -66,10 +67,16 @@ func (c *ServicePrincipalClient) AddPassword(ctx context.Context, spID, displayN
 	if months <= 0 {
 		months = 6
 	}
+	endYear := time.Now().Year() + (months / 12)
+	endMonth := time.Now().Month() + time.Month(months%12)
+	if endMonth > 12 {
+		endMonth -= 12
+		endYear++
+	}
 	payload := map[string]any{
 		"passwordCredential": map[string]any{
 			"displayName": displayName,
-			"endDateTime": fmt.Sprintf("%d-01-01T00:00:00Z", 2027), // Graph normalizes; explicit end
+			"endDateTime": fmt.Sprintf("%04d-%02d-01T00:00:00Z", endYear, endMonth),
 		},
 	}
 	body, err := json.Marshal(payload)

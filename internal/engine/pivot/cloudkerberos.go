@@ -322,7 +322,6 @@ func ParseASREP(der []byte) (*ASREPInfo, error) {
 
 	// The AS-REP is an APPLICATION-11 sequence; walk its children by
 	// scanning context-tagged elements.
-	rest := der
 	// Skip the outer APPLICATION wrapper.
 	var outer asn1.RawValue
 	if _, err := asn1.Unmarshal(der, &outer); err != nil {
@@ -331,7 +330,7 @@ func ParseASREP(der []byte) (*ASREPInfo, error) {
 	if outer.Tag != ASREPTag {
 		return nil, fmt.Errorf("not an AS-REP (tag %d)", outer.Tag)
 	}
-	rest = outer.Bytes
+	rest := outer.Bytes
 
 	for len(rest) > 0 {
 		var el asn1.RawValue
