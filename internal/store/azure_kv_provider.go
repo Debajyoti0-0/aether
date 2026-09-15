@@ -179,15 +179,14 @@ func (p *AzureKVProvider) GetSigningKey(ctx context.Context) (ed25519.PrivateKey
 }
 
 // GetVerificationKey returns the current Ed25519 public key for verification.
+//
+// Fail-closed: Azure Key Vault supports EC/RSA key types only (no Ed25519) and
+// never exports key material, so this provider cannot satisfy the Ed25519
+// KeyProvider contract for local audit signing/verification. It supports key
+// lifecycle operations (create, rotate, list) only. Callers must NOT fall back
+// to another provider when this error is returned.
 func (p *AzureKVProvider) GetVerificationKey(ctx context.Context) (ed25519.PublicKey, error) {
-	key, err := p.client.GetKey(ctx, p.keyName, p.currentVersion, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get key: %w", err)
-	}
-	if key.Key == nil {
-		return nil, errors.New("key material not available")
-	}
-	return nil, errors.New("GetVerificationKey requires JWK parsing; not fully implemented")
+	return nil, fmt.Errorf("azure_kv: Ed25519 verification key unavailable (provider %s): Azure Key Vault supports EC/RSA keys only and does not export key material; audit signing via this provider is unsupported", p.keyName)
 }
 
 // GetKeyVersion returns the current key version identifier.
