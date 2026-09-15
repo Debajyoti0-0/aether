@@ -403,7 +403,7 @@ func (f *ProviderFactory) CreateProvider(cfg ProviderConfig) (KeyProvider, error
 	case "mock_kms":
 		return NewMockKMSProvider(), nil
 	case "azure_kv":
-		return nil, fmt.Errorf("azure_kv provider not implemented")
+		return NewAzureKVProviderFromEnv(context.Background())
 	case "aws_kms":
 		return nil, fmt.Errorf("aws_kms provider not implemented")
 	case "yubihsm":
