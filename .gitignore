@@ -1,0 +1,8 @@
+# Added by goreleaser init:
+dist/
+bin/
+*.exe
+*.tar.gz
+*.zip
+artifacts/
+.goreleaser.yaml

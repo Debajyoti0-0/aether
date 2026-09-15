@@ -33,19 +33,18 @@ builds:
       - -X github.com/Debajyoti0-0/aether/internal/version.Commit={{.Commit}}
     flags:
       - -trimpath
-    hooks:
-      post:
-        - ./scripts/sign-windows.sh {{ .Path }}  # Windows Authenticode signing
 
 archives:
   - id: aether-archives
-    builds:
+    ids:
       - aether
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format: tar.gz
+    formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
       - LICENSE
       - README.md
@@ -55,41 +54,10 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
-signs:
-  - id: cosign-sign
-    artifacts: all
-    cmd: cosign sign-blob --yes --output-signature {{.Artifact}}.sig --output-certificate {{.Artifact}}.pem {{.Artifact}}
-    stdin: "{{ .Env.COSIGN_KEY }}"
-
-  - id: cosign-sign-manifest
-    artifacts: checksums.txt
-    cmd: cosign sign-blob --yes --output-signature checksums.txt.sig --output-certificate checksums.txt.pem checksums.txt
-    stdin: "{{ .Env.COSIGN_KEY }}"
-
-  - id: cosign-sign-sbom
-    artifacts: sbom-cyclonedx.json
-    cmd: cosign sign-blob --yes --output-signature sbom-cyclonedx.json.sig --output-certificate sbom-cyclonedx.json.pem sbom-cyclonedx.json
-    stdin: "{{ .Env.COSIGN_KEY }}"
-
-  - id: cosign-sign-manifest-file
-    artifacts: release-manifest.json
-    cmd: cosign sign-blob --yes --output-signature release-manifest.json.sig --output-certificate release-manifest.json.pem release-manifest.json
-    stdin: "{{ .Env.COSIGN_KEY }}"
-
-sbom:
-  - id: syft-sbom
-    artifacts: all
-    cmd: syft {{ .Path }} -o cyclonedx-json={{ .Path }}.sbom.json
-
-provenance:
-  builder: goreleaser
-  type: slsa
-  documents:
-    - type: attestation
-      name: provenance
-      path: provenance.json
-
 release:
+  github:
+    owner: Debajyoti0-0
+    name: aether
   draft: false
   prerelease: auto
   header: |
@@ -106,10 +74,10 @@ release:
 
     ### Linux/macOS (cosign)
     ```bash
-    cosign verify-blob --signature aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sig \\
-      --certificate aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}.pem \\
-      --certificate-identity-regexp ".*" \\
-      --certificate-oidc-issuer-regexp ".*" \\
+    cosign verify-blob --signature aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sig \
+      --certificate aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}.pem \
+      --certificate-identity-regexp ".*" \
+      --certificate-oidc-issuer-regexp ".*" \
       aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}
     ```
 
@@ -134,21 +102,9 @@ changelog:
       - "Merge branch"
 
 snapshot:
-  name_template: "{{ .Version }}-next"
-
-release:
-  github:
-    owner: Debajyoti0-0
-    name: aether
-  draft: false
-  prerelease: auto
+  version_template: "{{ .Tag }}-next"
 
 nfpms: []
-
-release:
-  github:
-    owner: Debajyoti0-0
-    name: aether
 
 env:
   - GOFLAGS=-mod=readonly
