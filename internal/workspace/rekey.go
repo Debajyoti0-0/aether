@@ -21,6 +21,9 @@ import (
 //     rewritten, so a wrong old passphrase cannot corrupt the vault;
 //   - migrating off keyless removes the KEYLESS marker.
 func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
+	w.rekeyMu.Lock()
+	defer w.rekeyMu.Unlock()
+
 	if err := ValidateName(w.Name); err != nil {
 		return 0, err
 	}

@@ -75,6 +75,10 @@ type Workspace struct {
 	auditMu     sync.Mutex
 	auditChain  *store.Log // lazily created, shared by all spine runs
 	rollbackStk *rollback.Stack
+
+	// rekeyMu protects pass and salt during Rekey operations,
+	// preventing races with concurrent Seal/Open calls.
+	rekeyMu sync.Mutex
 }
 
 // Dir returns the aether workspace root for the current OS profile

@@ -1,0 +1,69 @@
+name: Race Detector Isolation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  race-api:
+    name: Race - internal/api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x', cache: true }
+      - run: go test -race -count=1 ./internal/api/...
+
+  race-workspace:
+    name: Race - internal/workspace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x', cache: true }
+      - run: go test -race -count=1 ./internal/workspace/...
+
+  race-store:
+    name: Race - internal/store
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x', cache: true }
+      - run: go test -race -count=1 ./internal/store/...
+
+  race-engine:
+    name: Race - internal/engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x', cache: true }
+      - run: go test -race -count=1 ./internal/engine/...
+
+  race-protocol:
+    name: Race - internal/protocol
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x', cache: true }
+      - run: go test -race -count=1 ./internal/protocol/...
+
+  race-transport:
+    name: Race - internal/transport
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x', cache: true }
+      - run: go test -race -count=1 ./internal/transport/...
+
+  race-all:
+    name: Race - All (confirmation)
+    needs: [race-api, race-workspace, race-store, race-engine, race-protocol, race-transport]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - run: echo "Isolation complete. Check individual job results."

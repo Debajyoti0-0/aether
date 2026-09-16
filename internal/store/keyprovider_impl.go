@@ -273,6 +273,17 @@ func (p *LocalKeyProvider) ListKeyVersions(ctx context.Context) ([]KeyVersionInf
 	return result, nil
 }
 
+// Capabilities returns the provider's supported operations.
+func (p *LocalKeyProvider) Capabilities() KeyProviderCapabilities {
+	return KeyProviderCapabilities{
+		SupportsEd25519Signing:   true,
+		SupportsPrivateKeyExport: true,
+		SupportsKeyRotation:      true,
+		SupportsKeyVersioning:    true,
+		KeyType:                  "ed25519",
+	}
+}
+
 // Close releases any resources held by the provider.
 func (p *LocalKeyProvider) Close() error {
 	p.mu.Lock()
@@ -372,6 +383,16 @@ func (p *MockKMSProvider) ListKeyVersions(ctx context.Context) ([]KeyVersionInfo
 	result := make([]KeyVersionInfo, len(p.versions))
 	copy(result, p.versions)
 	return result, nil
+}
+
+func (p *MockKMSProvider) Capabilities() KeyProviderCapabilities {
+	return KeyProviderCapabilities{
+		SupportsEd25519Signing:   true,
+		SupportsPrivateKeyExport: true,
+		SupportsKeyRotation:      true,
+		SupportsKeyVersioning:    true,
+		KeyType:                  "ed25519",
+	}
 }
 
 func (p *MockKMSProvider) Close() error { return nil }

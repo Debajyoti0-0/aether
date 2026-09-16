@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -16,6 +17,7 @@ import (
 
 // AzureKVProvider implements KeyProvider using Azure Key Vault.
 type AzureKVProvider struct {
+	mu           sync.RWMutex
 	client       *azkeys.Client
 	keyName      string
 	vaultURL     string
@@ -120,6 +122,9 @@ func ptr[T any](v T) *T { return &v }
 
 // loadVersions loads all key versions from Key Vault.
 func (p *AzureKVProvider) loadVersions(ctx context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	pager := p.client.NewListKeyVersionsPager(p.keyName, nil)
 	p.keyVersions = nil
 	p.currentVersion = ""
@@ -172,34 +177,35 @@ func extractVersionFromKID(kid string) string {
 }
 
 // GetSigningKey returns the current Ed25519 private key for signing.
-// Note: Azure Key Vault doesn't export private keys. This returns an error.
-// Use the Sign method on the client for signing operations.
+// Azure Key Vault does not export private keys and does not support Ed25519.
 func (p *AzureKVProvider) GetSigningKey(ctx context.Context) (ed25519.PrivateKey, error) {
-	return nil, errors.New("azure_kv provider does not export private keys; use client.Sign() for signing")
+	return nil, ErrUnsupportedOperation
 }
 
 // GetVerificationKey returns the current Ed25519 public key for verification.
-//
-// Fail-closed: Azure Key Vault supports EC/RSA key types only (no Ed25519) and
-// never exports key material, so this provider cannot satisfy the Ed25519
-// KeyProvider contract for local audit signing/verification. It supports key
-// lifecycle operations (create, rotate, list) only. Callers must NOT fall back
-// to another provider when this error is returned.
+// Azure Key Vault supports EC/RSA keys only and does not export key material.
 func (p *AzureKVProvider) GetVerificationKey(ctx context.Context) (ed25519.PublicKey, error) {
-	return nil, fmt.Errorf("azure_kv: Ed25519 verification key unavailable (provider %s): Azure Key Vault supports EC/RSA keys only and does not export key material; audit signing via this provider is unsupported", p.keyName)
+	return nil, ErrUnsupportedOperation
 }
 
 // GetKeyVersion returns the current key version identifier.
 func (p *AzureKVProvider) GetKeyVersion(ctx context.Context) (string, error) {
-	if p.currentVersion == "" {
+	p.mu.RLock()
+	currentVersion := p.currentVersion
+	p.mu.RUnlock()
+
+	if currentVersion == "" {
 		if err := p.loadVersions(ctx); err != nil {
 			return "", err
 		}
+		p.mu.RLock()
+		currentVersion = p.currentVersion
+		p.mu.RUnlock()
 	}
-	if p.currentVersion == "" {
+	if currentVersion == "" {
 		return "", errors.New("no current key version")
 	}
-	return p.currentVersion, nil
+	return currentVersion, nil
 }
 
 // RotateKey creates a new key version in Key Vault.
@@ -212,8 +218,11 @@ func (p *AzureKVProvider) RotateKey(ctx context.Context) (string, error) {
 		return "", errors.New("rotated key missing version")
 	}
 	newVersion := extractVersionFromKID(string(*newKey.Key.KID))
+
+	p.mu.Lock()
 	p.currentVersion = newVersion
-	
+	p.mu.Unlock()
+
 	if err := p.loadVersions(ctx); err != nil {
 		return "", err
 	}
@@ -225,14 +234,31 @@ func (p *AzureKVProvider) ListKeyVersions(ctx context.Context) ([]KeyVersionInfo
 	if err := p.loadVersions(ctx); err != nil {
 		return nil, err
 	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	result := make([]KeyVersionInfo, len(p.keyVersions))
 	copy(result, p.keyVersions)
 	return result, nil
 }
 
+// Capabilities returns the provider's supported operations.
+func (p *AzureKVProvider) Capabilities() KeyProviderCapabilities {
+	return KeyProviderCapabilities{
+		SupportsEd25519Signing:   false,
+		SupportsPrivateKeyExport: false,
+		SupportsKeyRotation:      true,
+		SupportsKeyVersioning:    true,
+		KeyType:                  "ec-p256",
+	}
+}
+
 // Close releases any resources held by the provider.
 func (p *AzureKVProvider) Close() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	p.client = nil
 	p.cred = nil
+	p.keyVersions = nil
+	p.currentVersion = ""
 	return nil
 }
