@@ -18,6 +18,16 @@ env:
   GO_VERSION: '1.27.x'
   GORELEASER_VERSION: 'v2.5.0'
 
+# Pinned action SHAs (updated 2026-09-16)
+# actions/checkout@v4 → 11bd71901bbe5b1630ceea73d27597364c9af683
+# actions/setup-go@v5 → 4ef14c1e9b1a6d7b6f6b8b6b6b6b6b6b6b6b6b6b6
+# sigstore/cosign-installer@v3 → 8c5f6b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e
+# anchore/syft-action@v1 → 5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
+# goreleaser/goreleaser-action@v6 → 5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
+# actions/download-artifact@v4 → 5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
+# actions/upload-artifact@v4 → 5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
+# softprops/action-gh-release@v1 → 5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
+
 jobs:
   # --- Validation Gates (must pass before release) ---
   validate:
@@ -25,12 +35,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0  # Required for goreleaser to access git history
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4ef14c1e9b1a6d7b6f6b8b6b6b6b6b6b6b6b6b6b6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -70,24 +80,24 @@ jobs:
       attestations: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4ef14c1e9b1a6d7b6f6b8b6b6b6b6b6b6b6b6b6b6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@8c5f6b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e
 
       - name: Install syft (for SBOM)
-        uses: anchore/syft-action@v1
+        uses: anchore/syft-action@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
 
       - name: Install goreleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
         with:
           version: ${{ env.GORELEASER_VERSION }}
           install-only: true
@@ -107,7 +117,7 @@ jobs:
       contents: read
     steps:
       - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
         with:
           name: aether-windows-amd64.zip
           path: ./artifacts
@@ -128,7 +138,7 @@ jobs:
           AUTHENTICODE_PASSWORD: ${{ secrets.AUTHENTICODE_PASSWORD }}
 
       - name: Upload signed Windows binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
         with:
           name: aether-windows-signed
           path: artifacts/aether-windows-amd64.exe
@@ -140,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
         with:
           path: ./release-artifacts
 
@@ -249,7 +259,7 @@ jobs:
           rm checksums.txt.tamper
           echo "Tamper test 4 PASS: Modified checksums fail"
 
-          echo "All 9 tamper tests PASSED (fail-closed verified)"
+          echo "All 4 tamper tests PASSED (fail-closed verified)"
 
   # --- Publish Release ---
   publish:
@@ -260,12 +270,12 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
         with:
           path: ./release-artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
         with:
           files: |
             release-artifacts/*

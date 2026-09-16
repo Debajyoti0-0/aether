@@ -56,7 +56,16 @@ checksum:
 
 sboms:
   - artifacts: archive
-    id: cyclonedx
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
 
 release:
   github:
@@ -94,16 +103,6 @@ release:
     ```bash
     sha256sum -c checksums.txt
     ```
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
-      - "Merge pull request"
-      - "Merge branch"
 
 snapshot:
   version_template: "{{ .Tag }}-next"
