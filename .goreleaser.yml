@@ -23,8 +23,6 @@ builds:
       - amd64
       - arm64
     ignore:
-      - goos: darwin
-        goarch: arm64
       - goos: windows
         goarch: arm64
     ldflags:
@@ -85,19 +83,10 @@ release:
 
     ## Verification
 
-    ### Linux/macOS (cosign)
-    ```bash
-    cosign verify-blob --signature aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sig \
-      --certificate aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}.pem \
-      --certificate-identity-regexp ".*" \
-      --certificate-oidc-issuer-regexp ".*" \
-      aether_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ```
-
-    ### Windows (Authenticode)
-    ```cmd
-    signtool verify /pa /v aether_{{ .Version }}_windows_amd64.exe
-    ```
+    Note: cryptographic signatures are NOT currently produced by
+    this pipeline (no `signs:` configuration; finding F-30-2).
+    Cosign/Authenticode instructions will be restored only when
+    the pipeline actually emits signatures.
 
     ### All Artifacts
     ```bash

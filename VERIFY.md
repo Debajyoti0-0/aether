@@ -7,6 +7,14 @@
 
 ---
 
+> **Signing status (Stage 31, finding F-30-2):** the release pipeline
+> currently produces **no cryptographic signatures** (no cosign `signs:`
+> configuration, no Authenticode certificate). The cosign/Authenticode
+> sections below describe verification that is **not currently possible**
+> against release artifacts; they are retained only as the target state
+> for when signing is enabled. Checksum and SBOM verification are
+> functional today.
+
 ## Quick Verification
 
 ```bash
@@ -14,14 +22,14 @@
 # 2. Verify checksums
 sha256sum -c checksums.txt
 
-# 3. Verify cosign signatures (Linux/macOS)
+# 3. (NOT CURRENTLY PRODUCED) cosign signatures — see signing status above
 cosign verify-blob --signature aether_<version>_<os>_<arch>.sig \
   --certificate aether_<version>_<os>_<arch>.pem \
   --certificate-identity-regexp ".*" \
   --certificate-oidc-issuer-regexp ".*" \
   aether_<version>_<os>_<arch>
 
-# 4. Verify Windows Authenticode (if signed)
+# 4. (NOT CURRENTLY PRODUCED) Authenticode — see signing status above
 signtool verify /pa /v aether_<version>_windows_amd64.exe
 
 # 5. Verify SBOM
