@@ -66,9 +66,13 @@ P3 cosmetic / documentation.
 | 2026-09-18 | stage36 | INFO | DEBT-1 | 20 flags across 5 high-value commands swept; empty-name workspace delete verified fail-closed before destructive action | CLOSED |
 | 2026-09-18 | stage36 | INFO | CI revival | gh still unauthenticated; BLOCKED-WITH-OWNER stands (remedy: gh auth login + push master, 36 commits reviewed) | BLOCKED-WITH-OWNER |
 
+| 2026-09-17 | stage37a | INFO | time gate | Stage 37 invoked pre-gate (~3h elapsed of 30d); converted to 37a per charter rule; promotion re-deferred to on/after 2026-10-17T16:55:20Z | DEFERRED |
+| 2026-09-17 | stage37a | INFO | observation audit | Independent row-level recount: 0 P0, 0 P1, 1 P2 (closed), 1 P3 (accepted) across 27 events | CLOSED |
+| 2026-09-17 | stage37a | INFO | DEBT-1 | Batch 2: plan/rollback/relay/ztna/watch swept (16 flags), no anomalies; cumulative 10 commands fully swept | CLOSED |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=24 (21 closed, 1 deferred, 2 blocked-with-owner).
+P3=1 (closed), events=27 (23 closed, 2 deferred, 2 blocked-with-owner).
 
 ## Note on window integrity
 
