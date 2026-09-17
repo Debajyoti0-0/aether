@@ -294,18 +294,20 @@ func TestCrashMatrix(t *testing.T) {
 			if err != nil {
 				t.Fatalf("post-kill read (partial record?): %v", err)
 			}
-			// Upper bound carries a documented kill-latency
-			// tolerance: between observing the marker and
-			// TerminateProcess taking effect on Windows, the child
-			// can commit up to 2 further fsync'd entries (observed
-			// max: INT-1, Stage 31). The durability assertions below
-			// — contiguous sequence, chain verification, no partial
-			// record — remain strict and are the actual guarantee
-			// under test.
-			const crashKillLatencyTolerance = 2
-			if len(entries) < k-1 || len(entries) > k+crashKillLatencyTolerance {
-				t.Fatalf("committed entries = %d, want %d..%d (marker %d + kill-latency tolerance %d)",
-					len(entries), k-1, k+crashKillLatencyTolerance, k, crashKillLatencyTolerance)
+			// Durability bound: every entry fsync'd before the
+			// APPEND k marker must survive the kill. There is
+			// deliberately NO upper bound on committed entries: the
+			// interval between observing the marker and
+			// TerminateProcess taking effect is load-dependent (a
+			// fixed tolerance failed under background CPU load,
+			// Stage 33b/34), and entries committed in that window
+			// are legitimate fsync'd writes, not a durability
+			// violation. The product guarantees under test are the
+			// structural ones asserted below: no partial record
+			// readable, contiguous sequence, and full chain
+			// verification.
+			if len(entries) < k-1 {
+				t.Fatalf("committed entries = %d, want at least %d (fsync'd marker entry)", len(entries), k-1)
 			}
 			for i, e := range entries {
 				if e.Seq != int64(i+1) {
