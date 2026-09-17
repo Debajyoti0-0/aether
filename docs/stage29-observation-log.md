@@ -61,9 +61,14 @@ P3 cosmetic / documentation.
 | 2026-09-18 | stage35 | event | test harness | torn-write bitflip test made layout-independent (diff-based live-data location) after identity binding shifted page layout | CLOSED |
 | 2026-09-18 | stage35b | INFO | false-cert closure | Stages 20-26 retroactively dispositioned: 6 CLOSED-BY-SUCCESSOR, 7 FALSIFIED-AND-CORRECTED, 0 STILL-OPEN | CLOSED |
 
+| 2026-09-18 | stage36 | INFO | boundary assurance | F-34-4 remediation re-attacked from alternate paths: call-graph (1 vault path, binding at store layer), empty-state substitution REJECTED, rename/clone matrices deterministic, 60-mutation corruption campaign (0 panics, 0 false VERIFIED) | CLOSED |
+| 2026-09-18 | stage36 | event | security boundary | Plaintext-meta rebind attack exercised (bbolt rewrite -> VERIFIED): confirmed exactly at the documented Stage 35 boundary. G29 decision: ACCEPTED ARCHITECTURAL BOUNDARY; passphrase-sealed binding deferred with rationale. | CLOSED (documented) |
+| 2026-09-18 | stage36 | INFO | DEBT-1 | 20 flags across 5 high-value commands swept; empty-name workspace delete verified fail-closed before destructive action | CLOSED |
+| 2026-09-18 | stage36 | INFO | CI revival | gh still unauthenticated; BLOCKED-WITH-OWNER stands (remedy: gh auth login + push master, 36 commits reviewed) | BLOCKED-WITH-OWNER |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=20 (18 closed, 1 deferred, 1 blocked-with-owner).
+P3=1 (closed), events=24 (21 closed, 1 deferred, 2 blocked-with-owner).
 
 ## Note on window integrity
 
