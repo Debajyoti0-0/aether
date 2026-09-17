@@ -255,3 +255,16 @@ func TestVerifyEvidenceJSONOutputValid(t *testing.T) {
 		t.Fatalf("output is not valid JSON: %s", out)
 	}
 }
+
+func TestVerifyEvidenceRejectsUnknownPositionalArg(t *testing.T) {
+	setVerifyFlags(t)
+	// D-29-1 regression: verify-evidence takes no positional arguments;
+	// an unexpected argument must be rejected, not silently ignored.
+	err := exportVerifyCmd.Flags().Parse(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := exportVerifyCmd.Args(exportVerifyCmd, []string{"no-such-arg"}); err == nil {
+		t.Fatal("expected Args validation to reject unexpected positional argument")
+	}
+}

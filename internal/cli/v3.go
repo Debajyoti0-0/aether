@@ -415,6 +415,7 @@ func providersPick() string {
 var providersListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List registered provider plugins",
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reg := providerRegistryFor("", "")
 		for _, name := range reg.Names() {
@@ -535,21 +536,21 @@ Examples:
 
 func validateOkta(ctx context.Context, prov sdk.Provider, domain, token string) error {
 	fmt.Fprintf(os.Stderr, "Validating Okta configuration...\n")
-	
+
 	// Test OIDC discovery
 	discoveryURL := strings.TrimSuffix(provDomain, "/") + "/.well-known/openid-configuration"
 	req, err := http.NewRequestWithContext(context.Background(), "GET", discoveryURL, nil)
 	if err != nil {
 		return fmt.Errorf("create discovery request: %w", err)
 	}
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("OIDC discovery failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("OIDC discovery failed with status %d", resp.StatusCode)
 	}
@@ -564,7 +565,7 @@ func validateOkta(ctx context.Context, prov sdk.Provider, domain, token string) 
 
 func validateGitLab(ctx context.Context, prov sdk.Provider, domain, token string) error {
 	fmt.Fprintf(os.Stderr, "Validating GitLab configuration...\n")
-	
+
 	// Test API connectivity
 	apiURL := strings.TrimSuffix(provDomain, "/") + "/api/v4/user"
 	req, err := http.NewRequestWithContext(context.Background(), "GET", apiURL, nil)
@@ -572,14 +573,14 @@ func validateGitLab(ctx context.Context, prov sdk.Provider, domain, token string
 		return fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+provToken)
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("GitLab API request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode == http.StatusOK {
 		fmt.Fprintf(os.Stderr, "GitLab API connectivity: OK\n")
 	} else if resp.StatusCode == http.StatusUnauthorized {
@@ -587,14 +588,14 @@ func validateGitLab(ctx context.Context, prov sdk.Provider, domain, token string
 	} else {
 		return fmt.Errorf("GitLab API returned status %d", resp.StatusCode)
 	}
-	
+
 	fmt.Fprintf(os.Stderr, "GitLab validation: OK\n")
 	return nil
 }
 
 func validateKubernetes(ctx context.Context, prov sdk.Provider, domain, token string) error {
 	fmt.Fprintf(os.Stderr, "Validating Kubernetes configuration...\n")
-	
+
 	// Test cluster connectivity
 	apiURL := strings.TrimSuffix(provDomain, "/") + "/api/v1/namespaces"
 	req, err := http.NewRequestWithContext(context.Background(), "GET", apiURL, nil)
@@ -602,14 +603,14 @@ func validateKubernetes(ctx context.Context, prov sdk.Provider, domain, token st
 		return fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+provToken)
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Kubernetes API request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode == http.StatusOK {
 		fmt.Fprintf(os.Stderr, "Kubernetes API connectivity: OK\n")
 	} else if resp.StatusCode == http.StatusUnauthorized {
@@ -619,7 +620,7 @@ func validateKubernetes(ctx context.Context, prov sdk.Provider, domain, token st
 	} else {
 		return fmt.Errorf("Kubernetes API returned status %d", resp.StatusCode)
 	}
-	
+
 	fmt.Fprintf(os.Stderr, "Kubernetes validation: OK\n")
 	return nil
 }

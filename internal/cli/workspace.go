@@ -47,6 +47,7 @@ var wsCreateCmd = &cobra.Command{
 var wsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List workspaces",
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		names, err := workspace.List()
 		if err != nil {

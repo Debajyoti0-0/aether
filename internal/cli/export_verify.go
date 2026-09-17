@@ -88,6 +88,7 @@ func init() {
 var exportVerifyCmd = &cobra.Command{
 	Use:   "verify-evidence",
 	Short: "Verify evidence with revocation checking",
+	Args:  cobra.NoArgs,
 	Long: `Verify evidence artifacts with certificate revocation checking.
 
 The certificate under evaluation must be supplied with --cert. There is
