@@ -112,3 +112,25 @@ are two P2s — one fixed same-day with regression tests, one a designed
 fix away. The strongest evidence that it is *not* done: signatures and
 provenance have never executed, and the observation window has nine
 remaining days. Both facts are recorded; neither is decorated.
+
+
+## Retrospective Disposition — Stages 20–26 (False Cert Era)
+
+*Appended Stage 35b. See docs/stage35b-false-cert-closure-matrix.md for
+the full 13-row matrix with successor citations.*
+
+Stages 20, 23, 24, 25, 26 are preserved as false certifications.
+No history is rewritten. All false claims are now retroactively dispositioned:
+
+```
+CLOSED-BY-SUCCESSOR       : 6
+FALSIFIED-AND-CORRECTED   : 7
+PERMANENTLY-WAIVED        : 0   (access-dependent gaps live in the waiver
+                                register: B4, B5, F-30-3, LIVE-1)
+STILL-OPEN                : 0
+```
+
+Stage 21 (real QA), Stage 22 (FIX-1/2/3 landed later), Stage 27 (root
+cause found), Stage 28 (4.1.0-rc2 certified from the tag), Stage 31
+(4.2.0-rc1 pushed) corrected the false-cert era. This section records
+the closure: Stages 20–26 are 100% dispositioned, not 100% completed.

@@ -56,9 +56,14 @@ P3 cosmetic / documentation.
 | 2026-09-18 | stage34 | event | test harness | Crash-matrix fixed-tolerance failed under background CPU load (+7 overshoot). Replaced with load-independent structural durability assertion; 5/5 green under deliberate load; full integration suite green. | CLOSED |
 | 2026-09-18 | stage34 | event | CLI qualification | Long-tail flag sweep: 587 flags enumerated across the full command tree; 56 parse-class rejections 100% deterministic; 2 sweep anomalies investigated and dismissed as detector false positives. | CLOSED |
 
+| 2026-09-18 | stage35 | INFO | F-34-3 closed | corrupt vault -> typed ErrVaultCorrupt, zero panic text, exit 1; regression tests | CLOSED |
+| 2026-09-18 | stage35 | INFO | F-34-4 closed | vault bound to workspace identity; substitution (same-passphrase, empty-vault classes) rejected with identity-named error | CLOSED |
+| 2026-09-18 | stage35 | event | test harness | torn-write bitflip test made layout-independent (diff-based live-data location) after identity binding shifted page layout | CLOSED |
+| 2026-09-18 | stage35b | INFO | false-cert closure | Stages 20-26 retroactively dispositioned: 6 CLOSED-BY-SUCCESSOR, 7 FALSIFIED-AND-CORRECTED, 0 STILL-OPEN | CLOSED |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=16 (14 closed, 1 deferred, 1 blocked-with-owner).
+P3=1 (closed), events=20 (18 closed, 1 deferred, 1 blocked-with-owner).
 
 ## Note on window integrity
 
