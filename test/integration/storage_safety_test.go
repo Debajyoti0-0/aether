@@ -294,8 +294,18 @@ func TestCrashMatrix(t *testing.T) {
 			if err != nil {
 				t.Fatalf("post-kill read (partial record?): %v", err)
 			}
-			if len(entries) < k-1 || len(entries) > k {
-				t.Fatalf("committed entries = %d, want %d or %d", len(entries), k-1, k)
+			// Upper bound carries a documented kill-latency
+			// tolerance: between observing the marker and
+			// TerminateProcess taking effect on Windows, the child
+			// can commit up to 2 further fsync'd entries (observed
+			// max: INT-1, Stage 31). The durability assertions below
+			// — contiguous sequence, chain verification, no partial
+			// record — remain strict and are the actual guarantee
+			// under test.
+			const crashKillLatencyTolerance = 2
+			if len(entries) < k-1 || len(entries) > k+crashKillLatencyTolerance {
+				t.Fatalf("committed entries = %d, want %d..%d (marker %d + kill-latency tolerance %d)",
+					len(entries), k-1, k+crashKillLatencyTolerance, k, crashKillLatencyTolerance)
 			}
 			for i, e := range entries {
 				if e.Seq != int64(i+1) {
@@ -572,7 +582,3 @@ func TestSpineTamperDetection(t *testing.T) {
 		t.Fatalf("untampered export verify = %+v", uv)
 	}
 }
-
-
-
-

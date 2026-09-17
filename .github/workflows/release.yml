@@ -108,6 +108,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # COSIGN_KEY not needed for keyless signing (uses OIDC)
 
+      - name: Sign artifacts (keyless cosign)
+        run: |
+          set -e
+          for f in dist/checksums.txt dist/*.tar.gz dist/*.zip dist/*.sbom.json; do
+            [ -f "$f" ] || continue
+            cosign sign-blob --yes               --output-signature="${f}.sig"               --output-certificate="${f}.pem"               "$f"
+          done
+          ls -la dist/*.sig dist/*.pem
+
+      - name: Upload signatures
+        uses: actions/upload-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
+        with:
+          name: signatures
+          path: |
+            dist/*.sig
+            dist/*.pem
+
   # --- Windows Signing (separate job on windows-latest) ---
   windows-sign:
     name: Windows Authenticode Signing
