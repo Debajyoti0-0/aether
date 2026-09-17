@@ -68,8 +68,8 @@ func TestVerifyEvidenceOCSPRevoked(t *testing.T) {
 	evIssuerCert = filepath.Join(verifyTestdata, "ca.pem")
 	evResponderURL = srv.URL
 	err := runExportVerify(exportVerifyCmd, nil)
-	if !errors.Is(err, errEvidenceRevoked) {
-		t.Fatalf("expected errEvidenceRevoked, got: %v", err)
+	if !errors.Is(err, ErrEvidenceRevoked) {
+		t.Fatalf("expected ErrEvidenceRevoked, got: %v", err)
 	}
 }
 
@@ -81,8 +81,8 @@ func TestVerifyEvidenceOCSPUnknown(t *testing.T) {
 	evIssuerCert = filepath.Join(verifyTestdata, "ca.pem")
 	evResponderURL = srv.URL
 	err := runExportVerify(exportVerifyCmd, nil)
-	if !errors.Is(err, errEvidenceUnknown) {
-		t.Fatalf("expected errEvidenceUnknown, got: %v", err)
+	if !errors.Is(err, ErrEvidenceUnknown) {
+		t.Fatalf("expected ErrEvidenceUnknown, got: %v", err)
 	}
 }
 
@@ -171,8 +171,8 @@ func TestVerifyEvidenceCRLRevoked(t *testing.T) {
 	evIssuerCert = filepath.Join(verifyTestdata, "ca.pem")
 	evCRLFile = filepath.Join(verifyTestdata, "crl-revoked.pem")
 	err := runExportVerify(exportVerifyCmd, nil)
-	if !errors.Is(err, errEvidenceRevoked) {
-		t.Fatalf("expected errEvidenceRevoked, got: %v", err)
+	if !errors.Is(err, ErrEvidenceRevoked) {
+		t.Fatalf("expected ErrEvidenceRevoked, got: %v", err)
 	}
 }
 
@@ -196,8 +196,8 @@ func TestVerifyEvidenceFileMode(t *testing.T) {
 		evCertFile = filepath.Join(verifyTestdata, "dummy-12345.pem") // serial 12345
 		evRevocationFile = filepath.Join(verifyTestdata, "revoked.txt")
 		err := runExportVerify(exportVerifyCmd, nil)
-		if !errors.Is(err, errEvidenceRevoked) {
-			t.Fatalf("expected errEvidenceRevoked, got: %v", err)
+		if !errors.Is(err, ErrEvidenceRevoked) {
+			t.Fatalf("expected ErrEvidenceRevoked, got: %v", err)
 		}
 	})
 	t.Run("good", func(t *testing.T) {

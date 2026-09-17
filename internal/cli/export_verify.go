@@ -30,9 +30,16 @@ import (
 // Evidence acceptance is gated on a GOOD status only. A non-zero exit
 // always means the evidence was NOT accepted.
 var (
-	errEvidenceRevoked   = errors.New("evidence rejected: certificate is revoked")
-	errEvidenceUnknown   = errors.New("evidence rejected: revocation status unknown")
-	errEvidenceCheckFail = errors.New("evidence rejected: revocation check failed")
+	// ErrEvidenceRevoked is returned when the certificate under
+	// evaluation is revoked. The CLI maps it to exit code 2.
+	ErrEvidenceRevoked = errors.New("evidence rejected: certificate is revoked")
+	// ErrEvidenceUnknown is returned when the revocation status could
+	// not be determined. The CLI maps it to exit code 3.
+	ErrEvidenceUnknown = errors.New("evidence rejected: revocation status unknown")
+	// ErrEvidenceCheckFail is returned when the revocation check
+	// itself failed (invalid response, unavailable responder, CRL
+	// error). The CLI maps it to exit code 1.
+	ErrEvidenceCheckFail = errors.New("evidence rejected: revocation check failed")
 )
 
 type verifyEvidenceJSON struct {
@@ -244,16 +251,16 @@ func runExportVerify(cmd *cobra.Command, args []string) error {
 	case revocation.StatusGood:
 		out.Evidence = "accepted"
 	case revocation.StatusRevoked:
-		runErr = fmt.Errorf("%w (certificate %s, serial %s)", errEvidenceRevoked, leaf.Subject.String(), out.Serial)
+		runErr = fmt.Errorf("%w (certificate %s, serial %s)", ErrEvidenceRevoked, leaf.Subject.String(), out.Serial)
 	case revocation.StatusUnknown:
-		runErr = errEvidenceUnknown
+		runErr = ErrEvidenceUnknown
 		if result.Error != nil {
-			runErr = fmt.Errorf("%w: %v", errEvidenceUnknown, result.Error)
+			runErr = fmt.Errorf("%w: %v", ErrEvidenceUnknown, result.Error)
 		}
 	default: // StatusError and anything else: fail closed
-		runErr = errEvidenceCheckFail
+		runErr = ErrEvidenceCheckFail
 		if result.Error != nil {
-			runErr = fmt.Errorf("%w: %v", errEvidenceCheckFail, result.Error)
+			runErr = fmt.Errorf("%w: %v", ErrEvidenceCheckFail, result.Error)
 		}
 	}
 	if result.Error != nil && runErr == nil {
