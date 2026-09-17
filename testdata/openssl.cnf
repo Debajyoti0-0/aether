@@ -1,0 +1,19 @@
+[req]
+distinguished_name = req_dn
+[req_dn]
+[ca]
+default_ca = CA_default
+[CA_default]
+database = index.txt
+crlnumber = crlnumber
+new_certs_dir = .
+certificate = ca.pem
+private_key = ca.key
+serial = ca.srl
+default_md = sha256
+default_crl_days = 30
+default_days = 365
+policy = policy_any
+[policy_any]
+commonName = supplied
+organizationName = optional
