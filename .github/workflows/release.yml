@@ -116,6 +116,14 @@ jobs:
             cosign sign-blob --yes               --output-signature="${f}.sig"               --output-certificate="${f}.pem"               "$f"
           done
           ls -la dist/*.sig dist/*.pem
+          # Vacuous-verification guard (Stage 34 G2): an empty input set
+          # must fail the release, not skip signing silently.
+          sig_count=$(ls dist/*.sig 2>/dev/null | wc -l)
+          if [ "$sig_count" -eq 0 ]; then
+            echo "FATAL: no signatures were produced for dist artifacts"
+            exit 1
+          fi
+          echo "signed artifacts: $sig_count"
 
       - name: Upload signatures
         uses: actions/upload-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
@@ -124,6 +132,14 @@ jobs:
           path: |
             dist/*.sig
             dist/*.pem
+
+      - name: Generate SLSA build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums.txt
 
       - name: Upload Windows archive for Authenticode signing
         uses: actions/upload-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
