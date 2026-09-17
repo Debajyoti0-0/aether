@@ -1,0 +1,48 @@
+# Stage 29 — Production Observation Log (4.1.0-rc2)
+
+Production-Limited observation window for `v4.1.0-rc2`
+(tag object `e8416b58`, commit `bc674af1`).
+
+```text
+observation-start : 2026-09-17T16:55:20Z
+observation-end   : 2026-10-17T16:55:20Z (30 real days)
+```
+
+## Intake channel
+
+Defects and events are recorded as rows in the table below (append-only),
+and, when filed externally, as GitHub issues on
+`https://github.com/Debajyoti0-0/aether` referencing this document.
+Reporters: expert-lab operators and the authorized internal team.
+
+## Exit criteria (evaluated at window close)
+
+1. Zero P0/P1 defects reported.
+2. Zero P2 defects requiring code changes **during the window**.
+3. At least one full integration test run at end-of-window against the
+   tagged binary (`bin/aether-rc2` built from `bc674af1`).
+4. Race gate CLOSED (achieved 2026-09-17, see stage29-baseline-lock §3)
+   or BLOCKED with owner + target.
+
+Severities: P0 data loss / security bypass / release-blocking ·
+P1 core functionality broken · P2 workaround exists, not release-blocking ·
+P3 cosmetic / documentation.
+
+## Defect and event table
+
+| Date (UTC) | Reporter | Severity | Component | Description | Status |
+| --- | --- | --- | --- | --- | --- |
+| 2026-09-17 | stage29-cli-matrix | P2 | cli (export verify-evidence, providers list, workspace list) | D-29-1: leaf commands without `cobra.Args` restrictions accept and silently ignore unexpected positional arguments while still executing. Behavior/output otherwise correct. | OPEN — fix scheduled for next candidate (cobra.NoArgs); does not require an out-of-cycle rc3 |
+| 2026-09-17 | stage29-cli-matrix | P3 | cli (parent commands) | D-29-2: parent commands show help with exit 0 for an unknown subcommand/argument. Accepted cobra pattern; documented in stage29-baseline-lock §4. | CLOSED — documented, no change required |
+| 2026-09-17 | stage29-race-closure | event | quality gates | Race suite executed for the first time (scoop mingw-winlibs GCC 16.2.0, CGO_ENABLED=1) on the tagged commit: 29 packages ok, 0 DATA RACE, exit 0. Stage 28 limitation L-28-1 resolved. | CLOSED — race gate CLOSED (green) |
+
+Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
+scheduled, discovered at window open, not introduced during the window),
+P3=1 (closed), events=1.
+
+## Note on window integrity
+
+The window opened 2026-09-17 and closes 2026-10-17. No entry in this log
+may be back-dated; the end-of-window integration and unit runs (WS4) must
+execute on or after the end date against `bin/aether-rc2`. Until then the
+GA decision is RETAIN by definition.
