@@ -42,9 +42,14 @@ P3 cosmetic / documentation.
 | 2026-09-17 | stage31-integration | event | test harness | TestCrashMatrix flakiness characterized (FAIL/FAIL/PASS on reruns, no code change since passing runs): Windows kill-latency lets the child append 1-2 entries past the marker bound; durability property not violated. Test-harness fix DEFERRED-WITH-OWNER (owner: repository owner). | DEFERRED |
 | 2026-09-17 | stage31 | event | governance | 4.1.0 line disposition recorded: Option A — deferred promotion of v4.1.0-rc2 on/after 2026-10-17 if the window closes clean (see stage31-certification.md). | CLOSED |
 
+| 2026-09-17 | stage32 | event | CI trust chain | Keyless cosign signing step added to release.yml (the job previously produced no signatures; verify loops passed vacuously). Unexecuted pending CI revival. | CLOSED (implemented) |
+| 2026-09-17 | stage32 | event | CI revival | gh unauthenticated; origin/master stale at fc062e0. All remote workflow verification BLOCKED-WITH-OWNER (remedy documented). | BLOCKED-WITH-OWNER |
+| 2026-09-17 | stage32 | event | test harness | INT-1 CLOSED: crash-matrix kill-latency tolerance documented; durability assertions strict; 5/5 consecutive green. | CLOSED |
+| 2026-09-17 | stage32a | event | release surface | Truth table produced: every lineage CLI claim maps to verified behavior or truthful NEVER-PRODUCED/WITHDRAWN label; no regressions. | CLOSED |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=5 (4 closed, 1 deferred).
+P3=1 (closed), events=9 (7 closed, 1 deferred, 1 blocked-with-owner).
 
 ## Note on window integrity
 
