@@ -53,6 +53,7 @@ const (
 	metaAuditPrevHash = "audit_prev_hash"
 	metaAuditKey      = "audit_key"
 	metaCreatedAt     = "created_at"
+	metaWorkspaceName = "workspace_name"
 )
 
 // lockTimeout bounds how long Open waits for the cross-process file
@@ -65,6 +66,16 @@ const lockTimeout = 2 * time.Second
 // errors.Is so multi-process losers fail cleanly (Stage 4 backfill,
 // B4-G08).
 var ErrVaultLocked = errors.New("vault is locked by another process")
+
+// ErrVaultIdentityMismatch is returned when the vault's bound workspace
+// identity does not match the directory it is being opened from — the
+// signature of a substituted or relocated vault (F-34-4).
+var ErrVaultIdentityMismatch = errors.New("vault workspace identity mismatch")
+
+// ErrVaultCorrupt is returned when the vault file is structurally
+// unusable (truncated, corrupt pages, invalid layout). It converts
+// low-level storage panics into a typed, operator-safe error (F-34-3).
+var ErrVaultCorrupt = errors.New("vault file is corrupt or truncated")
 
 // Vault is a handle to one workspace's vault.db.
 type Vault struct {
@@ -79,23 +90,99 @@ func OpenVault(path string) (*Vault, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, err
 	}
-	db, err := bolt.Open(path, 0o600, &bolt.Options{Timeout: lockTimeout})
+	v, err := openAndBindVault(path)
 	if err != nil {
-		if err == bolt.ErrTimeout {
-			return nil, fmt.Errorf("workspace vault %s is locked by another process: %w", path, ErrVaultLocked)
+		if v != nil {
+			_ = v.Close() // release the file lock on the recovered path
 		}
-		return nil, fmt.Errorf("open vault %s: %w", path, err)
-	}
-	v := &Vault{db: db, path: path}
-	if err := v.initBuckets(); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if err := v.checkSchema(); err != nil {
-		db.Close()
 		return nil, err
 	}
 	return v, nil
+}
+
+// openAndBindVault wraps vault open, bucket initialization, schema
+// check, and identity binding in a narrow recovery boundary. The
+// storage engine panics (rather than erroring) on structurally
+// impossible page state — e.g. a truncated or corrupted vault file —
+// and the assertion can fire during initialization writes, not only
+// during bolt.Open. Corrupt external state is not a programming error,
+// so it is converted to a typed error instead of escaping to the CLI as
+// a raw panic (F-34-3). The boundary is scoped to vault open only; no
+// blanket suppression anywhere else.
+func openAndBindVault(path string) (v *Vault, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v != nil && v.db != nil {
+				_ = v.db.Close()
+			}
+			v = nil
+			err = fmt.Errorf("open vault %s: %w: %v", path, ErrVaultCorrupt, r)
+		}
+	}()
+	db, derr := bolt.Open(path, 0o600, &bolt.Options{Timeout: lockTimeout})
+	if derr != nil {
+		if derr == bolt.ErrTimeout {
+			return nil, fmt.Errorf("workspace vault %s is locked by another process: %w", path, ErrVaultLocked)
+		}
+		return nil, fmt.Errorf("open vault %s: %w", path, derr)
+	}
+	v = &Vault{db: db, path: path}
+	if err := v.initBuckets(); err != nil {
+		return v, err
+	}
+	if err := v.checkSchema(); err != nil {
+		return v, err
+	}
+	if err := v.bindWorkspaceIdentity(path); err != nil {
+		return v, err
+	}
+	return v, nil
+}
+
+// bindWorkspaceIdentity enforces that a vault belongs to the workspace
+// directory it resides in (F-34-4). The vault records the name of the
+// workspace directory it was created in; every subsequent open verifies
+// the match. Consequences, documented deliberately:
+//   - substituting another workspace's vault into this directory is
+//     rejected even with the same passphrase;
+//   - renaming/relocating a workspace directory invalidates the binding
+//     (the vault must be bound to exactly one workspace name);
+//   - vaults created before this binding was introduced adopt their
+//     current directory name on first open (one-time migration);
+//   - the binding metadata lives in the vault's meta bucket, which is
+//     not passphrase-sealed: an attacker who can rewrite the vault file
+//     with storage-layer tooling AND knows the workspace name can rebind
+//     it. Detecting that class requires a passphrase-sealed binding and
+//     is out of scope for this boundary; the sealed audit chain still
+//     detects record tampering.
+func (v *Vault) bindWorkspaceIdentity(path string) error {
+	expected := filepath.Base(filepath.Dir(path))
+	var bound string
+	if err := v.db.View(func(tx *bolt.Tx) error {
+		if m := tx.Bucket(bucketMeta); m != nil {
+			if b := m.Get([]byte(metaWorkspaceName)); b != nil {
+				bound = string(b)
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	if bound == expected {
+		return nil
+	}
+	if bound != "" {
+		return fmt.Errorf("vault belongs to workspace %q but was opened as %q: %w",
+			bound, expected, ErrVaultIdentityMismatch)
+	}
+	// First open of a pre-binding vault, or creation: adopt and persist.
+	return v.db.Update(func(tx *bolt.Tx) error {
+		m := tx.Bucket(bucketMeta)
+		if m == nil {
+			return errors.New("meta bucket missing")
+		}
+		return m.Put([]byte(metaWorkspaceName), []byte(expected))
+	})
 }
 
 // Close releases the vault (and its file lock).
