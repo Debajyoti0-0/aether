@@ -36,9 +36,15 @@ P3 cosmetic / documentation.
 | 2026-09-17 | stage29-cli-matrix | P3 | cli (parent commands) | D-29-2: parent commands show help with exit 0 for an unknown subcommand/argument. Accepted cobra pattern; documented in stage29-baseline-lock §4. | CLOSED — documented, no change required |
 | 2026-09-17 | stage29-race-closure | event | quality gates | Race suite executed for the first time (scoop mingw-winlibs GCC 16.2.0, CGO_ENABLED=1) on the tagged commit: 29 packages ok, 0 DATA RACE, exit 0. Stage 28 limitation L-28-1 resolved. | CLOSED — race gate CLOSED (green) |
 
+| 2026-09-17 | stage31 | event | release lineage | v4.2.0-rc1 pushed to origin (object bd0d9636, commit bb56cf3) — the candidate is now externally verifiable. | CLOSED |
+| 2026-09-17 | stage31 | event | release infra | F-30-2 resolved: false cosign/Authenticode instructions removed from goreleaser footer and VERIFY.md; pipeline claim now matches output. | CLOSED |
+| 2026-09-17 | stage31 | event | release infra | F-30-1 resolved: darwin/arm64 added to the build matrix (compile-verified; runtime not claimed). | CLOSED |
+| 2026-09-17 | stage31-integration | event | test harness | TestCrashMatrix flakiness characterized (FAIL/FAIL/PASS on reruns, no code change since passing runs): Windows kill-latency lets the child append 1-2 entries past the marker bound; durability property not violated. Test-harness fix DEFERRED-WITH-OWNER (owner: repository owner). | DEFERRED |
+| 2026-09-17 | stage31 | event | governance | 4.1.0 line disposition recorded: Option A — deferred promotion of v4.1.0-rc2 on/after 2026-10-17 if the window closes clean (see stage31-certification.md). | CLOSED |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=1.
+P3=1 (closed), events=5 (4 closed, 1 deferred).
 
 ## Note on window integrity
 
