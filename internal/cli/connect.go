@@ -1,13 +1,16 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/Debajyoti0-0/aether/internal/api"
+	"github.com/Debajyoti0-0/aether/internal/observability"
 	"github.com/Debajyoti0-0/aether/internal/workspace"
 )
 
@@ -44,6 +47,12 @@ var (
 	tsOpDir      string
 	tsRevoked    string
 	tsMaxConns   int
+
+	// Observability
+	tsMetricsAddr string
+	tsMetricsPath string
+	tsHealthPath  string
+	tsReadyPath   string
 )
 
 func init() {
@@ -67,6 +76,12 @@ func init() {
 	serveCmd.Flags().StringVar(&tsOpDir, "operators-dir", "", "Operator capability directory (default: <ca-cert dir>/operators)")
 	serveCmd.Flags().StringVar(&tsRevoked, "revoked", "", "Revocation list path (default: <ca-cert dir>/revoked.txt)")
 	serveCmd.Flags().IntVar(&tsMaxConns, "max-conns", 32, "Maximum concurrent connections")
+
+	// Observability flags
+	serveCmd.Flags().StringVar(&tsMetricsAddr, "metrics-addr", "", "Metrics/health listen address (e.g., 127.0.0.1:9090); empty disables")
+	serveCmd.Flags().StringVar(&tsMetricsPath, "metrics-path", "/metrics", "Metrics endpoint path")
+	serveCmd.Flags().StringVar(&tsHealthPath, "health-path", "/healthz", "Health endpoint path")
+	serveCmd.Flags().StringVar(&tsReadyPath, "ready-path", "/readyz", "Readiness endpoint path")
 }
 
 // runConnect dials the teamserver with an operator certificate issued
@@ -151,6 +166,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	// Fail closed: the teamserver is network-exposed. It must never
 	// open a workspace in keyless (empty-passphrase) mode.
+	var ws *workspace.Workspace
 	if tsWorkspace != "" {
 		pass := tsPassphrase
 		if pass == "" {
@@ -166,6 +182,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 		}
 		defer w.Close()
 		tsWorkspaceOp = w
+		ws = w
 	}
 
 	srvCert, clientCAs, err := api.LoadServerTLS(tsServerCert, tsServerKey, tsCACert)
@@ -194,6 +211,41 @@ func runServe(cmd *cobra.Command, args []string) error {
 	}
 	srv.SetMaxConnections(tsMaxConns)
 
+	// Start observability server if enabled
+	var obsServer *observability.ObservabilityServer
+	if tsMetricsAddr != "" {
+		obsConfig := observability.DefaultConfig()
+		obsConfig.Enabled = true
+		obsConfig.ListenAddress = tsMetricsAddr
+		obsConfig.ReadTimeout = 10 * time.Second
+		obsConfig.WriteTimeout = 10 * time.Second
+		obsConfig.IdleTimeout = 60 * time.Second
+		obsConfig.ShutdownGrace = 5 * time.Second
+
+		obsServer = observability.NewObservabilityServer(
+			ws,
+			"", // audit key
+			observability.Config{
+				Enabled:       true,
+				ListenAddress: tsMetricsAddr,
+				ReadTimeout:   10 * time.Second,
+				WriteTimeout:  10 * time.Second,
+				IdleTimeout:   60 * time.Second,
+				ShutdownGrace: 5 * time.Second,
+			},
+		)
+		if err := obsServer.Start(); err != nil {
+			return fmt.Errorf("start observability server: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "Observability server listening on %s (metrics: %s, health: %s, ready: %s)\n",
+			tsMetricsAddr, "/metrics", "/healthz", "/readyz")
+
+		// Start system metrics updater
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		obsServer.StartSystemMetricsUpdater(ctx, 15*time.Second)
+	}
+
 	fmt.Fprintf(os.Stderr, "Teamserver listening on %s (mTLS: operators verified against %s; revocation: %s)\n",
 		tsListenAddr, tsCACert, revokedPath)
 
@@ -202,6 +254,11 @@ func runServe(cmd *cobra.Command, args []string) error {
 	go func() {
 		<-ctx.Done()
 		_ = srv.Close()
+		if obsServer != nil {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = obsServer.Stop(shutdownCtx)
+		}
 	}()
 
 	return srv.Serve()
