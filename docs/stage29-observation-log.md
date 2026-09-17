@@ -51,9 +51,14 @@ P3 cosmetic / documentation.
 | 2026-09-17 | stage33 | event | release docs | F-32-4 CLOSED: VERIFY.md regenerated for 4.2.0-rc1 (0 stale refs, 0 missing commands). | CLOSED |
 | 2026-09-17 | stage33 | event | quality gates | Integration suite fully green post-INT-1 (21.9s) — first fully-green run since the Stage 31 flake. | CLOSED |
 
+| 2026-09-18 | stage33b | INFO | charter closure | Stages 10-18 retired: 10 CLOSED-BY-SUCCESSOR, 3 PERMANENTLY-WAIVED (B4/B5/B1+B2 — waiver files created; Stage 13 had claimed them filed but no file existed), 0 STILL-OPEN. | CLOSED |
+| 2026-09-18 | stage33b | event | CI trust chain | SLSA provenance step added (attest-build-provenance); signing step given a fail-closed zero-signature guard — an empty input set can no longer pass vacuously. | CLOSED (implemented) |
+| 2026-09-18 | stage34 | event | test harness | Crash-matrix fixed-tolerance failed under background CPU load (+7 overshoot). Replaced with load-independent structural durability assertion; 5/5 green under deliberate load; full integration suite green. | CLOSED |
+| 2026-09-18 | stage34 | event | CLI qualification | Long-tail flag sweep: 587 flags enumerated across the full command tree; 56 parse-class rejections 100% deterministic; 2 sweep anomalies investigated and dismissed as detector false positives. | CLOSED |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=12 (10 closed, 1 deferred, 1 blocked-with-owner).
+P3=1 (closed), events=16 (14 closed, 1 deferred, 1 blocked-with-owner).
 
 ## Note on window integrity
 
