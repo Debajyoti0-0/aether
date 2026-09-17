@@ -47,9 +47,13 @@ P3 cosmetic / documentation.
 | 2026-09-17 | stage32 | event | test harness | INT-1 CLOSED: crash-matrix kill-latency tolerance documented; durability assertions strict; 5/5 consecutive green. | CLOSED |
 | 2026-09-17 | stage32a | event | release surface | Truth table produced: every lineage CLI claim maps to verified behavior or truthful NEVER-PRODUCED/WITHDRAWN label; no regressions. | CLOSED |
 
+| 2026-09-17 | stage33 | event | CI trust chain | F-32-2 CLOSED: windows-sign artifact names aligned with actual goreleaser output (upload step added; sign targets aether.exe; signed repack). IMPLEMENTED, not EXECUTED — needs CI run. | CLOSED (implemented) |
+| 2026-09-17 | stage33 | event | release docs | F-32-4 CLOSED: VERIFY.md regenerated for 4.2.0-rc1 (0 stale refs, 0 missing commands). | CLOSED |
+| 2026-09-17 | stage33 | event | quality gates | Integration suite fully green post-INT-1 (21.9s) — first fully-green run since the Stage 31 flake. | CLOSED |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=9 (7 closed, 1 deferred, 1 blocked-with-owner).
+P3=1 (closed), events=12 (10 closed, 1 deferred, 1 blocked-with-owner).
 
 ## Note on window integrity
 
