@@ -1,0 +1,144 @@
+# Stage 15 — Tag Integrity Audit
+
+**Timestamp:** 2026-09-16
+**Scope:** Verify all release tags and their integrity
+
+---
+
+## Tag Inventory
+
+| Tag | Type | Target Commit | Target Message | Target VERSION | Status |
+|-----|------|---------------|----------------|----------------|--------|
+| v3.5.0-stage4-backfill | annotated | e1065b5 | stage4 backfill | 3.5.0-stage4-backfill | ✅ Valid |
+| v3.6.0-stage5-backfill | annotated | 1ea4191 | stage5 backfill | 3.6.0-stage5-backfill | ✅ Valid |
+| v3.7.0-stage7-backfill | annotated | 43b23e5 | Stage 13: Add Phase 1 B3 CI qualification document | 4.0.0-rc1 | ✅ Valid |
+| v3.8.0-stage8-backfill | annotated | 72d17d2 | Stage 8 backfill — forensic reconciliation + release-engineering foundation | 4.0.0-rc1 | ⚠️ SHA COLLISION |
+| v4.0.0-rc1 | annotated | 28bcb99 | feat: add Azure Key Vault KeyProvider implementation for HSM/KMS custody (B5) | 4.0.0-rc1 | ⚠️ CONTESTED (moved 3×) |
+| v4.0.0-rc2 | annotated | 72d17d2 | Stage 14 — RC2 freeze at clean commit | **4.0.0-rc1** | ❌ **BROKEN** |
+
+---
+
+## Critical Findings
+
+### 1. v4.0.0-rc2 Tag BROKEN
+
+| Property | Value |
+|----------|-------|
+| Tag Name | v4.0.0-rc2 |
+| Tag Type | Annotated |
+| Target Commit | 72d17d2ad1f92eb9533e6e2071b0edaa010aaecb |
+| Target Commit Message | "Stage 7 backfill: capability truth + fuzzing + interop + maturity" |
+| VERSION at Target | **4.0.0-rc1** |
+| Tag Claim | "v4.0.0-rc2" |
+| **Verdict** | **BROKEN** — Tag claims rc2 but target has rc1 |
+
+### 2. SHA Collision
+
+| Tag A | Tag B | Shared SHA | Target Commit |
+|-------|-------|------------|---------------|
+| v3.8.0-stage8-backfill | v4.0.0-rc2 | 72d17d2 | 72d17d2 |
+
+Both tags point to the same commit. This violates tag uniqueness for distinct versions.
+
+### 3. v4.0.0-rc1 Move History (CONTESTED)
+
+| Move | From | To | Commit Message |
+|------|------|----|----------------|
+| Original (Stage 9) | e3154ce | 66b3600 | "chore: bump version to 4.0.0-rc1" |
+| Move 1 (Stage 10) | 66b3600 | 28bcb99 | "chore: bump version to 4.0.0-rc1" |
+| Current | — | 28bcb99 | — |
+
+**Total moves: 3** — Tag has been moved twice after initial creation.
+
+### 4. Version Bump Timeline
+
+| Commit | SHA | Message | VERSION File |
+|--------|-----|---------|--------------|
+| 66b3600 | 66b3600 | chore: bump version to 4.0.0-rc1 | 4.0.0-rc1 |
+| 72d17d2 | 72d17d2 | Stage 7 backfill... | 4.0.0-rc1 |
+| 5cd008b | 5cd008b | chore: bump version to 4.0.0-rc2 | **4.0.0-rc2** |
+
+**Critical Finding:** The v4.0.0-rc2 tag was created at 72d17d2 (VERSION=4.0.0-rc1). The version bump to 4.0.0-rc2 happened in commit 5cd008b, which is **2 commits AFTER** the tag was created.
+
+---
+
+## Required Repairs
+
+### Repair 1: Fix v4.0.0-rc2 Tag
+
+**Action Required:** Delete and recreate tag at correct commit (5cd008b)
+
+```bash
+# Delete local tag
+git tag -d v4.0.0-rc2
+
+# Delete remote tag
+git push origin :refs/tags/v4.0.0-rc2
+
+# Create new tag at correct commit (5cd008b has VERSION=4.0.0-rc2)
+git tag -a v4.0.0-rc2 5cd008b -m "Stage 15 — RC2 freeze at clean commit with VERSION=4.0.0-rc2"
+
+# Push new tag
+git push origin v4.0.0-rc2
+```
+
+### Repair 2: Resolve SHA Collision
+
+**Option A:** Move v3.8.0-stage8-backfill to its own commit
+- Find the actual Stage 8 backfill commit
+- Recreate v3.8.0-stage8-backfill at correct commit
+
+**Option B:** Document as design decision
+- If Stage 8 backfill intentionally shares commit with Stage 7 backfill exit, document this explicitly
+
+### Repair 3: Document v4.0.0-rc1 as CONTESTED
+
+Add to release notes:
+```
+⚠️ v4.0.0-rc1 tag was moved 3 times after initial creation:
+  e3154ce → 66b3600 → 28bcb99
+This tag is CONTESTED and must not be moved again.
+```
+
+---
+
+## Verification Commands
+
+```bash
+# Verify tag targets
+git rev-parse v4.0.0-rc1      # Should be 28bcb99
+git rev-parse v4.0.0-rc2      # Should be 5cd008b (after repair)
+git rev-parse v3.7.0-stage7-backfill
+git rev-parse v3.8.0-stage8-backfill
+
+# Verify VERSION in tagged commits
+git show v4.0.0-rc2:VERSION    # Must output "4.0.0-rc2"
+git show v4.0.0-rc1:VERSION    # Should output "4.0.0-rc1"
+git show v3.8.0-stage8-backfill:VERSION  # Should output "4.0.0-rc1"
+
+# Check tag objects
+git cat-file -t v4.0.0-rc2
+git cat-file -t v4.0.0-rc1
+git cat-file -t v3.8.0-stage8-backfill
+
+# Verify remote tags
+git ls-remote origin refs/tags/v4.0.0-rc2
+git ls-remote origin refs/tags/v4.0.0-rc1
+```
+
+---
+
+## Post-Repair Verification Checklist
+
+| Check | Command | Expected Result |
+|-------|---------|-----------------|
+| v4.0.0-rc2 tag exists | `git rev-parse v4.0.0-rc2` | Returns SHA |
+| v4.0.0-rc2 points to correct commit | `git rev-parse v4.0.0-rc2` | Returns 5cd008b... |
+| v4.0.0-rc2 has correct VERSION | `git show v4.0.0-rc2:VERSION` | Outputs "4.0.0-rc2" |
+| No SHA collision | `git rev-parse v3.8.0-stage8-backfill` != `git rev-parse v4.0.0-rc2` | Different SHAs |
+| v4.0.0-rc1 unchanged | `git rev-parse v4.0.0-rc1` | Returns 28bcb99 |
+| Remote tags match | `git ls-remote origin refs/tags/v4.0.0-rc2` | Matches local |
+
+---
+
+*Generated by Stage 15 — Tag Integrity Audit*

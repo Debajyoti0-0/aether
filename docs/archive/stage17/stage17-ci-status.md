@@ -1,0 +1,133 @@
+# Stage 17 — CI Status (B3 Race Detector & B7 Release Validate)
+
+**Timestamp:** 2016-09-16
+**Scope:** CI evidence for B3 Race Detector and B7 Release Validate
+
+---
+
+## B3 Race Detector — CI Status
+
+### Race Isolation Workflow
+**Workflow:** `.github/workflows/race-isolation.yml`
+**Created:** Stage 12 (commit 6b88f87)
+**Trigger:** `workflow_dispatch`, push to `main`
+
+### Jobs
+| Job | Package | Command |
+|-----|---------|---------|
+| race-api | internal/api | `go test -race -count=1 ./internal/api/...` |
+| race-workspace | internal/workspace | `go test -race -count=1 ./internal/workspace/...` |
+| race-store | internal/store | `go test -race -count=1 ./internal/store/...` |
+| race-engine | internal/engine | `go test -race -count=1 ./internal/engine/...` |
+| race-protocol | internal/protocol | `go test -race -count=1 ./internal/protocol/...` |
+| race-transport | internal/transport | `go test -race -count=1 ./internal/transport/...` |
+| race-all | (confirmation) | Depends on all above |
+
+### CI Run Status for f1242dd / fc062e0
+
+| Job | Status | Run URL | Notes |
+|-----|--------|---------|-------|
+| race-api | ❌ NOT RUN | No run observed for fc062e0 | Workflow created but not triggered on this commit |
+| race-workspace | ❌ NOT RUN | No run observed for fc062e0 | |
+| race-store | ❌ NOT RUN | No run observed for fc062e0 | |
+| race-engine | ❌ NOT RUN | No run observed for fc062e0 | |
+| race-protocol | ❌ NOT RUN | No run observed for fc062e0 | |
+| race-transport | ❌ NOT RUN | No run observed for fc062e0 | |
+| race-all | ❌ NOT RUN | Depends on all above | |
+
+**Note:** GitHub CLI (`gh`) not authenticated in this environment. CI run evidence must be retrieved manually from GitHub Actions UI.
+
+### Local Race Detector Status
+- **Environment:** Windows 11, Go 1.27.1
+- **CGO:** Not available (no gcc/mingw)
+- **Docker:** Not available
+- **Status:** ❌ BLOCKED — Cannot run `go test -race ./...` locally without gcc/mingw
+
+### Local Pre-emptive Fixes Applied (Stage 12)
+| Fix | Location | Status |
+|-----|----------|--------|
+| AzureKVProvider RWMutex | `internal/store/azure_kv_provider.go` | ✅ Applied |
+| Workspace Rekey mutex | `internal/workspace/workspace.go`, `rekey.go` | ✅ Applied |
+
+### Code Review Findings (Stage 11)
+| Component | Risk | Assessment |
+|-----------|------|------------|
+| AzureKVProvider | HIGH (no mutex) | ✅ Fixed — RWMutex added |
+| Workspace Rekey | MEDIUM (pass/salt race) | ✅ Fixed — rekeyMu added |
+| Teamserver | LOW (reviewed) | ✅ Appears correct |
+| Vault | NONE | ✅ Thread-safe (bbolt) |
+
+### CI Run URLs (To Be Filled)
+| Workflow | Run ID | URL | Status |
+|----------|--------|-----|--------|
+| race-isolation.yml | [PENDING] | https://github.com/Debajyoti0-0/aether/actions/workflows/race-isolation.yml | PENDING |
+
+---
+
+## B7 Release Validate — CI Status
+
+### Release Validate Workflow
+**Workflow:** `.github/workflows/release.yml` — `validate` job
+**Trigger:** Tag push (`v*`)
+**Candidate Commit:** f1242dd (Stage 14 HEAD before version bump)
+
+### Validate Job Steps
+1. `go vet ./...`
+2. `go test -count=1 ./...`
+3. `go test -tags=integration -count=1 ./test/integration/...`
+4. `govulncheck ./...`
+5. 7 fuzz smoke tests (10s each)
+
+### CI Run Status for f1242dd / fc062e0
+
+| Trigger | Status | Notes |
+|---------|--------|-------|
+| Tag push (v4.0.0-rc2) | ❌ NOT TRIGGERED | Tag was broken, pointing to wrong commit |
+| Manual trigger | ❌ NOT RUN | Not executed for f1242dd/fc062e0 |
+
+### Local Reproduction (All PASS)
+
+| Step | Command | Result |
+|------|---------|--------|
+| 1. Go vet | `go vet ./...` | ✅ PASS |
+| 2. Unit tests | `go test -count=1 ./...` | ✅ PASS (38 packages) |
+| 3. Integration tests | `go test -tags=integration ...` | ✅ PASS |
+| 4. Govulncheck | `govulncheck ./...` | ✅ PASS (0 vulns) |
+| 5. Fuzz smoke tests (7 targets) | `go test -fuzz=... -fuzztime=10s` | ✅ ALL PASS |
+
+**All 11 Validate steps PASS locally.**
+
+---
+
+## Required for Closure
+
+| Blocker | Requirement | Current Status |
+|---------|-------------|----------------|
+| **B3 Race Detector** | CI race isolation workflow GREEN on candidate commit | ⏳ PENDING — CI run not observed |
+| **B7 Release Validate** | Release Validate workflow GREEN on candidate commit | ⏳ PENDING — CI not triggered |
+
+---
+
+## Next Steps Required
+
+1. **Trigger race-isolation workflow** on current HEAD (fc062e0) or 5cd008b
+2. **Trigger Release workflow** by pushing fixed v4.0.0-rc2 tag (already done)
+3. **Monitor CI runs** and capture run URLs
+4. **If green:** CLOSE B3 and B7
+5. **If red:** Diagnose → fix or file waiver with CI evidence
+
+---
+
+## Gate G221 Status
+
+| Sub-gate | Status |
+|----------|--------|
+| G221.1 Race workflow audited | ✅ Audited |
+| G221.2 Fresh candidate CI run identified | ❌ NOT OBSERVED |
+| G221.3 All required race jobs reviewed | ⏳ PENDING CI |
+| G221.4 No hidden failure/suppression | ⏳ PENDING CI |
+| G221.4 B3 final status evidence-backed | ⏳ PENDING CI |
+
+---
+
+*Generated by Stage 17 — CI Status (B3 Race Detector & B7 Release Validate)*

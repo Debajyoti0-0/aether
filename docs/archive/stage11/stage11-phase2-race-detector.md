@@ -1,0 +1,123 @@
+# Stage 11 Phase 2 — B3 Race Detector Closure Analysis
+
+**Timestamp:** 2026-09-16
+**Status:** BLOCKED - Cannot reproduce locally (no gcc/mingw, Docker unavailable)
+
+## CI Evidence Summary
+
+| Job | Runner | Command | Status |
+|-----|--------|---------|--------|
+| test (-race) | ubuntu-latest | `go test -race -count=1 ./...` | ❌ FAILURE |
+| test (-race, windows) | windows-latest | `go test -race -count=1 ./...` | ❌ FAILURE |
+
+**CI Run URLs:**
+- https://github.com/Debajyoti0-0/aether/actions/runs/34955187150 (latest)
+- https://github.com/Debajyoti0-0/aether/actions/runs/34952784420 (previous)
+
+**Critical Limitation:** Race detector logs not accessible without admin rights. Only "Process completed with exit code 1" visible.
+
+## Local Reproduction Attempts
+
+| Method | Result |
+|--------|--------|
+| Native Windows `go test -race` | ❌ `CGO_ENABLED=1` requires gcc (not installed) |
+| `CGO_ENABLED=1 go test -race` | ❌ `gcc not found` |
+| Docker (`Dockerfile.race`) | ❌ Docker daemon not running |
+| mingw-w64 install | ❌ Permission denied (choco requires admin) |
+
+## Code Review: High-Risk Areas for Data Races
+
+### 1. Teamserver (`internal/api/server.go`) — REVIEWED
+- **Pattern**: Mutex-protected maps + snapshot-copy-then-release for Publish
+- **Status**: Appears correct. `mu` guards all map access. `Publish` copies subscribers under lock, then sends without lock. `subscribe`/`unsubscribe` use lock. `done` channel closed once under lock.
+- **Test**: `TestPublishUnsubscribeRace` (100 publishers + 100 churners) designed to catch races.
+
+### 2. Workspace (`internal/workspace/workspace.go`) — POTENTIAL RISKS
+
+| Method | Risk | Details |
+|--------|------|---------|
+| `AuditLog()` | Low | Double-checked locking with `auditMu` |
+| `RollbackStack()` | Low | Same pattern |
+| `LogEvent()` → `Seal()` + `AppendJournal()` | **Medium** | `Seal` uses `w.pass` (slice) + `rand.Read`; not atomic with journal append |
+| `Events()` → iterates journal | **Medium** | Concurrent `AppendJournal` could race with `ReadJournal` |
+| `SaveRecord`/`LoadRecord` | Low | Vault transactions are atomic |
+| `Open`/`Create` | N/A | Single-threaded initialization |
+
+**Key Finding**: Workspace methods don't hold a mutex across `Seal` + vault operations. If `w.pass` is modified concurrently (e.g., `Rekey`), race on `w.pass` slice.
+
+### 3. Vault (`internal/store/vault.go`) — THREAD-SAFE
+- All operations use bbolt transactions (`Update`/`View`)
+- bbolt provides serialized access within transactions
+- No shared mutable state outside transactions
+
+### 4. Store Key Providers — NEED REVIEW
+
+| Provider | Thread Safety |
+|----------|---------------|
+| `LocalKeyProvider` | ✅ Uses `sync.Mutex` for all operations |
+| `MockKMSProvider` | ✅ Uses `sync.Mutex` |
+| `AzureKVProvider` | ⚠️ **NO MUTEX** - `keyVersions` slice, `currentVersion` string accessed without synchronization |
+
+**Critical**: `AzureKVProvider` has no mutex protecting:
+- `keyVersions []KeyVersionInfo` (slice)
+- `currentVersion string`
+- `client`, `cred` fields
+
+Concurrent `RotateKey` + `GetKeyVersion` + `ListKeyVersions` would race.
+
+### 5. Test Fixtures — COMMON SOURCE
+- Shared test infrastructure (PKI, workspaces, servers)
+- `TestPublishUnsubscribeRace` creates Teamserver with raw maps (no `NewTeamserver`)
+- Integration tests may share global state
+
+## Recommended Next Steps (Priority Order)
+
+### Option A: CI-Based Isolation (Immediate, No Local Deps)
+1. Create a test workflow that runs race detector on **one package at a time**
+2. Binary search to identify failing package(s)
+3. Fix races in identified packages
+
+```yaml
+# .github/workflows/race-isolate.yml
+jobs:
+  race-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x' }
+      - run: go test -race -count=1 ./internal/api/...
+  race-workspace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.27.x' }
+      - run: go test -race -count=1 ./internal/workspace/...
+  # ... repeat for each package
+```
+
+### Option B: Fix Known Issues First (Code Review)
+1. **Add mutex to `AzureKVProvider`** - Protects `keyVersions`, `currentVersion`, `client`, `cred`
+2. **Add mutex to `Workspace` for `pass`/`salt`** - Or document single-threaded use
+3. **Review test fixtures** for shared state
+
+### Option C: Docker/WSL (If Available)
+- Run `docker build -f Dockerfile.race .` in WSL or CI
+
+## Immediate Action Plan
+
+Since I cannot reproduce locally and Docker is unavailable:
+
+1. **Document the AzureKVProvider mutex fix** (clear race)
+2. **Create race isolation workflow** for CI-based debugging
+3. **Trigger CI runs** to identify exact failing package(s)
+4. **Apply targeted fixes** based on CI evidence
+
+---
+
+## Phase 2 Status: DEFERRED TO CI-BASED INVESTIGATION
+
+**Cannot close B3 without race detector execution.** The path forward is CI-based isolation workflow.
+
+*Generated by Stage 11 Phase 2 Race Detector Analysis*
