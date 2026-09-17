@@ -1,0 +1,17 @@
+# Dockerfile for running Go race detector tests
+FROM golang:1.27-alpine
+
+# Install gcc and musl-dev for race detector
+RUN apk add --no-cache gcc musl-dev git
+
+WORKDIR /app
+
+# Copy go.mod and go.sum first for caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Run tests with race detector
+RUN CGO_ENABLED=1 go test -race -count=1 ./... 2>&1
