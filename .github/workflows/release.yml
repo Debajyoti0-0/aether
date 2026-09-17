@@ -125,6 +125,12 @@ jobs:
             dist/*.sig
             dist/*.pem
 
+      - name: Upload Windows archive for Authenticode signing
+        uses: actions/upload-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
+        with:
+          name: aether-windows-amd64.zip
+          path: dist/aether_*_windows_amd64.zip
+
   # --- Windows Signing (separate job on windows-latest) ---
   windows-sign:
     name: Windows Authenticode Signing
@@ -148,17 +154,22 @@ jobs:
         run: |
           $certPath = [IO.Path]::GetTempFileName()
           [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:AUTHENTICODE_CERT))
-          signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $certPath /p $env:AUTHENTICODE_PASSWORD .\artifacts\aether-windows-amd64.exe
-          signtool verify /pa /v .\artifacts\aether-windows-amd64.exe
+          signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $certPath /p $env:AUTHENTICODE_PASSWORD .\artifacts\aether.exe
+          signtool verify /pa /v .\artifacts\aether.exe
         env:
           AUTHENTICODE_CERT: ${{ secrets.AUTHENTICODE_CERT }}
           AUTHENTICODE_PASSWORD: ${{ secrets.AUTHENTICODE_PASSWORD }}
+
+      - name: Repackage signed Windows binary
+        if: env.AUTHENTICODE_CERT != ''
+        run: |
+          Compress-Archive -Path .\artifacts\aether.exe -DestinationPath .\artifacts\aether-windows-amd64-signed.zip -Force
 
       - name: Upload signed Windows binary
         uses: actions/upload-artifact@5b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f8b8e4c5f
         with:
           name: aether-windows-signed
-          path: artifacts/aether-windows-amd64.exe
+          path: artifacts/aether-windows-amd64-signed.zip
 
   # --- Verification (runs after all signing) ---
   verify:
