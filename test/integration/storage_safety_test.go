@@ -390,19 +390,45 @@ func TestTornWriteRejection(t *testing.T) {
 		t.Logf("rejection: %s", verdict)
 	})
 
-	t.Run("bitflip_first_data_page", func(t *testing.T) {
+	t.Run("bitflip_live_data", func(t *testing.T) {
 		path, _ := build(t)
-		p2 := path + ".flip1"
+		// Locate LIVE bytes by diffing against a same-code empty vault:
+		// a hard-coded offset is layout-coupled (the Stage 35 identity
+		// binding shifted the page layout, moving 8192 into dead space
+		// where corruption is legitimately tolerated). Flip in the
+		// differing region — bytes that actually carry vault data.
+		emptyPath := filepath.Join(t.TempDir(), "empty.db")
+		ev, err := store.OpenVault(emptyPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := ev.Close(); err != nil {
+			t.Fatal(err)
+		}
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatal(err)
 		}
-		off := 8192 // page 2 region (first non-meta page)
+		empty, err := os.ReadFile(emptyPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var diffs []int
+		for i := 0; i < len(raw) && i < len(empty); i++ {
+			if raw[i] != empty[i] {
+				diffs = append(diffs, i)
+			}
+		}
+		if len(diffs) == 0 {
+			t.Fatal("no live data found to corrupt")
+		}
+		off := diffs[len(diffs)/2]
+		p2 := path + ".flip1"
 		raw[off] ^= 0xff
 		if err := os.WriteFile(p2, raw, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("mutated bytes: offset %d flipped", off)
+		t.Logf("mutated bytes: offset %d flipped (live-data region, %d differing bytes)", off, len(diffs))
 		verdict, rejected := probe(t, p2)
 		if !rejected {
 			t.Fatalf("bit-flipped vault silently ACCEPTED: %s", verdict)
