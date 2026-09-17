@@ -3,6 +3,9 @@ module github.com/Debajyoti0-0/aether
 go 1.26.0
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.1
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1
+	github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys v0.10.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/refraction-networking/utls v1.8.2
@@ -15,10 +18,7 @@ require (
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.1 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.12.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys v0.10.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.7.1 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.8.0 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
