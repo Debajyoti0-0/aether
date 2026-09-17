@@ -1,9 +1,9 @@
 # Aether Release Verification Guide
 
-**Version:** 4.0.0-rc2 (Production-Limited)
-**Release Date:** 2026-09-16
-**Commit:** 6b88f87
-**Tag:** v4.0.0-rc2
+**Version:** 4.2.0-rc1 (Production-Limited)
+**Release Date:** 2026-09-17 (guide regenerated Stage 33; artifact names follow aether_<version>_<os>_<arch>)
+**Commit:** bb56cf3
+**Tag:** v4.2.0-rc1
 
 ---
 
@@ -38,14 +38,15 @@ jq -e '.specVersion' sbom-cyclonedx.json
 
 ---
 
-## Artifact List (v4.0.0-rc2)
+## Artifact List (v4.2.0-rc1)
 
 | Artifact | Platform | Format | Size | SHA-256 |
 |----------|----------|--------|------|---------|
-| aether_v4.0.0-rc2_linux_amd64.tar.gz | Linux x86_64 | tar.gz | ~6.5 MB | (see checksums.txt) |
-| aether_v4.0.0-rc2_linux_arm64.tar.gz | Linux ARM64 | tar.gz | ~5.8 MB | (see checksums.txt) |
-| aether_v4.0.0-rc2_darwin_amd64.tar.gz | macOS x86_64 | tar.gz | ~6.6 MB | (see checksums.txt) |
-| aether_v4.0.0-rc2_windows_amd64.zip | Windows x86_64 | zip | ~6.6 MB | (see checksums.txt) |
+| aether_v4.2.0-rc1_linux_amd64.tar.gz | Linux x86_64 | tar.gz | (see checksums.txt) | (see checksums.txt) |
+| aether_v4.2.0-rc1_linux_arm64.tar.gz | Linux ARM64 | tar.gz | (see checksums.txt) | (see checksums.txt) |
+| aether_v4.2.0-rc1_darwin_amd64.tar.gz | macOS x86_64 | tar.gz | (see checksums.txt) | (see checksums.txt) |
+| aether_v4.2.0-rc1_darwin_arm64.tar.gz | macOS Apple Silicon | tar.gz | (see checksums.txt) | (see checksums.txt) |
+| aether_v4.2.0-rc1_windows_amd64.zip | Windows x86_64 | zip | (see checksums.txt) | (see checksums.txt) |
 
 Each archive has a corresponding `.sbom.json` (SPDX 2.3) and signature files (`.sig`, `.pem`) when cosign signing is enabled.
 
@@ -66,11 +67,11 @@ sha256sum -c checksums.txt
 ```bash
 # For each Linux/macOS artifact
 cosign verify-blob \
-  --signature aether_v4.0.0-rc2_linux_amd64.tar.gz.sig \
-  --certificate aether_v4.0.0-rc2_linux_amd64.tar.gz.pem \
+  --signature aether_v4.2.0-rc1_linux_amd64.tar.gz.sig \
+  --certificate aether_v4.2.0-rc1_linux_amd64.tar.gz.pem \
   --certificate-identity-regexp ".*" \
   --certificate-oidc-issuer-regexp ".*" \
-  aether_v4.0.0-rc2_linux_amd64.tar.gz
+  aether_v4.2.0-rc1_linux_amd64.tar.gz
 
 # Verify SBOM signatures
 cosign verify-blob \
@@ -87,10 +88,10 @@ cosign verify-blob \
 
 ```cmd
 :: Requires Windows with signtool (Windows SDK)
-signtool verify /pa /v aether_v4.0.0-rc2_windows_amd64.exe
+signtool verify /pa /v aether_v4.2.0-rc1_windows_amd64.exe
 ```
 
-**Status for v4.0.0-rc2:** Windows binary is **NOT Authenticode signed** (EV cert waived — see WAIVER-B4-2026-09-16). Expect SmartScreen warnings.
+**Status for v4.2.0-rc1:** Windows binary is **NOT Authenticode signed** (EV cert waived — see WAIVER-B4-2026-09-16). Expect SmartScreen warnings.
 
 ### 4. SBOM Verification
 
@@ -164,7 +165,7 @@ git clone https://github.com/Debajyoti0-0/aether.git
 cd aether
 
 # 2. Checkout exact tag
-git checkout v4.0.0-rc2
+git checkout v4.2.0-rc1
 
 # 3. Build
 go build ./...
@@ -185,7 +186,7 @@ goreleaser release --snapshot --clean
 
 ---
 
-## Known Limitations (v4.0.0-rc2)
+## Known Limitations (v4.2.0-rc1)
 
 | Limitation | Status | Tracking |
 |------------|--------|----------|
@@ -219,4 +220,4 @@ goreleaser release --snapshot --clean
 
 ---
 
-*Generated: 2026-09-16 | Commit: 6b88f87 | Tag: v4.0.0-rc2*
+*Generated: 2026-09-16 | Commit: 6b88f87 | Tag: v4.2.0-rc1*
