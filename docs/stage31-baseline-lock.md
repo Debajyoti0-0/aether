@@ -40,7 +40,7 @@ deliberate stage artifact.
 | Is `v4.1.0-rc2` immutable? | YES | tag object `e8416b58` unchanged local+remote | Window continues |
 | Is `v4.2.0-rc1` materially different? | NO — fixes-only successor | delta audit §2 (single CLI-strictness fix + docs) | No full re-observation required |
 | Does D-29-1 alter release behavior? | Only by rejecting previously-silently-ignored input | G2 verification (6 cases from candidate build) | Low; no production surface change |
-| Does the candidate preserve protocol behavior? | YES | no protocol code in delta; fuzz 23/23 | Evidence carries |
+| Does the candidate preserve protocol behavior? | YES | no protocol code in delta; fuzz 21/21 | Evidence carries |
 | Does the candidate preserve security behavior? | YES | no security code in delta; failure-injection matrix re-run | Evidence carries |
 | Can Stage 29 observation evidence transfer? | To the shared (unchanged) surface, yes | §2 | See outcome below |
 | Is a new observation window required? | No full window; the candidate's own promotion must wait for the shared window close + its own end-of-window run | this matrix | — |
@@ -53,3 +53,4 @@ window of its own, but its full executed-gate evidence (Stages 30–31)
 covers the delta. After 2026-10-17 the promotion decision applies to
 `v4.1.0-rc2`; any `4.2.0` promotion additionally requires its own
 end-of-window observation run.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

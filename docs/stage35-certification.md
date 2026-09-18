@@ -53,7 +53,7 @@ Final certification:        SECURITY REMEDIATION VERIFIED
 | G590 | build/vet/unit | PASS (29 packages) |
 | G591 | integration | PASS (30.7s full suite — includes the layout-independent torn-write fix) |
 | G592 | race | PASS (29 pkgs, 0 DATA RACE, CGO/mingw) |
-| G593 | fuzz | 23/23 targets, 0 crashes (60s each) |
+| G593 | fuzz | 21/21 targets, 0 crashes (60s each) |
 | G594 | lint + govulncheck | 0 / 0 affecting |
 | G595 | tag integrity | 3 tags unchanged; v4.1.0 absent |
 | G596–G597 | observation window | OPEN; events appended; 0 new P0/P1 |
@@ -86,3 +86,4 @@ implemented and needs `gh auth login && git push origin master` to
 execute; F-34-3/F-34-4 remediation should ship in the next 4.2.0
 candidate (`4.2.0-rc2`) with its own clean-room verification. Rollback
 baseline: `v4.0.0-rc2` (`5cd008be`).
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

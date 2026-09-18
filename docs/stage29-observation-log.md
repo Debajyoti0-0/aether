@@ -74,7 +74,9 @@ P3 cosmetic / documentation.
 
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
-P3=1 (closed), events=27 (23 closed, 2 deferred, 2 blocked-with-owner).
+P3=1 (closed), events=28 (24 closed, 2 deferred, 2 blocked-with-owner).
+
+| 2026-09-18 | stage40 | INFO | Stage 38 completion + 5 corrections | Campaigns 4-6 executed from raw commands on current builds (tag bb56cf3 + master 5cc7756): 0 new P0, 0 new P1; F-40-1 (P2, transport mismatch NEW both builds), F-40-2/F-40-3 (P3), F-40-4 (Info); Stage 34 four-fix lineage reproduced on-tag and REMEDIATED on-master; corrections C1-C5 landed (C1 matrix reference, C2 Validate BLOCKED-WITH-OWNER, C3 ldflags citation, C4 fuzz 23->21 across 15 docs, C5 F-30-3 + LIVE-1 standalone waivers); 21/21 fuzz targets 5.81M execs 0 crashes; build/vet/unit/integration/lint/vulncheck all green; 3 release tags unchanged; window continues | CLOSED |
 
 ## Note on window integrity
 

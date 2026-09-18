@@ -25,7 +25,7 @@ Quality:
   Integration:              PASS (Stage 35 full suite 30.7s; tree unchanged
                             by Stage 36 — no source changes this stage)
   Race:                     PASS (29 pkgs, 0 DATA RACE, on the remediation tree)
-  Fuzz:                     PASS (23/23 targets, 0 crashes — full 60s sweep
+  Fuzz:                     PASS (21/21 targets, 0 crashes — full 60s sweep
                             on the remediation tree)
   Vet:                      PASS
   Lint:                     PASS (0 issues)
@@ -104,3 +104,4 @@ action — `gh auth login && git push origin master` (36 reviewed commits)
 EXECUTED; then a `4.2.0-rc2` candidate cut carries the Stage 35 storage
 hardening into the release line. Rollback baseline: `v4.0.0-rc2`
 (`5cd008be`).
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

@@ -118,7 +118,7 @@ or Entra/IMDS access in this lab).
 | unit (`go test -count=1 ./...`) | PASS | 29 packages ok |
 | integration (`go test -tags=integration ./test/integration/...`) | PASS | 16.3s |
 | race (`go test -race ./...`) | **BLOCKED** | `-race` requires cgo; no C compiler on host (`gcc not found`), Docker daemon not running (repo's `Dockerfile.race` unavailable). NOT RUN — not counted as PASS |
-| fuzz (23 targets × 60s) | PASS | 0 failures, 0 crashes; ~85k–137k execs/sec per target |
+| fuzz (21 targets × 60s) | PASS | 0 failures, 0 crashes; ~85k–137k execs/sec per target |
 | lint (`golangci-lint run ./...`) | PASS | 0 issues |
 | govulncheck (`govulncheck ./...`) | PASS | 0 vulnerabilities affecting code (1 unreachable vuln in required modules) |
 
@@ -162,3 +162,4 @@ L-28-1..L-28-3, none blocking).**
 > `dd72f1e`, `267f797`), built (`bc674af1` clean checkout), tagged
 > (`v4.1.0-rc2` → `bc674af1`), and independently verified from the tag's
 > own build.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

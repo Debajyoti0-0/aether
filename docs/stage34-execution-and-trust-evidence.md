@@ -71,7 +71,7 @@ since (delta audits, Stages 31/33).
 | integration | PASS (18.3s full suite — post-INT-1-round-2) |
 | crash matrix | 5/5 green **under deliberate background fuzz load**; load-independent structural assertion (commit `cdd6a55`) |
 | race | PASS (29 pkgs, 0 DATA RACE — Stage 31 reconfirmation; no concurrency code changed since) |
-| fuzz | 23/23 targets, 0 crashes (10s sweep this stage; three full 60s sweeps: Stages 30/31/33) |
+| fuzz | 21/21 targets, 0 crashes (10s sweep this stage; three full 60s sweeps: Stages 30/31/33) |
 | lint / govulncheck | 0 / 0 affecting |
 
 Crash-matrix correction integrity (G12 requirement): durability
@@ -108,3 +108,4 @@ VERIFY.md regenerated Stage 33 (F-32-4 closed); signing sections retain
 NOT CURRENTLY PRODUCED labels. No documentation claims executed CI,
 signatures, or provenance. README spot-check: no stale release claims
 found affecting operator instructions.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

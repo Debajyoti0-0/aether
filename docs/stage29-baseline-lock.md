@@ -19,7 +19,7 @@ Observation record: `docs/stage29-observation-log.md`.
 | Tagged binary | `bin/aether-rc2` built fresh from the tag: `aether version 4.1.0-rc2` | G463 |
 
 Scoping note: Stage 28 already executed build/vet/unit/integration/fuzz
-(23 targets)/lint/govulncheck against this same immutable tag; Stage 29
+(21 targets)/lint/govulncheck against this same immutable tag; Stage 29
 does not re-run those (per charter). Stage 29 adds: the race suite
 (previously impossible), a top-level + second-level CLI/argument matrix,
 and an exit-code contract regression on a fresh tagged binary.
@@ -115,3 +115,4 @@ Contract unchanged from Stage 28; verified from a freshly built
 | D-29-2 | P3 | Parent commands display help with exit 0 for unknown subcommand/argument (audit, cap, exec, export, graph, pivot, plan, plugins, prt, relay, rollback, token, validate, workspace, ztna, cap). Accepted cobra pattern; documented here; no change required. |
 
 No panics, no secret leakage, no state corruption observed in any matrix run.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

@@ -15,7 +15,7 @@ Companion: `stage31-baseline-lock.md` (delta, continuity decision),
 | G5 | Security/failure regression | PASS (carried + delta-audited) | no security-relevant code in delta; secret scan clean |
 | G6 | FIX-4 revocation/evidence | PASS (carried) | Stage 30 §2 re-verification on the post-fix build; delta contains no revocation code |
 | G7 | FIX-5 providers | PASS (mock; live BLOCKED) | carried; LIVE-1 unchanged |
-| G8 | Race/fuzz | PASS | race: 29 ok, 0 races (reconfirmed this stage); fuzz: 23/23 targets |
+| G8 | Race/fuzz | PASS | race: 29 ok, 0 races (reconfirmed this stage); fuzz: 21/21 targets |
 | G9 | Cross-platform | PASS (compile) / BLOCKED (non-Windows runtime) | 5/5 goreleaser targets build incl. darwin/arm64; runtime claims unchanged |
 | G10 | Artifacts/SBOM/provenance/signing | PASS (claims now match pipeline) | F-30-2 CLOSED; F-30-1 CLOSED; F-30-3 documented limitation w/ expiry+owner |
 | G11 | Observation continuity | PASS — Outcome B | window stays on `v4.1.0-rc2`; candidate needs no full re-window (fixes-only delta) |
@@ -82,3 +82,4 @@ master) so race and provenance run where they belong; (4) close INT-1
 (5) LIVE-1 remains open until authorized access exists. Rollback baseline
 at all times: `v4.0.0-rc2` (`5cd008be`). Earliest valid promotion date for
 `4.1.0`: 2026-10-17T16:55:20Z.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

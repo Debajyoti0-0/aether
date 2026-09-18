@@ -252,7 +252,7 @@ Implements Phase 1–2 of the v3.0.0 roadmap (adaptive engine, distributed mesh,
 - **Legacy migration**: v1.x `~/.config/aether` workspaces migrate automatically on first run.
 - **`aether doctor`**: host-environment self-test — writable dirs, config discovery, encrypted workspace roundtrip, OS notes.
 - **Signals**: build-tagged handlers (`signals_unix.go` / `signals_windows.go`) — SIGTERM on unix, CTRL_C on Windows.
-- **Version injection**: `-ldflags "-X main.version=…"` now drives `aether --version`.
+- **Version injection**: `-ldflags "-X github.com/Debajyoti0-0/aether/internal/version.Version=…"` now drives `aether --version`. *(Corrected from `-X main.version` in Stage 40 - `main.version` silently no-ops; see docs/stage40-corrections-register.md.)*
 - **Build system**: cross-platform Makefile (no `rm -rf`/`mkdir -p`), `scripts/build.ps1` (Windows), `scripts/build.sh` (unix), `make man` (cobra man-page tree), `make completions` (bash/zsh/fish/powershell).
 - **Cross-compile verification**: windows/linux/darwin/freebsd × amd64/arm64 all build from one host.
 - **Packaging**: debian rules now install man pages + shell completions; static CGO-free binary runs on musl and glibc distros.

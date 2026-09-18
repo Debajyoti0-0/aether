@@ -24,7 +24,7 @@ in the executed Stage 27; the live candidate line is `4.1.0-rc2`).
 | unit | PASS | 29 packages |
 | integration | PASS | 32.6s |
 | race | PASS | CGO + mingw-winlibs GCC 16.2.0; 29 ok, 0 DATA RACE |
-| fuzz | PASS | 23 targets × 60s; 23/23 exit 0; 0 crashes/panics/timeouts |
+| fuzz | PASS | 21 targets × 60s; 21/21 exit 0; 0 crashes/panics/timeouts |
 | lint | PASS | 0 issues |
 | govulncheck | PASS | 0 affecting |
 | CLI matrix | PASS at command/argument level; release-surface flag matrix PASS; full per-flag boundary sweep PARTIALLY VERIFIED (tracked debt) | production-qa §1 |
@@ -85,3 +85,4 @@ instructions become true; (3) disposition F-30-1/F-30-3 (darwin/arm64
 matrix, SLSA provenance); (4) live Entra/IMDS/IdP qualification when
 authorized access exists; (5) only then consider the `4.2.0` GA gate.
 Push `v4.2.0-rc1` only with explicit authorization.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

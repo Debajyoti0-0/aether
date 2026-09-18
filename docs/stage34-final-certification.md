@@ -32,12 +32,12 @@ Security gaps:       audit-trail substitution gap (F-34-4); signing/provenance
                      UNEXECUTED (CI); live integrations (LIVE-1)
 Reliability gaps:    panic text on corrupt storage (F-34-3)
 CLI gaps:            --log-level reserved/inert (documented)
-Protocol gaps:       fuzz-covered (23 targets); live protocol qualification open
+Protocol gaps:       fuzz-covered (21 targets); live protocol qualification open
 Provider gaps:       live interoperability unproven (mock-only)
 Release gaps:        signing/provenance execution (CI revival — one operator action)
 
 Unit: PASS (29)        Integration: PASS (13.9s post-fix)   Race: PASS (29, 0 races)
-Fuzz: PASS (23/23)     Vet: PASS                              Lint: PASS (0)
+Fuzz: PASS (21/21)     Vet: PASS                              Lint: PASS (0)
 Govulncheck: PASS (0)  Crash Matrix: PASS (load-independent)  Clean-room: PASS
 
 Audit integrity:     record tamper DETECTED; substitution NOT detected (F-34-4)
@@ -134,3 +134,4 @@ Stage 21 (real QA), Stage 22 (FIX-1/2/3 landed later), Stage 27 (root
 cause found), Stage 28 (4.1.0-rc2 certified from the tag), Stage 31
 (4.2.0-rc1 pushed) corrected the false-cert era. This section records
 the closure: Stages 20–26 are 100% dispositioned, not 100% completed.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

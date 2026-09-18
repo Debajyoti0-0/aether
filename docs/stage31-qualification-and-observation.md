@@ -107,7 +107,7 @@ the bounded scope is VERIFIED, the remainder is DEFERRED-WITH-OWNER.
 | unit | PASS | 29 packages |
 | integration | **FLAKY-FAIL** | see §8 |
 | race | PASS | CGO_ENABLED=1, mingw-winlibs GCC 16.2.0; 29 packages ok, 0 DATA RACE, exit 0 (reconfirmed on this HEAD) |
-| fuzz | 23/23 targets exit 0 | 60s per target; 0 crashes/panics/timeouts |
+| fuzz | 21/21 targets exit 0 | 60s per target; 0 crashes/panics/timeouts |
 | lint | PASS | 0 issues |
 | govulncheck | PASS | 0 affecting |
 
@@ -140,3 +140,4 @@ Status: **OPEN — continuing, not closed early.** Close 2026-10-17T16:55:20Z.
 New events appended to `docs/stage29-observation-log.md`: tag push,
 F-30-2 resolution, F-30-1 matrix change, crash-matrix flake record.
 New P0/P1 defects: **0**. The window remains attached to `v4.1.0-rc2`.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

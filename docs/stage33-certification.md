@@ -33,7 +33,7 @@ specified in the Stage 32/33 handoffs and will execute in Stage 34.
 | --- | --- |
 | Candidate identity (`v4.2.0-rc1` → `bb56cf3`, on origin) | INDEPENDENTLY_VERIFIED |
 | Binary correctness (CLI matrix, exit codes 0/1/2/3, JSON, D-29-1) | INDEPENDENTLY_VERIFIED (Stages 28–33) |
-| Race / fuzz / lint / vulncheck / unit | PASSED (reconfirmed; fuzz 23/23) |
+| Race / fuzz / lint / vulncheck / unit | PASSED (reconfirmed; fuzz 21/21) |
 | Integration suite | PASSED (fully green post-INT-1) |
 | Crash-matrix (INT-1) | CLOSED (5/5 + full suite) |
 | Observability endpoints | PASSED (first live test: 200/200/503 fail-closed) |
@@ -93,3 +93,4 @@ the pushed tag) or RETAIN with the specific reason. `v4.0.0-rc2`
 master`) so the corrected signing/windows-sign workflow executes with a
 run URL, provenance attestation, and LIVE-1 disposition when access
 exists.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

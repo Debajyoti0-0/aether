@@ -38,3 +38,4 @@ filed waiver with owner and expiry, which is what "waived" means.)
 Stage 39 recount: **BLOCKED-WITH-OWNER 2 · CLOSED-BY-SUCCESSOR 8 ·
 PERMANENTLY-WAIVED 3 · STILL-OPEN 0** — the two Stage 10 CI rows were
 downgraded on raw run queries (see docs/stage39-verification-matrix.md).
+Corrected by Stage 39; disposition record: docs/stage39-certification.md (DOWNGRADED ROWS).

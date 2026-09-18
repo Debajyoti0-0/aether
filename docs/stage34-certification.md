@@ -43,7 +43,7 @@ ARM64 build:                VERIFIED (linux/arm64, darwin/arm64)
 ARM64 runtime:              UNVERIFIED (no host; not claimed)
 
 Race:                       PASS (29 pkgs, 0 DATA RACE)
-Fuzz:                       PASS (23/23 targets, 0 crashes; 10s sweep + three 60s sweeps)
+Fuzz:                       PASS (21/21 targets, 0 crashes; 10s sweep + three 60s sweeps)
 Integration:                PASS (18.3s — fully green post-INT-1)
 Crash matrix:               PASS — load-independent (5/5 under deliberate load)
 Lint:                       PASS (0 issues)
@@ -129,3 +129,4 @@ EXECUTED AND VERIFIED and the live scope is dispositioned.
 6. Elapsed observation window + Stage 35 promotion decision for v4.1.0.
 
 Rollback baseline at all times: `v4.0.0-rc2` (`5cd008be`).
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

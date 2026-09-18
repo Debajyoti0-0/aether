@@ -134,7 +134,7 @@ workspace create without --passphrase → fail-closed error (keyless mode
 | unit (`go test -count=1 ./...`) | PASS | 29 packages |
 | integration (`-tags=integration`) | PASS | 32.6s |
 | race (`CGO_ENABLED=1 go test -race ./...`, mingw-winlibs GCC 16.2.0) | PASS | 29 packages ok, 0 DATA RACE, exit 0 |
-| fuzz (23 targets × 60s) | see certification doc (final counts) | |
+| fuzz (21 targets × 60s) | see certification doc (final counts) | |
 | lint (golangci-lint) | PASS | 0 issues |
 | govulncheck | PASS | 0 affecting (1 unreachable, in required modules) |
 
@@ -156,3 +156,4 @@ workspace create without --passphrase → fail-closed error (keyless mode
 | 30 | 4.2.0 qualification | this stage; verdict in certification doc | IN PROGRESS → see verdict |
 
 No historical record was rewritten; contradictions remain preserved and labeled.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

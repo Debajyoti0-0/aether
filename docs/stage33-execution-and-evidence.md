@@ -70,7 +70,7 @@ performed this stage; no PARTIAL exit issued.
 | build / vet | PASS | |
 | unit | PASS | 29 packages |
 | integration | **PASS** | 21.9s — full suite green post-INT-1 (first fully-green integration run since the flake surfaced in Stage 31) |
-| fuzz | 23/23 targets exit 0 | 60s per target (raw log /tmp/fuzz33.log) |
+| fuzz | 21/21 targets exit 0 | 60s per target (raw log /tmp/fuzz33.log) |
 | lint | PASS | 0 issues |
 | govulncheck | PASS | 0 affecting |
 
@@ -79,3 +79,4 @@ performed this stage; no PARTIAL exit issued.
 OPEN — continuing. Events appended: F-32-2 closed, F-32-3
 re-affirmed-blocked, F-32-4 closed, integration suite fully green.
 New P0/P1: **0**.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.

@@ -33,7 +33,7 @@ claimed the B4/B5 waiver files as filed when they did not exist.
 | G568 | Tag integrity | all 3 tags unchanged (re-verified) |
 | G569 | build/vet/unit | PASS (29 packages) |
 | G570 | integration | PASS (18.3s full suite) |
-| G571 | fuzz | PASS — 23/23 targets, 0 crashes (10s-per-target sweep this stage; three prior full 60s sweeps on this code: Stages 30/31/33) |
+| G571 | fuzz | PASS — 21/21 targets, 0 crashes (10s-per-target sweep this stage; three prior full 60s sweeps on this code: Stages 30/31/33) |
 | G572 | lint + govulncheck | 0 / 0 affecting |
 | G573 | Observation window | OPEN; log appended |
 | G574 | New P0/P1 | 0 |
@@ -82,3 +82,4 @@ revival: execute the release workflow (or a dry run) to convert
 signing/provenance from IMPLEMENTED to EXECUTED+VERIFIED, close F-32-3
 with a run URL, and reclassify Track B. The 4.1.0 time gate is
 untouched: 2026-10-17T16:55:20Z.
+> Corrected 23 → 21 in Stage 40; the count discrepancy is documented in docs/stage40-corrections-register.md.
