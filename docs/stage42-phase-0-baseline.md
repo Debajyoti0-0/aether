@@ -28,4 +28,4 @@ each bucket:
 | Procurement (SGN-2 Authenticode, B4 EV cert) | 2 | BLOCKED-WITH-OWNER (needs EV certificate) |
 | External (B1 live Entra, B2 live IMDS, B5 Azure KV, LIVE-1 live IdP, ARM64 host) | 5 | WAIVED with owner + expiry (existing waivers B-series + LIVE-1) |
 
-30 blockers inventoried → 30 dispositioned. Zero unconfirmed.
+30 blockers inventoried → 30 dispositioned. Zero open dispositions.

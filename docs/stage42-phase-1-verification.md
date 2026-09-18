@@ -29,4 +29,4 @@ tag's own build (`bin/aether-42.exe`, clean-room clone of `c923fac`, ldflags
 | CLI-0 | `internal/cli` test gap | `dir internal\cli\*_test.go` (before) | zero test files; 5 of the bugs live here | **CONFIRMED** | FIXED — Phase 3 (7 new tests) |
 
 **Summary: 19 CONFIRMED / 1 DISMISSED-STALE / 1 DEFERRED-WITH-OWNER / 1 INFO.**
-Zero unconfirmed. Every row names the build and the exact command.
+Zero open dispositions. Every row names the build and the exact command.
