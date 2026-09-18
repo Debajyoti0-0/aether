@@ -27,6 +27,14 @@ PERMANENTLY-WAIVED. **STILL-OPEN count: 0.**
 
 ## Waiver verification (G606–G609)
 
+Stage 39 re-verification: all four records re-checked — B4 and B5 as
+standalone waiver files on disk (owner + expiry + compensating controls),
+F-30-3 and LIVE-1 as register entries with owner + expiry
+(F-30-3: stage32-certification.md:18, stage33-certification.md:44,
+2027-03-31; LIVE-1: stage35-certification.md:22, BLOCKED-WITH-OWNER,
+2027-06-30 per the table row below). All four stand; see
+docs/stage39-verification-matrix.md and docs/stage39-certification.md.
+
 | Waiver | Expiry | Owner | File/record |
 | --- | --- | --- | --- |
 | B4 — EV Authenticode | 2027-03-31 | repository owner | docs/stage13-phase2-b4-waiver.md (created Stage 33b — Stage 13 had claimed it filed) |

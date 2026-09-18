@@ -70,6 +70,8 @@ P3 cosmetic / documentation.
 | 2026-09-17 | stage37a | INFO | observation audit | Independent row-level recount: 0 P0, 0 P1, 1 P2 (closed), 1 P3 (accepted) across 27 events | CLOSED |
 | 2026-09-17 | stage37a | INFO | DEBT-1 | Batch 2: plan/rollback/relay/ztna/watch swept (16 flags), no anomalies; cumulative 10 commands fully swept | CLOSED |
 
+| 2026-09-18 | stage39 | INFO | strict completion | Stages 10–26 dispositions re-verified from raw commands on the current binary: 26/26 rows evidenced (24 VERIFIED, 2 DOWNGRADED at source: Stage 10 CI execution and B7 Release Validate → BLOCKED-WITH-OWNER per red ci.yml/release.yml runs); 0 UNSUPPORTED, 0 FAILED; all 4 waivers re-verified with owner+expiry; 3 release tags unchanged; 21/21 fuzz targets 0 crashes; window continues | CLOSED |
+
 Running totals (updated as events are appended): P0=0, P1=0, P2=1 (fix
 scheduled, discovered at window open, not introduced during the window),
 P3=1 (closed), events=27 (23 closed, 2 deferred, 2 blocked-with-owner).

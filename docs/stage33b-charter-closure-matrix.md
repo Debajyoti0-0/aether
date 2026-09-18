@@ -9,10 +9,10 @@ CLOSED-NOW / PERMANENTLY-WAIVED. **STILL-OPEN count: 0.**
 
 | Stage | Charter item | Original blocker | Current status | Successor stage | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| 10 | CI pipeline execution | B3 | CLOSED-BY-SUCCESSOR | Stage 30 (race gate: mingw CGO PASS, 29 pkgs, 0 races) + ci.yml race jobs present; CI *execution* itself is F-32-3 BLOCKED-WITH-OWNER, tracked separately and not a charter re-open | docs/stage30-certification.md §quality; stage33-execution-and-evidence.md §2 |
+| 10 | CI pipeline execution | B3 | BLOCKED-WITH-OWNER *(downgraded from CLOSED-BY-SUCCESSOR by Stage 39)* | Stage 30 (race gate: mingw CGO PASS, 29 pkgs, 0 races) + ci.yml race jobs present; Stage 39 raw check: latest ci.yml run = **failure** (2026-09-16) and gh remains unauthenticated — CI *execution* is not closable until F-32-3 clears | docs/stage39-verification-matrix.md row 1; stage30-certification.md §quality |
 | 10 | EV cert | B4 | PERMANENTLY-WAIVED | Waiver formalized Stage 33b (the Stage 13 report claimed it filed; no file existed — created now) | docs/stage13-phase2-b4-waiver.md (owner, risk, compensating controls, expiry 2027-03-31) |
 | 10 | HSM/KMS custody | B5 | PERMANENTLY-WAIVED | Waiver formalized Stage 33b; `AZURE_KEYVAULT_URI` not configured at filing (live round-trip not executable); procedure to close documented in the waiver | docs/stage13-b5-waiver.md (expiry 2027-03-31) |
-| 10 | Release Validate | B7 | CLOSED-BY-SUCCESSOR | Stage 13 phase-2 B7 qualification + subsequent full test pyramid executions (Stages 30/31/33: build/vet/unit/integration/race/fuzz/lint/vulncheck green) | docs/stage13-phase2-b7-ci-qualification.md; stage33-execution-and-evidence.md §5 |
+| 10 | Release Validate | B7 | BLOCKED-WITH-OWNER (CI) / local-verified *(downgraded from CLOSED-BY-SUCCESSOR by Stage 39)* | Local B7 qualification PASS rows (go vet / unit / integration) stand, but the release.yml run on the v4.2.0-rc1 ref **failed at the Validate job** (#35253502855, 2026-09-17T17:33:50Z); local validate steps re-verified green at Stage 39 | docs/stage39-verification-matrix.md row 4; stage13-phase2-b7-ci-qualification.md; release.yml #35253502855 |
 | 11 | Live Entra validation | B1 | PERMANENTLY-WAIVED (access-dependent) | No authorized tenant exists (LIVE-1 unchanged through Stages 29–33); subsumed by the LIVE-1 register entry with owner; expiry aligned 2027-03-31 | stage32-certification.md (LIVE-1); docs/stage13-b5-waiver.md model |
 | 11 | Live IMDS validation | B2 | PERMANENTLY-WAIVED (access-dependent) | Same access blocker; IMDS requires an authorized cloud-hosted environment; subsumed by LIVE-1 | stage32-certification.md (LIVE-1) |
 | 12 | Tag freeze | integrity | CLOSED-BY-SUCCESSOR | Stage 17 tag repair + Stage 28's tag-lineage discipline (annotated tags, object+peeled verification, push + ls-remote proof) | docs/stage33b-certification.md §tag integrity; stage28-baseline-lock.md §5 |
@@ -34,3 +34,7 @@ Counts: **CLOSED-BY-SUCCESSOR 10 · CLOSED-NOW 0 · PERMANENTLY-WAIVED 3 · STIL
 (The three waivers — B4, B5, and the access-dependent B1/B2 pair — are
 the items whose closure requires external resources; each now has a
 filed waiver with owner and expiry, which is what "waived" means.)
+
+Stage 39 recount: **BLOCKED-WITH-OWNER 2 · CLOSED-BY-SUCCESSOR 8 ·
+PERMANENTLY-WAIVED 3 · STILL-OPEN 0** — the two Stage 10 CI rows were
+downgraded on raw run queries (see docs/stage39-verification-matrix.md).
