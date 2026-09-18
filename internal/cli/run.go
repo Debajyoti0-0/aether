@@ -60,6 +60,9 @@ func init() {
 	runCmd.Flags().IntVar(&runMaxRisk, "risk-threshold", 50, "Risk ceiling 0-100")
 	runCmd.Flags().BoolVar(&runLowSlow, "low-slow", false, "Randomize 1-5s jitter between phases")
 	runCmd.Flags().BoolVar(&runAuto, "auto", false, "Autonomous mode: continue past risk gates, use stored PRT")
+	// Charter fix (L2): runPassphrase was declared but never registered
+	// nor read — dead state. Register it as the AETHER_PASSPHRASE fallback.
+	runCmd.Flags().StringVar(&runPassphrase, "passphrase", "", "Workspace passphrase (falls back to AETHER_PASSPHRASE)")
 	_ = runCmd.MarkFlagRequired("workspace")
 }
 
@@ -68,7 +71,11 @@ func runKillChain(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ws, err := workspace.Open(runWorkspace, os.Getenv("AETHER_PASSPHRASE"))
+	pass := os.Getenv("AETHER_PASSPHRASE")
+	if pass == "" {
+		pass = runPassphrase
+	}
+	ws, err := workspace.Open(runWorkspace, pass)
 	if err != nil {
 		return err
 	}

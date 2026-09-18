@@ -78,6 +78,12 @@ P3=1 (closed), events=28 (24 closed, 2 deferred, 2 blocked-with-owner).
 
 | 2026-09-18 | stage40 | INFO | Stage 38 completion + 5 corrections | Campaigns 4-6 executed from raw commands on current builds (tag bb56cf3 + master 5cc7756): 0 new P0, 0 new P1; F-40-1 (P2, transport mismatch NEW both builds), F-40-2/F-40-3 (P3), F-40-4 (Info); Stage 34 four-fix lineage reproduced on-tag and REMEDIATED on-master; corrections C1-C5 landed (C1 matrix reference, C2 Validate BLOCKED-WITH-OWNER, C3 ldflags citation, C4 fuzz 23->21 across 15 docs, C5 F-30-3 + LIVE-1 standalone waivers); 21/21 fuzz targets 5.81M execs 0 crashes; build/vet/unit/integration/lint/vulncheck all green; 3 release tags unchanged; window continues | CLOSED |
 
+| 2026-09-18 | stage42 | INFO | External forensic verification + production-readiness closure | External report (15 C/H/M/L + 4 INFO, tested against a stale 4.0.0-rc1/3.4.0-stage3 clone) re-verified against the current tag build bb56cf3: 19 CONFIRMED / 1 DISMISSED-STALE (L6) / 1 DEFERRED-WITH-OWNER (M6 design); ALL 17 code confirmations FIXED (C1 ALPN http/1.1-only, H1 revoke --operator, H2 connect CA fallback, H3 replay workspace threading, H4 doctor Windows, H5 RL whitelist, M1 RiskScore wired, M2 whitelist narrowed, M3 documented, M4 atomic key-file commit, M5 15s handshake bound, L1 non-zero exit, L2 passphrase wired, L4 query channel removed, L5 60s client, S42-1 revoke MkdirAll, CLI-0 9 regression tests); F-40-1 (the h2/h1 transport mismatch) CONFIRMED and FIXED; 0 new P0, 0 new P1 during this stage; 29/29 pkgs + race + integration + lint(0) + vulncheck(0) + fuzz(21 targets ~9.1M execs 0 crashes) green; 3 release tags unchanged; window continues | CLOSED |
+
+Running totals (updated as events are appended): P0=0, P1=0, P2=2 (F-40-1
+FIXED in Stage 42; the original P2 closed), P3=1 (closed), events=29
+(26 closed, 1 deferred-with-owner, 2 blocked-with-owner).
+
 ## Note on window integrity
 
 The window opened 2026-09-17 and closes 2026-10-17. No entry in this log

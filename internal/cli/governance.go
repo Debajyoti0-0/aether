@@ -111,21 +111,33 @@ func runIntent(ctx context.Context, ws *workspace.Workspace, command string, act
 	}
 
 	s := spine.New(ws)
+	// Charter fix (M1): the estimator's riskV was minted but never mapped
+	// onto the Action — the spine's risk stage ran against 0 for every
+	// intent-driven action, so the operator ceiling never fired.
+	estimated := 50
+	if mc, ok := mut.(*cliMutation); ok {
+		estimated = mc.riskV
+	}
 	return s.Run(ctx, &spine.Action{
 		Kind:         kind,
 		Target:       target,
 		Actor:        actor,
 		Mutation:     mut,
+		RiskScore:    estimated,
 		ApprovalMode: spine.ApprovalAuto,
 	})
 }
 
 // mutatingIntents lists the command shapes that MUST go through the
 // spine wherever they appear (plans, undo commands, runbooks).
+//
+// Charter fix (M1): narrow the whitelist to exactly what buildIntentMutation
+// implements. The previous entries (simulate stream, plugins install,
+// prt import, pivot cloud-to-onprem) were declared but refused downstream
+// with "unsupported action kind" — intents the spine cannot represent must
+// fail closed here, not after the spine is entered.
 var mutatingIntents = [][2]string{
 	{"exec", "azure"}, {"exec", "aws"}, {"exec", "github"}, {"exec", "gcp"},
-	{"simulate", "stream"}, {"plugins", "install"},
-	{"prt", "import"}, {"pivot", "cloud-to-onprem"},
 }
 
 // isMutatingIntent reports whether a parsed command line is a mutating

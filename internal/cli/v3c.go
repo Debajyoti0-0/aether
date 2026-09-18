@@ -162,9 +162,9 @@ var dashboardCmd = &cobra.Command{
 		}
 
 		fmt.Fprintf(os.Stdout, "Dashboard token: %s\n", d.Token())
-		fmt.Fprintf(os.Stdout, "Pass the token via ?token=, the X-Aether-Token header, or 'Authorization: Bearer <token>'.\n")
-		fmt.Fprintf(os.Stderr, "Dashboard: %s://%s/?token=%s (workspace %s: %d nodes, %d edges)\n",
-			map[bool]string{true: "https", false: "http"}[withTLS], addr, d.Token(), dashWorkspace, len(g.Nodes), len(g.Edges))
+		fmt.Fprintf(os.Stdout, "Pass the token via the X-Aether-Token header or 'Authorization: Bearer <token>'.\n")
+		fmt.Fprintf(os.Stderr, "Dashboard: %s://%s/ (workspace %s: %d nodes, %d edges)\n",
+			map[bool]string{true: "https", false: "http"}[withTLS], addr, dashWorkspace, len(g.Nodes), len(g.Edges))
 
 		// T8: live mode — consume the canonical teamserver event stream
 		// when --teamserver is configured; otherwise run honestly

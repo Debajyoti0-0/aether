@@ -37,6 +37,10 @@ func init() {
 	serveCertIssueCmd.Flags().StringVar(&tsCertCaps, "caps", "", "Comma-separated execute capabilities to grant (e.g. exec.azure,exec.aws); read caps are granted by default")
 	serveCertIssueCmd.Flags().IntVar(&tsCertDays, "days", 365, "Certificate validity in days")
 	_ = serveCertIssueCmd.MarkFlagRequired("operator")
+	// Charter fix (charter fix H1): revoke reads tsCertOperator but never
+	// registered the flag — revocation via CLI was unusable.
+	serveCertRevokeCmd.Flags().StringVar(&tsCertOperator, "operator", "", "Operator name to revoke (required)")
+	_ = serveCertRevokeCmd.MarkFlagRequired("operator")
 	serveCertInitCmd.Flags().StringVar(&tsCertHosts, "extra-hosts", "", "Extra SAN hosts for the server cert (comma-separated)")
 }
 
@@ -122,6 +126,12 @@ var serveCertRevokeCmd = &cobra.Command{
 			return err
 		}
 		path := filepath.Join(tsCertDir, "revoked.txt")
+		// Stage 42 finding (S42-1): revoke appended to revoked.txt without
+		// ensuring the PKI directory exists — a fresh --dir made revocation
+		// fail with "cannot find the path" after flag parsing succeeded.
+		if err := os.MkdirAll(tsCertDir, 0o700); err != nil {
+			return err
+		}
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 		if err != nil {
 			return err

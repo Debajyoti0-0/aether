@@ -76,7 +76,11 @@ func (d *TLSDialer) DialTLSContext(ctx context.Context, network, addr string) (n
 	cfg := &utls.Config{
 		ServerName:         host,
 		InsecureSkipVerify: d.Insecure,
-		NextProtos:         []string{"h2", "http/1.1"},
+		// ALPN http/1.1 only: the consumer of this dialer is
+		// http.Transport (HTTP/1.1). Negotiating h2 here mismatches
+		// the protocol the Transport speaks (h2-only endpoints reply
+		// with SETTINGS frames the h1 parser rejects).
+		NextProtos: []string{"http/1.1"},
 	}
 
 	conn := utls.UClient(raw, cfg, clientHelloID(preset))

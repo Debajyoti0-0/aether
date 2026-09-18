@@ -8,7 +8,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
+
+// providersHTTP carries a timeout — http.DefaultClient has none, so a
+// stalled provider endpoint would block the CLI forever (charter fix 8).
+var providersHTTP = &http.Client{Timeout: 60 * time.Second}
 
 // execOktaUsers enumerates Okta users with the raw REST shape used by
 // the okta plugin (kept here so the CLI controls output formatting).
@@ -28,7 +33,7 @@ func execOktaUsers(token, domain string, limit int) error {
 	req.Header.Set("Authorization", "SSWS "+token)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := providersHTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("okta request: %w", err)
 	}

@@ -128,6 +128,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("\n=== Plan execution summary ===")
+	failed := 0
 	for _, s := range rec.Steps() {
 		mark := "OK  "
 		switch s.Status {
@@ -139,6 +140,15 @@ func runPlan(cmd *cobra.Command, args []string) error {
 			mark = "SKIP"
 		}
 		fmt.Printf("[%s] %-14s attempts=%d %s\n", mark, s.NodeID, s.Attempts, s.Detail)
+		if s.Status == "failed" {
+			failed++
+		}
+	}
+	if failed > 0 {
+		// Charter fix (L1): a plan whose steps failed but completed
+		// (non-critical nodes) must not exit 0 — CI and CI-like callers
+		// treat exit 0 as success.
+		return fmt.Errorf("plan finished with %d failed step(s)", failed)
 	}
 	return nil
 }

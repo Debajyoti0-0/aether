@@ -128,7 +128,15 @@ func executeAetherLine(line string) error {
 		return fmt.Errorf("empty command")
 	}
 	if isMutatingIntent(fields) {
-		ws, err := openGovernedWorkspace(execWorkspace)
+		// Charter fix (H3): resolve the step's own --workspace flag
+		// before opening the governed workspace — the replay-level
+		// value is only a fallback, and opening before parsing made
+		// every governed runbook line fail with "requires --workspace".
+		wsName := workspaceFromLine(fields)
+		if wsName == "" {
+			wsName = execWorkspace
+		}
+		ws, err := openGovernedWorkspace(wsName)
 		if err != nil {
 			return err
 		}
@@ -141,6 +149,20 @@ func executeAetherLine(line string) error {
 	root.SetOut(os.Stdout)
 	root.SetErr(os.Stderr)
 	return root.Execute()
+}
+
+// workspaceFromLine extracts the step's --workspace flag (both the
+// space-separated and = forms) from a parsed runbook command line.
+func workspaceFromLine(fields []string) string {
+	for i, f := range fields {
+		if f == "--workspace" && i+1 < len(fields) {
+			return fields[i+1]
+		}
+		if strings.HasPrefix(f, "--workspace=") {
+			return strings.TrimPrefix(f, "--workspace=")
+		}
+	}
+	return ""
 }
 
 // askContinue prompts the operator after a failed step.

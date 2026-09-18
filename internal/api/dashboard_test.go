@@ -55,7 +55,8 @@ func TestDashboardAuth(t *testing.T) {
 		}
 	}
 
-	// Correct token via query parameter → 200.
+	// Query parameter must NOT authenticate anymore — the ?token= channel
+	// was removed (query strings land in browser history and proxy logs).
 	for _, route := range routes {
 		sep := "?"
 		if strings.Contains(route, "?") {
@@ -63,8 +64,8 @@ func TestDashboardAuth(t *testing.T) {
 		}
 		resp, _ := http.Get(srv.URL + route + sep + "token=" + d.Token())
 		resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("%s with query token = %d, want 200", route, resp.StatusCode)
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("%s with query token = %d, want 401 (query channel removed)", route, resp.StatusCode)
 		}
 	}
 

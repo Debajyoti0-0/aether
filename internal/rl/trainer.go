@@ -92,6 +92,24 @@ func GenerateRLPlan(agent *QAgent, start State, maxSteps int) ([]PlanNode, error
 			break
 		}
 
+		// Charter fix (H5): only emit spine-governable commands.
+		// 'run plan' nodes execute through the Action spine, whose
+		// whitelist covers exec azure|aws|github|gcp — emitting any
+		// other catalog command (graph build, prt convert, ...) minted
+		// a guaranteed-to-fail node.
+		if !isSpineGovernable(action.Command) {
+			next, _, done := Step(state, action, true, false)
+			if visited[next.Key()] {
+				break
+			}
+			visited[next.Key()] = true
+			state = next
+			if done {
+				break
+			}
+			continue
+		}
+
 		id := fmt.Sprintf("rl-step-%d", step+1)
 		node := PlanNode{
 			ID:      id,
@@ -146,4 +164,20 @@ func stateFromKey(key string) State {
 // convergence checks (goal: tokens held, execution phase).
 func bestStateForKey(action string) string {
 	return State{TokenBucket: 3, GraphDensity: "high", CAPStrictness: "medium", Phase: "execute"}.Key()
+}
+
+// isSpineGovernable reports whether a catalog command can be executed by
+// 'run plan' nodes. The Action spine's whitelist covers the four cloud
+// exec commands only; every other catalog command minted a
+// guaranteed-to-fail plan node (charter fix H5).
+func isSpineGovernable(command string) bool {
+	governable := []string{
+		"exec azure", "exec aws", "exec github", "exec gcp",
+	}
+	for _, g := range governable {
+		if command == g || strings.HasPrefix(command, g+" ") {
+			return true
+		}
+	}
+	return false
 }

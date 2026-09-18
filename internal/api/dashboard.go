@@ -19,8 +19,9 @@ import (
 // Security model (Stage 1, forensic F3): the dashboard exposes
 // engagement data (graph topology, event history), so every route
 // requires a bearer token. The token is generated per start and must be
-// passed as `Authorization: Bearer <t>`, `X-Aether-Token: <t>`, or a
-// `?token=` query parameter. The default bind address is loopback.
+// passed as `Authorization: Bearer <t>` or `X-Aether-Token: <t>` (the
+// `?token=` query channel was removed — query strings land in history
+// and proxy logs). The default bind address is loopback.
 type Dashboard struct {
 	mu      sync.RWMutex
 	events  []DashboardEvent
@@ -64,16 +65,17 @@ func (d *Dashboard) Publish(e DashboardEvent) {
 }
 
 // authorize checks the request token against the dashboard token using
-// a constant-time comparison. Token may arrive via Authorization
-// header, X-Aether-Token header, or ?token= query parameter.
+// a constant-time comparison. Token may arrive via the Authorization
+// header or the X-Aether-Token header.
+//
+// Charter fix (9): the ?token= query channel was removed — query strings
+// land in browser history and proxy logs. Query strings carrying the old
+// channel are rejected like any other credential.
 func (d *Dashboard) authorize(r *http.Request) bool {
 	presented := r.Header.Get("Authorization")
 	presented = strings.TrimSpace(strings.TrimPrefix(presented, "Bearer"))
 	if presented == "" {
 		presented = r.Header.Get("X-Aether-Token")
-	}
-	if presented == "" {
-		presented = r.URL.Query().Get("token")
 	}
 	if presented == "" {
 		return false

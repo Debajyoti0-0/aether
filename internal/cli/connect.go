@@ -25,7 +25,16 @@ var connectCmd = &cobra.Command{
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the mTLS teamserver (cert-bound operators, capability authz, spine dispatch)",
-	RunE:  runServe,
+	Long: `Start the mTLS teamserver: cert-bound operators, capability authz,
+and spine dispatch for authenticated operators.
+
+Workspace access (charter fix 10): the workspace store is opened with an
+exclusive lock — while ` + "`aether serve --workspace NAME`" + ` runs, other
+aether processes CANNOT open that workspace locally (commands fail with a
+lock error). This is intentional: concurrent writers to the vault would
+corrupt the signed hash chain. To run local commands, stop the teamserver
+first.`,
+	RunE: runServe,
 }
 
 var (
@@ -98,10 +107,7 @@ func runConnect(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(os.Stderr, "WARNING: TLS server verification DISABLED (--insecure). The server identity is NOT authenticated. Research use only.")
 	}
 
-	serverCA := tsServerCA
-	if serverCA == "" && !tsInsecure {
-		serverCA = filepath.Join(filepath.Dir(tsOpCert), "teamserver-ca.crt")
-	}
+	serverCA := resolveServerCA(tsServerCA, tsOpCert, tsInsecure)
 
 	pair, cas, err := api.LoadOperatorTLS(tsOpCert, tsOpKey, serverCA)
 	if err != nil {
@@ -261,5 +267,22 @@ func runServe(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	return srv.Serve()
+	<-ctx.Done()
+	_ = srv.Close()
+	return nil
+}
+
+// resolveServerCA picks the teamserver CA for connection verification:
+// explicit --server-ca wins; otherwise the CA is expected at the
+// teamserver ROOT (three levels above <root>/operators/<name>/<file>.crt),
+// falling back to the cert dir for flat operator layouts (charter fix 6).
+func resolveServerCA(explicit, opCert string, insecure bool) string {
+	if explicit != "" || insecure {
+		return explicit
+	}
+	rootCA := filepath.Join(filepath.Dir(filepath.Dir(filepath.Dir(opCert))), "teamserver-ca.crt")
+	if _, err := os.Stat(rootCA); err == nil {
+		return rootCA
+	}
+	return filepath.Join(filepath.Dir(opCert), "teamserver-ca.crt")
 }

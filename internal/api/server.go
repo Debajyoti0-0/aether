@@ -171,7 +171,17 @@ func (s *Teamserver) handleConn(conn net.Conn) {
 	if !ok {
 		return
 	}
+	// Charter fix (7): bound the handshake so a client cannot pin the
+	// goroutine with a slowloris pattern (never-completing handshake).
+	if err := conn.SetDeadline(time.Now().Add(15 * time.Second)); err != nil {
+		return
+	}
 	if err := tlsConn.Handshake(); err != nil {
+		return
+	}
+	// Handshake done — clear the bound; protocol traffic carries its
+	// own deadlines downstream.
+	if err := conn.SetDeadline(time.Time{}); err != nil {
 		return
 	}
 	peerCerts := tlsConn.ConnectionState().PeerCertificates

@@ -89,8 +89,10 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 		return migrated, fmt.Errorf("journal: %w (wrong passphrase?)", err)
 	}
 
-	// Phase 2 — mint a fresh random salt, write the new key file, and
-	// re-encrypt everything under the new key.
+	// Phase 2 — mint a fresh random salt and re-encrypt everything under
+	// the new key. The key file on disk still holds the OLD salt here:
+	// the durable commit happens last (charter fix 7), so a crash before
+	// it leaves the workspace openable with the OLD passphrase.
 	newSalt := make([]byte, saltLen)
 	if _, err := rand.Read(newSalt); err != nil {
 		return migrated, fmt.Errorf("generate new salt: %w", err)
@@ -98,9 +100,6 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 	w.salt = newSalt
 	if err := w.DeriveKey(newPassphrase); err != nil {
 		return migrated, err
-	}
-	if err := writeSaltFile(w.saltFilePath(), newSalt, w.pass); err != nil {
-		return migrated, fmt.Errorf("write workspace key file: %w", err)
 	}
 
 	for _, bucket := range buckets {
@@ -136,6 +135,18 @@ func (w *Workspace) Rekey(oldPassphrase, newPassphrase string) (int, error) {
 	}
 	if err := w.vault.Sync(); err != nil {
 		return migrated, err
+	}
+
+	// Phase 3 — durable commit: stage the new key file, then swap it in
+	// atomically (charter fix 7). The rename is the single commit point:
+	// before it, the OLD key file still decrypts the OLD records; after
+	// it, the NEW key file matches the fully re-sealed store.
+	tmpKey := w.saltFilePath() + ".new"
+	if err := writeSaltFile(tmpKey, newSalt, w.pass); err != nil {
+		return migrated, fmt.Errorf("stage workspace key file: %w", err)
+	}
+	if err := os.Rename(tmpKey, w.saltFilePath()); err != nil {
+		return migrated, fmt.Errorf("commit workspace key file: %w", err)
 	}
 
 	// Migration off keyless removes the marker.
