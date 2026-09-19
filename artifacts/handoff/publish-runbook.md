@@ -19,21 +19,21 @@ go test -count=1 ./...         # must be green post-flip
 ```bash
 V=3.4.0-ga; C=$(git rev-parse --short HEAD)
 LDF="-s -w -X github.com/Debajyoti0-0/aether/internal/version.Version=$V -X github.com/Debajyoti0-0/aether/internal/version.Commit=$C"
-mkdir -p artifacts/stage48/dist
+mkdir -p artifacts/handoff/dist
 for t in windows-amd64 windows-arm64 linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
   os=${t%-*}; arch=${t#*-}; ext=""; [ "$os" = windows ] && ext=.exe
   GOOS=$os GOARCH=$arch CGO_ENABLED=0 go build -buildvcs=false -trimpath -ldflags="$LDF" \
-    -o artifacts/stage48/dist/aether-$t$ext ./cmd/aether || exit 1
+    -o artifacts/handoff/dist/aether-$t$ext ./cmd/aether || exit 1
 done
 # reproducibility gate: rebuild one target, expect identical hash
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -buildvcs=false -trimpath -ldflags="$LDF" -o /tmp/repro-check ./cmd/aether
-sha256sum /tmp/repro-check artifacts/stage48/dist/aether-linux-amd64   # MUST match
+sha256sum /tmp/repro-check artifacts/handoff/dist/aether-linux-amd64   # MUST match
 ```
 
 ## 3. SBOM, checksums, provenance, signing
 
 ```bash
-cd artifacts/stage48
+cd artifacts/handoff
 cyclonedx-gomod bin -json -output sbom.cdx.json dist/aether-windows-amd64.exe
 sha256sum dist/* > checksums.txt
 # provenance.json — regenerate for the GA commit (see stage45 provenance.json as template)

@@ -41,7 +41,7 @@ govulncheck ./...                     # expect: no affecting vulnerabilities
 
 ```bash
 # Do NOT trust committed signatures' *content* — verify from the artifacts:
-cd artifacts/stage45
+cd artifacts/release
 sha256sum dist/*                       # compare line-by-line to checksums.txt
 cosign verify-blob --key supply-chain/release.pub \
   --signature supply-chain/aether-windows-amd64.exe.sig \
@@ -77,7 +77,7 @@ Full command sequences with expected outputs: `stage44/ops-qualification.md` (th
 
 ## 6. Required deliverable
 
-`artifacts/stage48/independent-audit-report-v2.md` containing:
+`artifacts/handoff/independent-audit-report-v2.md` containing:
 
 ```text
 Attestation: "I am independent of the development implementation being reviewed."
