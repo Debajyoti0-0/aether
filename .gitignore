@@ -1,2 +1,5 @@
 # Local engagement datasets (kept on disk, never committed)
 ad_sampledata/
+
+# local build output (make build) — regenerated, never committed
+/bin/
