@@ -284,10 +284,15 @@ func TestGenerateRLPlan(t *testing.T) {
 
 func TestGenerateRLPlanCycleSafe(t *testing.T) {
 	// Untrained agent: policy loops → plan must terminate via visited set.
+	// Stage 43 adjustment (charter fix 4 follow-up): the spine-governable
+	// whitelist may filter every sampled action of an untrained walk, in
+	// which case the trainer returns the bounded empty-plan outcome
+	// (empty-plan error). Termination + the max-step bound are the intent
+	// of this test; both outcomes honor them.
 	agent := NewQAgent(DefaultHyperParams())
 	start := State{TokenBucket: 0, GraphDensity: "low", CAPStrictness: "medium", Phase: "recon"}
 	nodes, err := GenerateRLPlan(agent, start, 8)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "no plan steps") {
 		t.Fatalf("generate: %v", err)
 	}
 	if len(nodes) > 8 {
