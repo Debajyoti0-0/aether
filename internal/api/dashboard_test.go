@@ -1,13 +1,44 @@
 package api
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
+
+// selfSignedTLSCert generates an in-memory self-signed cert for live
+// TLS-listener tests (no fixture files on disk).
+func selfSignedTLSCert(t *testing.T) tls.Certificate {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("key: %v", err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber:          big.NewInt(7),
+		Subject:               pkix.Name{CommonName: "qa-dashboard"},
+		NotBefore:             time.Now().Add(-time.Minute),
+		NotAfter:              time.Now().Add(time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	if err != nil {
+		t.Fatalf("cert: %v", err)
+	}
+	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}
+}
 
 func TestDashboardAuth(t *testing.T) {
 	d, err := NewDashboard()
@@ -155,6 +186,55 @@ func TestDashboardTLSListenerSmoke(t *testing.T) {
 		t.Fatal("ServeTLS with missing cert = nil, want error")
 	}
 	_ = tls.VersionTLS12
+}
+
+func TestDashboardHTTPSListenerLiveRequest(t *testing.T) {
+	// F-006 live evidence: a real TLS listener that speaks HTTPS, where
+	// the token gate actually authorizes and rejects over the wire.
+	d, err := NewDashboard()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ln, err := tls.Listen("tcp", "127.0.0.1:0", &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		NextProtos:   []string{"http/1.1"},
+		Certificates: []tls.Certificate{selfSignedTLSCert(t)},
+	})
+	if err != nil {
+		t.Fatalf("tls listen: %v", err)
+	}
+	srv := &http.Server{Handler: d.Handler("<html>qa</html>", map[string]int{})}
+	go srv.Serve(ln)
+	defer srv.Close()
+
+	addr := ln.Addr().String()
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}, Timeout: 5 * time.Second}
+
+	// Unauthenticated request must be denied (401/403) over TLS.
+	resp, err := client.Get("https://" + addr + "/")
+	if err != nil {
+		t.Fatalf("https request: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		t.Errorf("unauthenticated request returned 200; want denial")
+	}
+	if resp.TLS == nil || !resp.TLS.HandshakeComplete {
+		t.Errorf("TLS handshake did not complete")
+	}
+
+	// Authenticated request (correct bearer token) must pass.
+	req, _ := http.NewRequest(http.MethodGet, "https://"+addr+"/", nil)
+	req.Header.Set("Authorization", "Bearer "+d.Token())
+	resp2, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("authenticated https request: %v", err)
+	}
+	defer resp2.Body.Close()
+	if resp2.StatusCode != 200 {
+		t.Errorf("authenticated request status = %d, want 200", resp2.StatusCode)
+	}
 }
 
 func buildTestGraphHTML() (string, error) {

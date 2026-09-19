@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -140,5 +141,62 @@ func TestRequestWithCAERetryWithChallenge(t *testing.T) {
 	}
 	if !strings.HasPrefix(refreshed.AccessToken, "mock_") {
 		t.Errorf("refreshed token = %q", refreshed.AccessToken)
+	}
+}
+
+func TestRequestWithCAERetryPersistentChallengeRetriesOnce(t *testing.T) {
+	// F-004 regression pin: a server that keeps challenging must be
+	// retried EXACTLY once — never an infinite challenge loop, never a
+	// blind transport retry that could duplicate a side effect.
+	srv := mock.NewEntraIDServer()
+	defer srv.Close()
+
+	c := NewClientWithHTTP(srv.URL, srv.Client())
+	tokens := &types.OAuthTokens{AccessToken: "stale", RefreshToken: "rt-1"}
+
+	claims := map[string]any{"access_token": map[string]any{"acrs": "essential"}}
+	claimsJSON, _ := json.Marshal(claims)
+	claimsB64 := base64.StdEncoding.EncodeToString(claimsJSON)
+
+	calls := 0
+	_, _, err := c.RequestWithCAERetry(context.Background(), "dummy", "cid", tokens, func(bearer string) (*http.Response, error) {
+		calls++
+		return &http.Response{
+			StatusCode: 401,
+			Header:     challengeHeader(claimsB64),
+			Body:       http.NoBody,
+		}, nil
+	})
+	// The retry is bounded: one challenge -> one refresh -> one retry;
+	// the second challenge is returned to the caller as a definitive
+	// response, NOT retried again.
+	if err != nil {
+		t.Fatalf("persistent challenge should not error, got %v", err)
+	}
+	if calls != 2 {
+		t.Errorf("calls = %d, want exactly 2 (bounded retry)", calls)
+	}
+}
+
+func TestRequestWithCAERetryTransportErrorNoRetry(t *testing.T) {
+	// F-004 regression pin: a transport error (timeout/reset/lost
+	// response) must propagate with ZERO retries — the request state is
+	// ambiguous, so blind duplication is forbidden.
+	srv := mock.NewEntraIDServer()
+	defer srv.Close()
+
+	c := NewClientWithHTTP(srv.URL, srv.Client())
+	tokens := &types.OAuthTokens{AccessToken: "stale", RefreshToken: "rt-1"}
+
+	calls := 0
+	_, _, err := c.RequestWithCAERetry(context.Background(), "dummy", "cid", tokens, func(bearer string) (*http.Response, error) {
+		calls++
+		return nil, fmt.Errorf("net/http: timeout awaiting response headers")
+	})
+	if err == nil {
+		t.Fatal("transport error must propagate")
+	}
+	if calls != 1 {
+		t.Errorf("calls = %d, want 1 (no retry on ambiguous outcome)", calls)
 	}
 }

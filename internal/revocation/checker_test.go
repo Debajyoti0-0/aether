@@ -1,9 +1,106 @@
 package revocation
 
 import (
+	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"math/big"
 	"os"
 	"testing"
+	"time"
 )
+
+// selfSignedIssuer creates a minimal self-signed issuer cert for
+// fail-closed path tests (no fixture dependency).
+func selfSignedIssuer(t *testing.T) (*x509.Certificate, *ecdsa.PrivateKey) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("key: %v", err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "qa-issuer"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(time.Hour),
+		IsCA:         true,
+		KeyUsage:     x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	if err != nil {
+		t.Fatalf("cert: %v", err)
+	}
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	return cert, key
+}
+
+// leafCert creates a leaf cert issued by the QA issuer.
+func leafCert(t *testing.T, issuer *x509.Certificate, issuerKey *ecdsa.PrivateKey) *x509.Certificate {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("key: %v", err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(4242),
+		Subject:      pkix.Name{CommonName: "qa-leaf"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(time.Hour),
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, issuer, &key.PublicKey, issuerKey)
+	if err != nil {
+		t.Fatalf("cert: %v", err)
+	}
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	return cert
+}
+
+func TestOCSPRemoteUnreachableFailsClosed(t *testing.T) {
+	// F-005 pin: an unreachable OCSP responder with FailClosed (the
+	// default) must yield StatusError, which the evidence gate rejects.
+	cfg := DefaultConfig()
+	cfg.Mode = ModeOCSP
+	cfg.OCSPResponder = "http://127.0.0.1:1/ocsp" // nothing listens here
+	cfg.FailClosed = true
+	cfg.Timeout = 2 * time.Second
+
+	issuer, issuerKey := selfSignedIssuer(t)
+	leaf := leafCert(t, issuer, issuerKey)
+
+	c := NewChecker(cfg)
+	res := c.Check(context.Background(), leaf, issuer)
+	if res.Status != StatusError {
+		t.Fatalf("unreachable responder: status = %v, want StatusError (fail-closed)", res.Status)
+	}
+}
+
+func TestOCSPRemoteUnreachableFailOpenYieldsUnknown(t *testing.T) {
+	// Explicit fail-open (operator override) yields StatusUnknown —
+	// still rejected by the evidence gate, but distinctly reasoned.
+	cfg := DefaultConfig()
+	cfg.Mode = ModeOCSP
+	cfg.OCSPResponder = "http://127.0.0.1:1/ocsp"
+	cfg.FailClosed = false
+	cfg.Timeout = 2 * time.Second
+
+	issuer, issuerKey := selfSignedIssuer(t)
+	leaf := leafCert(t, issuer, issuerKey)
+
+	c := NewChecker(cfg)
+	res := c.Check(context.Background(), leaf, issuer)
+	if res.Status != StatusUnknown {
+		t.Fatalf("fail-open unreachable responder: status = %v, want StatusUnknown", res.Status)
+	}
+}
 
 func TestOCSPGood(t *testing.T) {
 	// Test OCSP Good status parsing with a pre-generated response
