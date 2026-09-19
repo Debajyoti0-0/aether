@@ -10,7 +10,8 @@ import (
 )
 
 // NewUTLSClient creates an HTTP client whose TLS handshake mimics the
-// given browser preset. ALPN negotiates HTTP/2 when the server supports it.
+// given browser preset. HTTP/2 is disabled: the uTLS dialer negotiates
+// http/1.1 only (see TLSDialer.DialTLSContext).
 func NewUTLSClient(preset BrowserPreset, timeout time.Duration) *http.Client {
 	if timeout <= 0 {
 		timeout = 30 * time.Second
@@ -20,7 +21,7 @@ func NewUTLSClient(preset BrowserPreset, timeout time.Duration) *http.Client {
 	tr := &http.Transport{
 		DialTLSContext:    dialer.DialTLSContext,
 		DialContext:       (&net.Dialer{Timeout: timeout}).DialContext,
-		ForceAttemptHTTP2: true,
+		ForceAttemptHTTP2: false,
 		MaxIdleConns:      100,
 		IdleConnTimeout:   90 * time.Second,
 		TLSHandshakeTimeout: 15 * time.Second,
@@ -33,7 +34,8 @@ func NewUTLSClient(preset BrowserPreset, timeout time.Duration) *http.Client {
 }
 
 // NewUTLSClientWithPool creates an HTTP client whose TLS fingerprint
-// rotates per connection from the supplied JA4 pool.
+// rotates per connection from the supplied JA4 pool. HTTP/2 is disabled:
+// the uTLS dialer negotiates http/1.1 only (see TLSDialer.DialTLSContext).
 func NewUTLSClientWithPool(pool *JA4Pool, timeout time.Duration) *http.Client {
 	if timeout <= 0 {
 		timeout = 30 * time.Second
@@ -43,7 +45,7 @@ func NewUTLSClientWithPool(pool *JA4Pool, timeout time.Duration) *http.Client {
 	tr := &http.Transport{
 		DialTLSContext:    dialer.DialTLSContext,
 		DialContext:       (&net.Dialer{Timeout: timeout}).DialContext,
-		ForceAttemptHTTP2: true,
+		ForceAttemptHTTP2: false,
 		MaxIdleConns:      100,
 		IdleConnTimeout:   90 * time.Second,
 		TLSHandshakeTimeout: 15 * time.Second,
@@ -86,7 +88,7 @@ func NewClientWithOptions(opts Options) (*http.Client, error) {
 	tr := &http.Transport{
 		DialTLSContext:      dialer.DialTLSContext,
 		DialContext:         (&net.Dialer{Timeout: opts.Timeout}).DialContext,
-		ForceAttemptHTTP2:   true,
+		ForceAttemptHTTP2:   false,
 		MaxIdleConns:        100,
 		IdleConnTimeout:     90 * time.Second,
 		TLSHandshakeTimeout: 15 * time.Second,

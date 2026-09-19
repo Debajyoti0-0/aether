@@ -28,15 +28,21 @@ func ParsePreset(s string) (BrowserPreset, error) {
 	}
 }
 
-func clientHelloID(p BrowserPreset) utls.ClientHelloID {
-	switch p {
-	case Edge:
-		return utls.HelloEdge_Auto
-	case Firefox:
-		return utls.HelloFirefox_Auto
-	default:
-		return utls.HelloChrome_Auto
+func clientHelloSpecFromID(id utls.ClientHelloID) utls.ClientHelloSpec {
+	spec, err := utls.UTLSIdToSpec(id)
+	if err != nil {
+		// Fallback to Chrome spec if conversion fails
+		spec, _ = utls.UTLSIdToSpec(utls.HelloChrome_Auto)
 	}
+	// Override ALPN to http/1.1 only (F-40-1: prevent h2 negotiation
+	// mismatch with HTTP/1.1 transport).
+	for i := range spec.Extensions {
+		if alpn, ok := spec.Extensions[i].(*utls.ALPNExtension); ok {
+			alpn.AlpnProtocols = []string{"http/1.1"}
+			break
+		}
+	}
+	return spec
 }
 
 // TLSDialer dials TLS connections with a spoofed browser fingerprint
@@ -55,11 +61,6 @@ func (d *TLSDialer) DialTLSContext(ctx context.Context, network, addr string) (n
 	timeout := d.Timeout
 	if timeout == 0 {
 		timeout = 15 * time.Second
-	}
-
-	preset := d.Preset
-	if d.Pool != nil {
-		preset = presetFromHello(d.Pool.Next())
 	}
 
 	raw, err := (&net.Dialer{Timeout: timeout}).DialContext(ctx, network, addr)
@@ -83,7 +84,31 @@ func (d *TLSDialer) DialTLSContext(ctx context.Context, network, addr string) (n
 		NextProtos: []string{"http/1.1"},
 	}
 
-	conn := utls.UClient(raw, cfg, clientHelloID(preset))
+	var baseID utls.ClientHelloID
+	if d.Pool != nil {
+		baseID = d.Pool.Next()
+	} else {
+		switch d.Preset {
+		case Edge:
+			baseID = utls.HelloEdge_Auto
+		case Firefox:
+			baseID = utls.HelloFirefox_Auto
+		default:
+			baseID = utls.HelloChrome_Auto
+		}
+	}
+
+	// Get the browser fingerprint spec, override ALPN to http/1.1 only
+	// (F-40-1: prevent h2 negotiation mismatch with HTTP/1.1 transport).
+	spec := clientHelloSpecFromID(baseID)
+
+	// Use HelloCustom + ApplyPreset to apply the modified spec while
+	// preserving the browser fingerprint (JA3/JA4).
+	conn := utls.UClient(raw, cfg, utls.HelloCustom)
+	if err := conn.ApplyPreset(&spec); err != nil {
+		raw.Close()
+		return nil, fmt.Errorf("apply preset for %s: %w", addr, err)
+	}
 	if err := conn.HandshakeContext(ctx); err != nil {
 		raw.Close()
 		return nil, fmt.Errorf("tls handshake %s: %w", addr, err)
