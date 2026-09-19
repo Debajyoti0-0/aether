@@ -1,0 +1,112 @@
+CFG=/tmp/tmp.1UYEKIJzOf/cfg
+=== create ===
+Workspace "opsqual" created at C:\Users\Debajyoti0-0\AppData\Local\Temp\tmp.1UYEKIJzOf\cfg\workspaces\opsqual
+rc=0
+=== list ===
+opsqual
+rc=0
+=== info ===
+Error: workspace "opsqual" is passphrase-protected: an empty passphrase is rejected
+Usage:
+  aether workspace info [flags]
+
+Flags:
+  -h, --help                help for info
+      --passphrase string   Workspace passphrase (or AETHER_PASSPHRASE env)
+      --workspace string    Workspace name (or pass as arg)
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Error: workspace "opsqual" is passphrase-protected: an empty passphrase is rejected
+rc=1
+=== info (correct pass) ===
+{
+  "evidence": 0,
+  "identities": 0,
+  "name": "opsqual",
+  "root": "C:\\Users\\Debajyoti0-0\\AppData\\Local\\Temp\\tmp.1UYEKIJzOf\\cfg\\workspaces\\opsqual",
+  "tokens": 0
+}
+rc=0
+=== info (wrong pass) ===
+Error: workspace "opsqual": wrong passphrase or corrupted salt.bin
+Usage:
+  aether workspace info [flags]
+
+Flags:
+  -h, --help                help for info
+      --passphrase string   Workspace passphrase (or AETHER_PASSPHRASE env)
+      --workspace string    Workspace name (or pass as arg)
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Error: workspace "opsqual": wrong passphrase or corrupted salt.bin
+rc=1
+=== rekey ===
+Re-encrypt every stored record (tokens, identities, evidence, journal) under a new passphrase. The old passphrase must decrypt the existing records. Migrating a KEYLESS (or pre-Stage-1 legacy) workspace requires --confirm-keyless when the old passphrase is empty.
+
+Usage:
+  aether workspace rekey [flags]
+
+Flags:
+      --confirm-keyless         Required when migrating a keyless/legacy workspace (empty old passphrase)
+  -h, --help                    help for rekey
+      --new-passphrase string   New passphrase (or AETHER_NEW_PASSPHRASE env)
+      --old-passphrase string   Current passphrase (or AETHER_PASSPHRASE env); empty only for keyless/legacy migration
+      --workspace string        Workspace name (or pass as arg)
+
+=== corrupt vault.db test ===
+Error: open vault C:\Users\Debajyoti0-0\AppData\Local\Temp\tmp.1UYEKIJzOf\cfg\workspaces\opsqual\vault.db: invalid database
+Usage:
+  aether workspace info [flags]
+rc=0 (expect fail-closed typed error)
+=== restore + rekey ===
+Rekeyed workspace "opsqual": 0 records + journal rotated. Store the new passphrase safely.
+rc=0
+=== open with old pass (must fail) ===
+Error: workspace "opsqual": wrong passphrase or corrupted salt.bin
+Usage:
+=== open with new pass (must pass) ===
+{
+  "evidence": 0,
+  "identities": 0,
+rc=0
+=== backup: copy workspace dir ===
+artifacts
+reports
+salt.bin
+vault.db
+vault.db.bak
+=== destroy original (simulate loss): shred-delete ===
+Error: unknown flag: --passphrase
+Usage:
+  aether workspace delete [flags]
+rc=0
+opsqual
+(empty = gone)
+=== restore from backup ===
+=== reopen restored with crypto verify ===
+{
+  "evidence": 0,
+  "identities": 0,
+  "name": "opsqual",
+  "root": "C:\\Users\\Debajyoti0-0\\AppData\\Local\\Temp\\tmp.1UYEKIJzOf\\cfg\\workspaces\\opsqual",
+  "tokens": 0
+}
+rc=0
+=== secure delete ===
+This shreds and deletes workspace "opsqual". Re-run with --force to confirm.
+rc=0
+=== verify gone ===
+opsqual
+opsqual
+Workspace "opsqual" securely deleted.
+rc=0
+=== after ===
+No workspaces. Create one: aether workspace create <name>
+rc=0
+0

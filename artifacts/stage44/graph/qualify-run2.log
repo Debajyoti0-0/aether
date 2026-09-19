@@ -1,0 +1,37 @@
+=== qualify valid path on 10K ===
+=== Executable Runbook ===
+Path: user000000@phantom.corp -> r000
+OPSEC Risk: 30/100
+
+Steps:
+  1. aether exec azure --token <arm-token> --subscription-id <sub> --resource-group <rg> --vm-id r000 --cmd 'whoami'
+
+Notes:
+  [!] No credentials held for "user000000@phantom.corp"; run `aether prt convert` or import tokens first.
+
+real	0m0.074s
+user	0m0.000s
+sys	0m0.030s
+=== generate runbook ===
+=== Generated Plan: 2 node(s), max_parallel=2 ===
+  cae-recovery   deps=-          retries=0
+    $ relay cae-handler --refresh-token <rt> --tenant <tenant>
+  step-1         deps=cae-recovery retries=1
+    $ aether exec azure --token <arm-token> --subscription-id <sub> --resource-group <rg> --vm-id r000 --cmd 'whoami'
+
+real	0m0.062s
+user	0m0.031s
+sys	0m0.015s
+=== risk-threshold enforcement ===
+=== Executable Runbook ===
+Path: user000000@phantom.corp -> r000
+OPSEC Risk: 30/100
+
+=== duplicates (200% dup records) ===
+Graph saved to dup-g.json
+Nodes: 10040, Edges: 10000
+  entra:   10040 nodes
+
+real	0m0.728s
+user	0m0.031s
+sys	0m0.030s

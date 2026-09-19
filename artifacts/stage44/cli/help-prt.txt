@@ -1,0 +1,19 @@
+Convert extracted PRTs into usable OAuth2 tokens (authorized testing only).
+
+Usage:
+  aether prt [command]
+
+Available Commands:
+  convert     Convert a PRT to OAuth2 tokens
+  extract     Extract PRTs from registry/credential dumps
+  import      Import a PRT (and optional TLS binding) into a workspace
+  show        Display PRT metadata without exchanging
+
+Flags:
+  -h, --help   help for prt
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Use "aether prt [command] --help" for more information about a command.

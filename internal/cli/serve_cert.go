@@ -37,6 +37,10 @@ func init() {
 	serveCertIssueCmd.Flags().StringVar(&tsCertCaps, "caps", "", "Comma-separated execute capabilities to grant (e.g. exec.azure,exec.aws); read caps are granted by default")
 	serveCertIssueCmd.Flags().IntVar(&tsCertDays, "days", 365, "Certificate validity in days")
 	_ = serveCertIssueCmd.MarkFlagRequired("operator")
+	// D-002 fix: revocation was unreachable — the --operator flag existed
+	// only on `issue`, so `revoke` always failed with "invalid operator name".
+	serveCertRevokeCmd.Flags().StringVar(&tsCertOperator, "operator", "", "Operator name to revoke (required)")
+	_ = serveCertRevokeCmd.MarkFlagRequired("operator")
 	serveCertInitCmd.Flags().StringVar(&tsCertHosts, "extra-hosts", "", "Extra SAN hosts for the server cert (comma-separated)")
 }
 

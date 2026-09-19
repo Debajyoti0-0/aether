@@ -1,0 +1,19 @@
+Spoof TLS tls-unique channel bindings to replay PRTs from Linux against Token Protection-enforcing tenants.
+
+Usage:
+  aether token [command]
+
+Available Commands:
+  confuse     Forge a JWT via RS256→HS256 algorithm confusion
+  protect     Convert a PRT with Token Protection binding spoof
+  repurpose   Rewrite the aud claim into an unsigned test artifact
+  show        Render the channel binding header for a binding dump
+
+Flags:
+  -h, --help   help for token
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Use "aether token [command] --help" for more information about a command.

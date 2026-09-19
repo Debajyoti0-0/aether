@@ -1,0 +1,11 @@
+Verify that aether runs correctly on this OS: directory permissions, config discovery, crypto self-test, and workspace access.
+
+Usage:
+  aether doctor [flags]
+
+Flags:
+  -h, --help   help for doctor
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")

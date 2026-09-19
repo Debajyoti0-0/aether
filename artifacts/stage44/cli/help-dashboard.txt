@@ -1,0 +1,21 @@
+Token-authenticated web dashboard: graph view + activity stream
+
+Usage:
+  aether dashboard [flags]
+
+Flags:
+      --bind string            Bind address (default 127.0.0.1; non-loopback requires TLS) (default "127.0.0.1")
+      --graph string           Graph JSON file (required)
+  -h, --help                   help for dashboard
+      --operator-cert string   Operator client certificate (required with --teamserver)
+      --operator-key string    Operator client key (required with --teamserver)
+      --port string            Listen port (default "8080")
+      --server-ca string       Teamserver CA certificate (default: <operator-cert dir>/teamserver-ca.crt)
+      --teamserver string      Teamserver address for live events (optional; offline banner otherwise)
+      --tls-cert string        TLS certificate (required for non-loopback binds)
+      --tls-key string         TLS key (required for non-loopback binds)
+      --workspace string       Workspace name (required)
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")

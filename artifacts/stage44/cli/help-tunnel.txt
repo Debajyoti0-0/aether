@@ -1,0 +1,15 @@
+Sends ONE GET request through the configured proxy and reports the status code and TLS preset used. There is no persistent tunnel; use this to verify proxy routing before other commands.
+
+Usage:
+  aether tunnel [flags]
+
+Flags:
+      --browser-preset string   TLS preset (default "chrome")
+  -h, --help                    help for tunnel
+      --proxy string            Proxy URL: http(s):// or socks5:// (required)
+      --rotate-ja4              Rotate TLS fingerprints per connection
+      --test-url string         URL to probe through the proxy (default "https://login.microsoftonline.com/common/discovery/instance")
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")

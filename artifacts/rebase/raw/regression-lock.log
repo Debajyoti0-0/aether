@@ -1,0 +1,151 @@
+=== 2026-09-19T11:17:26Z go version: go version go1.27.1 windows/amd64 ===
+### go test ./...
+?   	github.com/Debajyoti0-0/aether/cmd/aether	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/api	3.504s
+ok  	github.com/Debajyoti0-0/aether/internal/behavior	0.816s
+?   	github.com/Debajyoti0-0/aether/internal/cli	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/engine/cap	1.588s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/exec	2.784s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/graph	0.901s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/mutation	2.534s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/orchestrate	3.000s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/orchestrator	0.460s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/pivot	1.381s
+?   	github.com/Debajyoti0-0/aether/internal/engine/relay	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/engine/rollback	1.149s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/spine	1.354s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/token	1.615s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/validate	1.526s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/watch	1.265s
+ok  	github.com/Debajyoti0-0/aether/internal/intel	1.541s
+ok  	github.com/Debajyoti0-0/aether/internal/paths	0.478s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/msoapx	1.627s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/oauth2	1.681s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/saml	0.754s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/wstrust	1.107s
+ok  	github.com/Debajyoti0-0/aether/internal/rl	1.837s
+ok  	github.com/Debajyoti0-0/aether/internal/store	3.569s
+ok  	github.com/Debajyoti0-0/aether/internal/transport	5.607s
+ok  	github.com/Debajyoti0-0/aether/internal/types	0.596s
+?   	github.com/Debajyoti0-0/aether/internal/version	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/workspace	7.262s
+ok  	github.com/Debajyoti0-0/aether/pkg/plugins	1.688s
+ok  	github.com/Debajyoti0-0/aether/pkg/plugins/gcp	1.624s
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/gitlab	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/kubernetes	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/okta	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/sdk	[no test files]
+?   	github.com/Debajyoti0-0/aether/scripts/genman	[no test files]
+?   	github.com/Debajyoti0-0/aether/scripts/rmdir	[no test files]
+?   	github.com/Debajyoti0-0/aether/test/mock	[no test files]
+### go test -race -count=1 ./...
+?   	github.com/Debajyoti0-0/aether/cmd/aether	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/api	6.224s
+ok  	github.com/Debajyoti0-0/aether/internal/behavior	1.664s
+?   	github.com/Debajyoti0-0/aether/internal/cli	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/engine/cap	2.158s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/exec	4.243s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/graph	1.652s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/mutation	4.106s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/orchestrate	6.336s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/orchestrator	1.493s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/pivot	1.927s
+?   	github.com/Debajyoti0-0/aether/internal/engine/relay	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/engine/rollback	1.850s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/spine	2.925s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/token	2.647s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/validate	2.233s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/watch	2.084s
+ok  	github.com/Debajyoti0-0/aether/internal/intel	2.067s
+ok  	github.com/Debajyoti0-0/aether/internal/paths	1.457s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/msoapx	2.711s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/oauth2	2.885s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/saml	1.417s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/wstrust	1.513s
+ok  	github.com/Debajyoti0-0/aether/internal/rl	2.640s
+ok  	github.com/Debajyoti0-0/aether/internal/store	4.116s
+ok  	github.com/Debajyoti0-0/aether/internal/transport	6.163s
+ok  	github.com/Debajyoti0-0/aether/internal/types	1.257s
+?   	github.com/Debajyoti0-0/aether/internal/version	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/workspace	8.286s
+ok  	github.com/Debajyoti0-0/aether/pkg/plugins	2.413s
+ok  	github.com/Debajyoti0-0/aether/pkg/plugins/gcp	2.239s
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/gitlab	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/kubernetes	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/okta	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/sdk	[no test files]
+?   	github.com/Debajyoti0-0/aether/scripts/genman	[no test files]
+?   	github.com/Debajyoti0-0/aether/scripts/rmdir	[no test files]
+?   	github.com/Debajyoti0-0/aether/test/mock	[no test files]
+### go test -tags=integration ./test/integration/...
+ok  	github.com/Debajyoti0-0/aether/test/integration	3.041s
+### go vet ./...
+VET_EXIT=0
+### golangci-lint run
+	switch {
+	^
+internal\engine\validate\attck_test.go:41:3: SA4004: the surrounding loop is unconditionally terminated (staticcheck)
+		break
+		^
+internal\protocol\oauth2\pqc.go:55:3: SA9003: empty branch (staticcheck)
+		if runtime.GOOS == "windows" && len(path) > 1 && path[1] == ':' {
+		^
+internal\protocol\saml\assertion.go:130:46: S1016: should convert attr (type Attribute) to attributeXML instead of using struct literal (staticcheck)
+			stmt.Attributes = append(stmt.Attributes, attributeXML{
+			                                          ^
+internal\rl\agent_linear.go:78:2: SA4017: normalized doesn't have side effects and its return value is ignored (staticcheck)
+	normalized(h)
+	^
+pkg\plugins\plugins_test.go:49:3: QF1002: could use tagged switch on r.URL.Path (staticcheck)
+		switch {
+		^
+pkg\plugins\plugins_test.go:62:2: SA4006: this value of prov is never used (staticcheck)
+	prov, err := plugins.NewRegistry().Provider("okta")
+	^
+pkg\plugins\remote_test.go:57:3: QF1002: could use tagged switch on r.URL.Path (staticcheck)
+		switch {
+		^
+pkg\plugins\remote_test.go:94:3: QF1002: could use tagged switch on r.URL.Path (staticcheck)
+		switch {
+		^
+190 issues:
+* errcheck: 172
+* ineffassign: 3
+* staticcheck: 15
+### staticcheck ./...
+internal\api\client.go:15:6: func jsonUnmarshalImpl is unused (U1000)
+internal\cli\governance.go:35:5: var govWorkspace is unused (U1000)
+internal\cli\graph.go:142:2: should replace loop with pathIDs = append(pathIDs, splitComma(graphPath)...) (S1011)
+internal\cli\relay_cae.go:51:2: var fido2Preset is unused (U1000)
+internal\cli\relay_cae.go:157:14: unnecessary use of fmt.Sprintf (S1039)
+internal\cli\replay.go:167:3: should replace loop with pathIDs = append(pathIDs, splitComma(saveRunbookPath)...) (S1011)
+internal\cli\run.go:34:2: var runPassphrase is unused (U1000)
+internal\cli\v3b.go:65:3: should replace loop with pathIDs = append(pathIDs, splitComma(genPath)...) (S1011)
+internal\cli\v3b.go:202:6: func rollbackPath is unused (U1000)
+internal\engine\pivot\ccache.go:12:7: const keyVersionUnknown is unused (U1000)
+internal\engine\pivot\ccache.go:15:6: type ccacheEntry is unused (U1000)
+internal\engine\pivot\cloudkerberos.go:180:6: func mustMarshalRaw is unused (U1000)
+internal\engine\validate\attck_test.go:41:3: the surrounding loop is unconditionally terminated (SA4004)
+internal\protocol\saml\assertion.go:130:46: should convert attr (type Attribute) to attributeXML instead of using struct literal (S1016)
+internal\protocol\wstrust\client.go:159:6: func normalizeNamespace is unused (U1000)
+internal\protocol\wstrust\downgrade.go:117:6: type mexDoc is unused (U1000)
+internal\protocol\wstrust\downgrade.go:121:6: type mexEndpoint is unused (U1000)
+internal\protocol\wstrust\request.go:220:6: func nsAttr is unused (U1000)
+internal\rl\agent_linear.go:78:2: normalized doesn't have side effects and its return value is ignored (SA4017)
+internal\rl\env.go:219:6: func minInt is unused (U1000)
+internal\store\vault.go:451:6: func migrationJSON is unused (U1000)
+internal\workspace\io.go:7:2: var osReadFile is unused (U1000)
+internal\workspace\io.go:8:2: var osWriteFile is unused (U1000)
+pkg\plugins\plugins_test.go:62:2: this value of prov is never used (SA4006)
+SC_EXIT=0
+### govulncheck ./...
+=== Symbol Results ===
+
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 2
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
+Use '-show verbose' for more details.
+ALL_DONE

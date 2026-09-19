@@ -5,7 +5,9 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -93,15 +95,37 @@ func (o *Operator) CanExecute(capability string) bool {
 }
 
 // RevocationList is a plain-text name list checked at connection time
-// (Stage 3 scope; OCSP/CRL distribution is Stage 4).
+// (Stage 3 scope; OCSP/CRL distribution is Stage 4). When bound to a
+// file path (FileRevocationList), the list is re-read on every check so
+// `serve cert revoke` takes effect on new connections without a server
+// restart (D-003). A read error keeps the last known list — previously
+// revoked names can never be silently un-revoked by an I/O failure.
 type RevocationList struct {
+	mu      sync.Mutex
 	revoked map[string]bool
+	path    string
 }
 
 // LoadRevocationList parses one operator name per line (# comments
-// allowed). A missing file is an empty list.
+// allowed). A missing file is an empty list. The result is a static
+// snapshot; use FileRevocationList for live revocation.
 func LoadRevocationList(data []byte) *RevocationList {
 	rl := &RevocationList{revoked: map[string]bool{}}
+	rl.parse(data)
+	return rl
+}
+
+// FileRevocationList binds the list to path so IsRevoked re-reads it
+// before every check. initial is the startup snapshot the caller already
+// read (may be nil).
+func FileRevocationList(path string, initial []byte) *RevocationList {
+	rl := LoadRevocationList(initial)
+	rl.path = path
+	return rl
+}
+
+func (rl *RevocationList) parse(data []byte) {
+	rl.revoked = map[string]bool{}
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -109,10 +133,24 @@ func LoadRevocationList(data []byte) *RevocationList {
 		}
 		rl.revoked[line] = true
 	}
-	return rl
 }
 
-// IsRevoked reports whether the operator name is revoked.
+// IsRevoked reports whether the operator name is revoked. If the list is
+// file-bound, the file is re-read first; a missing file is an empty list,
+// and an unreadable file leaves the last known list in force.
 func (rl *RevocationList) IsRevoked(name string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	if rl.path != "" {
+		data, err := os.ReadFile(rl.path)
+		switch {
+		case err == nil:
+			rl.parse(data)
+		case os.IsNotExist(err):
+			rl.revoked = map[string]bool{}
+		default:
+			// keep last known list
+		}
+	}
 	return rl.revoked[name]
 }

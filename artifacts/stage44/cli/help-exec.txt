@@ -1,0 +1,21 @@
+Execute commands on cloud VMs and CI runners with valid tokens (authorized testing only). Every execution is written to the signed audit chain and rollback stack of the --workspace it names.
+
+Usage:
+  aether exec [command]
+
+Available Commands:
+  aws         AWS EC2 SSM RunCommand
+  azure       Azure VM RunCommand
+  gcp         GCP Compute Engine exec staging (OS Login / serial console path)
+  github      GitHub Actions workflow dispatch
+  imds        Azure IMDS managed identity exploitation (from a compromised VM)
+  parallel    Fan a command out over many targets with a worker pool
+
+Flags:
+  -h, --help   help for exec
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Use "aether exec [command] --help" for more information about a command.

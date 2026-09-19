@@ -1,0 +1,79 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "aether-darwin-amd64",
+      "digest": {
+        "sha256": "ae6ce965082e92b63714190e203a551c845d8eeee525c20ec9d68fb1cdb0ab10"
+      }
+    },
+    {
+      "name": "aether-darwin-arm64",
+      "digest": {
+        "sha256": "731db2a5a87f5534c789ea146ac815445ae68f1b091d082aac3543bca8125e78"
+      }
+    },
+    {
+      "name": "aether-linux-amd64",
+      "digest": {
+        "sha256": "1c657152045f08a0da49310147a99bfb537dfc23498f10a45d67e2aa7bd454c0"
+      }
+    },
+    {
+      "name": "aether-linux-arm64",
+      "digest": {
+        "sha256": "0e0928286a616a34d48130ddeb88512e0c30ba8b59e7bdf162e4ed5b939df725"
+      }
+    },
+    {
+      "name": "aether-windows-amd64.exe",
+      "digest": {
+        "sha256": "f5cafd277defdef002c1d290e1dc417fccf77cc1b8fec1f7f8f6435a5885c6dc"
+      }
+    },
+    {
+      "name": "aether-windows-arm64.exe",
+      "digest": {
+        "sha256": "51abdf229bd93b199abfecf93562371420c6366275532bfc45b3a1ea47025bf4"
+      }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://go.dev/build/go-build",
+      "externalParameters": {
+        "commit": "0dae3ae0292c3a03aefd51b6735decd072b6b4d1",
+        "version": "3.4.0-stage3",
+        "buildFlags": [
+          "-trimpath",
+          "-ldflags",
+          "-s -w -X github.com/Debajyoti0-0/aether/internal/version.Version=3.4.0-stage3 -X github.com/Debajyoti0-0/aether/internal/version.Commit=0dae3ae"
+        ],
+        "toolchain": "go version go1.27.1 windows/amd64",
+        "targets": [
+          "aether-darwin-amd64",
+          "aether-darwin-arm64",
+          "aether-linux-amd64",
+          "aether-linux-arm64",
+          "aether-windows-amd64.exe",
+          "aether-windows-arm64.exe"
+        ]
+      }
+    },
+    "runDetails": {
+      "builder": {
+        "id": "local-operator:debajyoti-haldar"
+      },
+      "metadata": {
+        "invocationId": "stage44r-rebase-manual",
+        "startedOn": "2026-09-19T11:40:38Z",
+        "sbomDigest": "sha256:32010cd1051e73f254b0a60e4e7178fd310cf3665ad537b7521d0d17a561e78b",
+        "binarySignatureDigest": "sha256:51ad46d8a954e068698a560dfd950e38ba6bc7de710ab2129b2d2f6f04942dc0",
+        "publicKeyDigest": "sha256:deefd1702ec651c4d240b1eef0b47b8496890cc4ea6a370c43def20139967350",
+        "signing": "cosign key-based; tlog upload disabled (offline release)",
+        "reproducibility": "windows-amd64 rebuilt 3x (2 warm, 1 cold cache) byte-identical"
+      }
+    }
+  }
+}

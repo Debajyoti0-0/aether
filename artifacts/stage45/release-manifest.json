@@ -1,0 +1,58 @@
+{
+  "release": "3.4.0-stage3+stage44r (GA candidate)",
+  "commit": "0dae3ae0292c3a03aefd51b6735decd072b6b4d1",
+  "created": "2026-09-19T11:48:13Z",
+  "toolchain": "go version go1.27.1 windows/amd64",
+  "artifacts": {
+    "binaries": {
+      "aether-darwin-amd64": {
+        "sha256": "ae6ce965082e92b63714190e203a551c845d8eeee525c20ec9d68fb1cdb0ab10"
+      },
+      "aether-darwin-arm64": {
+        "sha256": "731db2a5a87f5534c789ea146ac815445ae68f1b091d082aac3543bca8125e78"
+      },
+      "aether-linux-amd64": {
+        "sha256": "1c657152045f08a0da49310147a99bfb537dfc23498f10a45d67e2aa7bd454c0"
+      },
+      "aether-linux-arm64": {
+        "sha256": "0e0928286a616a34d48130ddeb88512e0c30ba8b59e7bdf162e4ed5b939df725"
+      },
+      "aether-windows-amd64.exe": {
+        "sha256": "f5cafd277defdef002c1d290e1dc417fccf77cc1b8fec1f7f8f6435a5885c6dc"
+      },
+      "aether-windows-arm64.exe": {
+        "sha256": "51abdf229bd93b199abfecf93562371420c6366275532bfc45b3a1ea47025bf4"
+      }
+    },
+    "sbom": {
+      "path": "sbom/aether-3.4.0-stage3.cdx.json",
+      "sha256": "32010cd1051e73f254b0a60e4e7178fd310cf3665ad537b7521d0d17a561e78b",
+      "format": "CycloneDX 1.6"
+    },
+    "provenance": {
+      "path": "provenance.json",
+      "sha256": "00763eb91134a64cef4822a7e790b67976752084a6b51f34d9868079e5e90206",
+      "type": "SLSA v1 in-toto"
+    },
+    "checksums": {
+      "path": "checksums.txt",
+      "sha256": "d84f30f950631535648396f038ac69368d8d8a9b92f242dd2c449aeeef07ec91"
+    }
+  },
+  "signatures": {
+    "method": "cosign key-based",
+    "publicKey": "supply-chain/release.pub",
+    "publicKeySha256": "deefd1702ec651c4d240b1eef0b47b8496890cc4ea6a370c43def20139967350",
+    "signed": [
+      "dist/aether-windows-amd64.exe",
+      "checksums.txt",
+      "provenance.json",
+      "sbom/aether-3.4.0-stage3.cdx.json"
+    ],
+    "tlog": "not uploaded (offline release)"
+  },
+  "publication": {
+    "status": "BLOCKED",
+    "reason": "no git remote configured; no authorized release channel designated"
+  }
+}

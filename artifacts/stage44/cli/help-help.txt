@@ -1,0 +1,12 @@
+Help provides help for any command in the application.
+Simply type aether help [path to command] for full details.
+
+Usage:
+  aether help [command] [flags]
+
+Flags:
+  -h, --help   help for help
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")

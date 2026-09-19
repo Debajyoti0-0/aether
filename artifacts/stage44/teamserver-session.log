@@ -1,0 +1,176 @@
+=== workspace for teamserver ===
+Workspace "ts-ws" created at C:\Users\Debajyoti0-0\AppData\Local\Temp\tmp.1UYEKIJzOf\cfg\workspaces\ts-ws
+=== cert init ===
+Teamserver PKI initialized in C:/Users/DEBAJY~1/AppData/Local/Temp/aether-ts/pki
+  CA:     C:\Users\DEBAJY~1\AppData\Local\Temp\aether-ts\pki\teamserver-ca.crt
+  Server: C:\Users\DEBAJY~1\AppData\Local\Temp\aether-ts\pki\teamserver-server.crt
+Issue operator certificates with: aether serve cert issue --operator <name>
+rc=0
+teamserver-ca.crt
+teamserver-ca.key
+teamserver-server.crt
+teamserver-server.key
+=== issue operator ===
+Issued operator certificate for "alice" (valid 365 days)
+  cert: C:\Users\DEBAJY~1\AppData\Local\Temp\aether-ts\pki\operators\alice\alice.crt
+  key:  C:\Users\DEBAJY~1\AppData\Local\Temp\aether-ts\pki\operators\alice\alice.key
+  capabilities: [read.audit read.events read.graph read.workspace exec.azure graph.read]
+alice
+=== fingerprint ===
+sha256 Fingerprint=60:C8:B9:2F:AA:95:58:2B:38:79:2A:99:3B:25:A2:0E:8C:DF:6C:01:42:B4:F9:EF:5D:1C:AF:16:D9:8C:0B:D0
+sha256 Fingerprint=FD:CE:BC:14:62:71:38:DC:6F:B3:4A:C1:14:44:EA:DE:F8:75:25:B1:07:7C:2C:44:A9:8C:6E:AA:C5:9D:7C:CF
+=== connect (no cert, must fail closed) ===
+Error: operator credentials are required: pass --operator-cert and --operator-key (obtain them with 'aether serve cert issue --operator <name>')
+Usage:
+  aether connect [flags]
+rc=0
+=== connect (valid operator) ===
+Error: unknown flag: --addr
+Usage:
+  aether connect [flags]
+
+Flags:
+      --exec string            Execute one command on the teamserver and exit
+  -h, --help                   help for connect
+      --i-know-what-im-doing   Required confirmation alongside --insecure
+rc=0
+=== status via mTLS ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: command not permitted on teamserver: only whitelisted mutating intents (exec azure|aws|github|gcp, simulate stream) are accepted
+Usage:
+  aether connect [flags]
+
+Flags:
+      --exec string            Execute one command on the teamserver and exit
+  -h, --help                   help for connect
+      --i-know-what-im-doing   Required confirmation alongside --insecure
+      --insecure               Skip server cert verification (research only)
+      --operator-cert string   Operator client certificate (PEM; from 'serve cert issue')
+      --operator-key string    Operator client key (PEM)
+rc=0
+=== TLS validation: wrong CA must fail ===
+Error: connect 127.0.0.1:7788: tls: failed to verify certificate: x509: certificate signed by unknown authority
+Usage:
+  aether connect [flags]
+
+=== bob (graph.read only) attempts exec.azure (must be denied by capability authz) ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: exec azure requires --token, --subscription-id, --resource-group, --vm-id, --cmd
+Usage:
+  aether connect [flags]
+
+=== bob sends well-formed exec.azure (fake targets) — expect capability DENY ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: operator "bob" lacks capability "exec.azure"
+Usage:
+  aether connect [flags]
+
+Flags:
+rc=0
+=== alice exec.azure fake targets (spine dispatch; expect typed failure, audit + rollback recorded) ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: runcommand request: Post "https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-qual/providers/Microsoft.Compute/virtualMachines/vm-qual/runCommand?api-version=2024-03-01": net/http: HTTP/1.x transport connection broken: malformed HTTP response "\x00\x00\x12\x04\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00d\x00\x10\x00\x00\x00\x02\x00\x04\x00\x80\x00\x00\x00\x00\x04\b\x00\x00\x00\x00\x00\x00\x7f\x00\x01"
+Usage:
+  aether connect [flags]
+
+Flags:
+      --exec string            Execute one command on the teamserver and exit
+  -h, --help                   help for connect
+      --i-know-what-im-doing   Required confirmation alongside --insecure
+      --insecure               Skip server cert verification (research only)
+      --operator-cert string   Operator client certificate (PEM; from 'serve cert issue')
+      --operator-key string    Operator client key (PEM)
+      --server string          Teamserver address (default "127.0.0.1:7788")
+      --server-ca string       Teamserver CA certificate to verify the server (default: <operator-cert dir>/teamserver-ca.crt)
+      --workspace string       Workspace to sync
+rc=0
+Error: workspace vault C:\Users\Debajyoti0-0\AppData\Local\Temp\tmp.1UYEKIJzOf\cfg\workspaces\ts-ws\vault.db is locked by another process
+Usage:
+  aether workspace info [flags]
+
+Flags:
+  -h, --help                help for info
+      --passphrase string   Workspace passphrase (or AETHER_PASSPHRASE env)
+      --workspace string    Workspace name (or pass as arg)
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Error: workspace vault C:\Users\Debajyoti0-0\AppData\Local\Temp\tmp.1UYEKIJzOf\cfg\workspaces\ts-ws\vault.db is locked by another process
+=== revoke bob ===
+Error: unknown flag: --operator
+Usage:
+  aether serve cert revoke [flags]
+
+=== bob reconnect (must FAIL CLOSED) ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: command not permitted on teamserver: only whitelisted mutating intents (exec azure|aws|github|gcp, simulate stream) are accepted
+Usage:
+  aether connect [flags]
+rc=0
+=== revoke bob (arg form) ===
+Error: invalid operator name ""
+Usage:
+  aether serve cert revoke [flags]
+
+Flags:
+rc=0
+=== revoked list (serials redacted) ===
+=== revoke bob (fixed CLI, live) ===
+Operator "bob" revoked (appended to C:\Users\DEBAJY~1\AppData\Local\Temp\aether-ts\pki\revoked.txt)
+rc=0
+=== bob reconnect (must FAIL CLOSED) ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: command not permitted on teamserver: only whitelisted mutating intents (exec azure|aws|github|gcp, simulate stream) are accepted
+Usage:
+rc=0
+=== alice still works ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: command not permitted on teamserver: only whitelisted mutating intents (exec azure|aws|github|gcp, simulate stream) are accepted
+=== kill old server (graceful: taskkill to its pid) ===
+server pid=28860
+SUCCESS: The process with PID 28860 has been terminated.
+0
+=== 1. bob connects (not yet revoked) ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: command not permitted on teamserver: only whitelisted mutating intents (exec azure|aws|github|gcp, simulate stream) are accepted
+=== 2. revoke bob (live, server keeps running) ===
+Operator "bob" revoked (appended to C:\Users\DEBAJY~1\AppData\Local\Temp\aether-ts\pki\revoked.txt)
+=== 3. bob reconnect (MUST fail closed, no restart) ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: connection closed
+Usage:
+bob-rc=0
+=== 4. alice still works ===
+Connected to teamserver 127.0.0.1:7788 (authenticated operator)
+Error: command not permitted on teamserver: only whitelisted mutating intents (exec azure|aws|github|gcp, simulate stream) are accepted
+=== serve without certs (must refuse) ===
+Error: teamserver PKI is required: pass --server-cert, --server-key and --ca-cert (bootstrap with 'aether serve cert init', then issue operator certificates with 'aether serve cert issue')
+Usage:
+  aether serve [flags]
+rc=0
+=== serve with garbage cert (must refuse) ===
+Error: attach workspace "ts-ws": workspace vault C:\Users\Debajyoti0-0\AppData\Local\Temp\tmp.1UYEKIJzOf\cfg\workspaces\ts-ws\vault.db is locked by another process
+Usage:
+  aether serve [flags]
+rc=0
+=== serve with wrong-passphrase workspace (must refuse) ===
+Error: attach workspace "ts-ws": workspace "ts-ws": wrong passphrase or corrupted salt.bin
+Usage:
+  aether serve [flags]
+rc=0
+=== serve with garbage cert (fresh workspace) ===
+Error: attach workspace "ts-ws2": workspace "ts-ws2": wrong passphrase or corrupted salt.bin
+Usage:
+  aether serve [flags]
+rc=0
+Error: attach workspace "ts-ws2": workspace "ts-ws2" not found: GetFileAttributesEx C:\Users\Debajyoti0-0\AppData\Roaming\aether\workspaces\ts-ws2: The system cannot find the file specified.
+Usage:
+  aether serve [flags]
+rc=0
+Error: load server keypair: tls: failed to find any PEM data in certificate input
+Usage:
+  aether serve [flags]
+rc=0
+cleanup rc=0

@@ -1,0 +1,23 @@
+Replay a saved operation file — a graph runbook, a run report, or a
+hand-written list of aether commands. Dry-run mode prints what would
+execute and performs NO network or destructive actions. Pass --confirm
+to actually execute each step.
+
+Usage:
+  aether replay [flags]
+  aether replay [command]
+
+Available Commands:
+  save        Save a graph path's runbook as a replayable operation file
+
+Flags:
+      --confirm         Actually execute the steps (default: dry-run)
+      --file string     Operation file: runbook JSON, or one command per line (required)
+      --filter string   Only replay steps containing this substring
+  -h, --help            help for replay
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Use "aether replay [command] --help" for more information about a command.

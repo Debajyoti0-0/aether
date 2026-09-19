@@ -1,0 +1,15 @@
+=== SIGINT to dashboard (graceful?) ===
+pids: 767 /c/Users/Debajyoti0-0/OneDrive/Documents/aether/bin/aether
+1141 /c/Users/Debajyoti0-0/OneDrive/Documents/aether/bin/aether
+dashboard winpid=
+kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]
+2
+  TCP    127.0.0.1:8443         0.0.0.0:0              LISTENING
+  TCP    127.0.0.1:21811        127.0.0.1:8443         TIME_WAIT
+port8443_lines=11
+=== kill -INT msys pid 767 (dashboard) ===
+remaining aether processes: 0
+port 8443 listeners: 1
+=== restart dashboard to confirm clean relaunch ===
+Dashboard token: [REDACTED-TOKEN]
+relaunch rc=0

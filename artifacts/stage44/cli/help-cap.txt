@@ -1,0 +1,20 @@
+Parse and offline-evaluate Entra ID Conditional Access policies.
+
+Usage:
+  aether cap [command]
+
+Available Commands:
+  evaluate    Evaluate policies offline for a user/app pair
+  exploit     Simulate a live CAP bypass (OS/IP/Browser spoofing)
+  matrix      Build the user×app policy decision matrix
+  parse       Fetch or load CAP policies
+  predict     Forecast CAP activity windows from historical state changes
+
+Flags:
+  -h, --help   help for cap
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Use "aether cap [command] --help" for more information about a command.
