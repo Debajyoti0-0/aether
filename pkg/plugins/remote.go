@@ -38,7 +38,12 @@ type RemoteRegistry struct {
 	URL string
 	// Dir is the local install directory.
 	Dir string
-	HTTP *http.Client
+	// AllowUnsigned permits installing artifacts whose manifest does
+	// NOT declare a checksum. Insecure: artifact integrity is then
+	// unverified. Callers must set this deliberately; the CLI surfaces
+	// it as --allow-unsigned and emits an audit record when used.
+	AllowUnsigned bool
+	HTTP          *http.Client
 }
 
 // NewRemoteRegistry builds a registry client. dir defaults to the
@@ -155,6 +160,12 @@ func (r *RemoteRegistry) Install(ctx context.Context, manifest PluginManifest) (
 
 	got := hex.EncodeToString(hasher.Sum(nil))
 	want := strings.ToLower(strings.TrimPrefix(manifest.SHA256, "sha256:"))
+	if want == "" && !r.AllowUnsigned {
+		// F-003 fail-closed: an undeclared checksum must not install.
+		// The manifest's own integrity claim is missing; proceeding
+		// would activate an artifact nobody vouched for.
+		return "", fmt.Errorf("manifest %s declares no sha256 checksum (integrity unverified); use --allow-unsigned to override insecurely", manifest.Name)
+	}
 	if want != "" && got != want {
 		return "", fmt.Errorf("checksum mismatch for %s: got %s want %s", manifest.Name, got, want)
 	}

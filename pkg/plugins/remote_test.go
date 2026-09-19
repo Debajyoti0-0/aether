@@ -112,6 +112,74 @@ func TestRemoteRegistryInstallChecksumMismatch(t *testing.T) {
 	}
 }
 
+func TestRemoteRegistryInstallUndeclaredChecksumFailsClosed(t *testing.T) {
+	// F-003 regression: a manifest that declares no sha256 must NOT
+	// install (the old code activated the artifact unverified).
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/index.json":
+			json.NewEncoder(w).Encode(testIndex())
+		case r.URL.Path == "/artifacts/aether-vmware.json":
+			w.Write([]byte(`{"type":"provider","provider":"vmware"}`))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer srv.Close()
+
+	dir := filepath.Join(t.TempDir(), "plugins")
+	reg := NewRemoteRegistry(srv.URL+"/index.json", dir)
+
+	idx, err := reg.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("fetch: %v", err)
+	}
+	// idx.Plugins[1] is aether-vmware — declares no SHA256.
+	path, err := reg.Install(context.Background(), idx.Plugins[1])
+	if err == nil || !strings.Contains(err.Error(), "declares no sha256") {
+		t.Fatalf("expected fail-closed on undeclared checksum, got path=%q err=%v", path, err)
+	}
+	// Nothing was installed.
+	installed, _ := reg.Installed()
+	if len(installed) != 0 {
+		t.Errorf("unverified install leaked: %+v", installed)
+	}
+}
+
+func TestRemoteRegistryInstallAllowUnsignedOverride(t *testing.T) {
+	// F-003: the explicit insecure override installs, but the stored
+	// entry records that no checksum was verified.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/index.json":
+			json.NewEncoder(w).Encode(testIndex())
+		case r.URL.Path == "/artifacts/aether-vmware.json":
+			w.Write([]byte(`{"type":"provider","provider":"vmware"}`))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer srv.Close()
+
+	dir := filepath.Join(t.TempDir(), "plugins")
+	reg := NewRemoteRegistry(srv.URL+"/index.json", dir)
+	reg.AllowUnsigned = true // deliberate insecure override
+
+	idx, _ := reg.Fetch(context.Background())
+	path, err := reg.Install(context.Background(), idx.Plugins[1])
+	if err != nil {
+		t.Fatalf("allow-unsigned install: %v", err)
+	}
+	// The stored entry records the computed hash of what was installed
+	// (a fingerprint, not a verified claim — no checksum was declared).
+	artifact := []byte(`{"type":"provider","provider":"vmware"}`)
+	sum := sha256.Sum256(artifact)
+	data, _ := os.ReadFile(path)
+	if !strings.Contains(string(data), hex.EncodeToString(sum[:])) {
+		t.Errorf("allow-unsigned entry should record computed artifact sha: %s", data)
+	}
+}
+
 func TestRemoteRegistryNoURL(t *testing.T) {
 	reg := NewRemoteRegistry("", filepath.Join(t.TempDir(), "plugins"))
 	if _, err := reg.Search(context.Background(), ""); err == nil {

@@ -331,6 +331,11 @@ var pluginsInstallCmd = &cobra.Command{
 			return err
 		}
 		reg := plugins.NewRemoteRegistry(pluginsIndex, "")
+		reg.AllowUnsigned = pluginsAllowUnsigned
+		if pluginsAllowUnsigned {
+			// F-003: the insecure override is deliberate and audited.
+			fmt.Fprintln(os.Stderr, "WARNING: --allow-unsigned set; artifact integrity is UNVERIFIED for this install")
+		}
 
 		results, err := reg.Search(context.Background(), pluginsInstallName)
 		if err != nil {
@@ -394,6 +399,7 @@ var (
 	pluginsIndex        string
 	pluginsQuery        string
 	pluginsInstallName  string
+	pluginsAllowUnsigned bool
 )
 
 // ---------------------------------------------------------------- exec gcp
@@ -531,6 +537,7 @@ func init() {
 	pluginsCmd2.PersistentFlags().StringVar(&pluginsIndex, "index", "https://raw.githubusercontent.com/Debajyoti0-0/aether-plugins/main/index.json", "Registry index URL")
 	pluginsSearchCmd.Flags().StringVar(&pluginsQuery, "query", "", "Search substring")
 	pluginsInstallCmd.Flags().StringVar(&pluginsInstallName, "name", "", "Plugin name (required)")
+	pluginsInstallCmd.Flags().BoolVar(&pluginsAllowUnsigned, "allow-unsigned", false, "INSECURE: allow installing artifacts whose manifest declares no checksum")
 	pluginsInstallCmd.Flags().StringVar(&execWorkspace, "workspace", "", "Workspace for audit+rollback records (required)")
 	_ = pluginsInstallCmd.MarkFlagRequired("name")
 
