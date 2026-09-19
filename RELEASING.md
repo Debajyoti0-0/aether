@@ -8,7 +8,7 @@ RELEASE AUTHORIZED:  NO
 RELEASE PUBLISHED:   NO
 ```
 
-Engineering and qualification are complete and evidenced in `artifacts/rebase/` through `artifacts/stage49/`. Only governance remains, and every remaining action belongs to a human with authority, credentials, hardware, or signing power. This file is the standing execution order; the authoritative probe is always the repository itself (`git status`, `git tag`, `git remote`, `VERSION`), never this file.
+Engineering and qualification are complete and evidenced in the committed evidence chain (process history pruned to `artifacts/PROCESS-HISTORY.md`; full records recoverable from git history). Only governance remains, and every remaining action belongs to a human with authority, credentials, hardware, or signing power. This file is the standing execution order; the authoritative probe is always the repository itself (`git status`, `git tag`, `git remote`, `VERSION`), never this file.
 
 ---
 
@@ -59,7 +59,7 @@ RELEASE PUBLISHED:   YES
 >
 > **Role:** Release operator. Execute the rehearsed GA ceremony from `artifacts/stage48/publish-runbook.md`.
 >
-> **Do not re-derive.** Do not re-audit. Do not re-qualify. The engineering and qualification work is complete and evidenced in `artifacts/rebase/` through `artifacts/stage49/`. Your only task is the mechanical ceremony:
+> **Do not re-derive.** Do not re-audit. Do not re-qualify. The engineering and qualification work is complete and evidenced in the committed evidence chain (process history pruned to `artifacts/PROCESS-HISTORY.md`; full records recoverable from git history). Your only task is the mechanical ceremony:
 > 1. Re-probe the repository (`git status`, HEAD, tags, remotes, `VERSION`) — trust the repository, not this prompt.
 > 2. Verify the four governance inputs are present and signed.
 > 3. Version flip to `3.4.0-ga` in VERSION / README / CHANGELOG / binary; commit.
@@ -85,4 +85,4 @@ RELEASE PUBLISHED:   YES
 - Produce percentages that fold untested items into the total.
 - Treat the dossier's blank signature block as approval.
 
-**The correct agent behavior from this point is to stop.** The repository is clean, the evidence chain is intact (`artifacts/rebase/` → `stage49/`, plus the stage48 handoff package), and every remaining action belongs to a human.
+**The correct agent behavior from this point is to stop.** The repository is clean, the evidence chain is intact (`artifacts/` — see `PROCESS-HISTORY.md`), and every remaining action belongs to a human.

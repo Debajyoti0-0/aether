@@ -1,11 +1,0 @@
-SOAK_START 2026-09-19T11:34:50Z target=600s
-METRICS t=58s iter=10 mem_mb=[20 16 ]
-METRICS t=124s iter=20 mem_mb=[19 17 ]
-METRICS t=186s iter=30 mem_mb=[20 17 ]
-METRICS t=246s iter=40 mem_mb=[20 17 ]
-METRICS t=306s iter=50 mem_mb=[20 17 ]
-METRICS t=366s iter=60 mem_mb=[20 18 ]
-METRICS t=426s iter=70 mem_mb=[20 18 ]
-METRICS t=487s iter=80 mem_mb=[20 17 ]
-METRICS t=547s iter=90 mem_mb=[19 17 ]
-SOAK_DONE iter=98 duration=601s errors=0
