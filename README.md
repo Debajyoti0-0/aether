@@ -1,4 +1,4 @@
-# Aether v4.2.0-rc1
+# Aether v4.2.0-ga
 
 > **Authorized-testing engineering platform for hybrid identity fabrics**
 

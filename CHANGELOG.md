@@ -1,5 +1,19 @@
 # Changelog
 
+## v4.2.0-ga (2026-09-19)
+
+General Availability of the v4.2.0 line: all Stage 41-46 finding-closure and qualification work (F-001..F-010 regression-pinned), Stage 43-44 live staging/operational evidence, Stage 45-46 supply-chain qualification and independent release audit (GO).
+
+Ceremony additions:
+
+- build: reproducible release recipe (release-audit finding F46-2 remediation) - `-trimpath -buildvcs=false`; release builds run from fresh checkouts (line-ending normalized)
+- release engineering: final artifacts rebuilt and signed at the GA commit; Rekor transparency-log inclusion verified for the actual final artifacts (findings F46-1/F46-3 remediation); recipe and digest records under artifacts/stage46/
+- independent release audit: Stage 46 GO (regression lock green, operational spot-checks 7/7 live PASS, lineage and historical tags verified)
+
+Known limitations:
+
+- Azure live-tenant provider verification remains WAIVED (unsigned waiver with documented review condition; artifacts/stage44/provider-waiver/)
+- darwin targets and windows/arm64 native smoke dispositioned (no macOS host / no emulation available in this lab)
 ## v4.2.0-rc1 (2026-09-19)
 
 ### Security Fixes
