@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.2.0-rc1 (2026-09-19)
+
+### Security Fixes
+- Fixed token confuse modulus slice panic (F-001/F-008): Added modulus length validation in ConfuseJWT to prevent slice bounds panic on short modulus inputs.
+
 ## v3.4.0-stage3 — Teamserver V2 (Stage 3 of the v4.0.0 roadmap) (2026-09-11)
 
 Distributed control plane — no new offensive capabilities.

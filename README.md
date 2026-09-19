@@ -1,4 +1,4 @@
-# Aether v3.4.0-stage3
+# Aether v4.2.0-rc1
 
 > **Authorized-testing engineering platform for hybrid identity fabrics**
 

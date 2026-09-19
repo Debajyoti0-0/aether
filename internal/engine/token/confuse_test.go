@@ -1,12 +1,14 @@
 package token
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"math/big"
 	"strings"
 	"testing"
 )
@@ -136,5 +138,37 @@ func TestRepurposeAudArray(t *testing.T) {
 	}
 	if res.OriginalAud != "a" {
 		t.Errorf("original aud = %q (first element)", res.OriginalAud)
+	}
+}
+
+func TestConfuseJWT_ShortModulus(t *testing.T) {
+	pub := &rsa.PublicKey{N: big.NewInt(0xAABBCC), E: 65537}
+	token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.c2lnYXR1cmU"
+	_, err := ConfuseJWT(token, pub, nil)
+	if err == nil {
+		t.Fatal("expected error for short modulus")
+	}
+	if !strings.Contains(err.Error(), "modulus") {
+		t.Errorf("expected modulus error, got: %v", err)
+	}
+}
+
+func TestConfuseJWT_ValidModulus(t *testing.T) {
+	pub := &rsa.PublicKey{N: big.NewInt(0), E: 65537}
+	pub.N.SetBytes(bytes.Repeat([]byte{0xFF}, 256))
+	token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.c2lnYXR1cmU"
+	_, err := ConfuseJWT(token, pub, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConfuseJWT_NilPublicKey(t *testing.T) {
+	_, err := ConfuseJWT("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.c2lnYXR1cmU", nil, nil)
+	if err == nil {
+		t.Fatal("expected error for nil public key")
+	}
+	if !strings.Contains(err.Error(), "public key is nil") {
+		t.Errorf("expected nil public key error, got: %v", err)
 	}
 }

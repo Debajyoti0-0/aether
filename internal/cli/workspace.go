@@ -76,6 +76,21 @@ var wsDeleteCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "This shreds and deletes workspace %q. Re-run with --force to confirm.\n", name)
 			return nil
 		}
+		// Require passphrase for deletion to prevent unauthorized deletion
+		pass := wsPassphrase
+		if pass == "" {
+			pass = os.Getenv("AETHER_PASSPHRASE")
+		}
+		if pass == "" {
+			return fmt.Errorf("a passphrase is required for deletion: pass --passphrase or set AETHER_PASSPHRASE")
+		}
+		// Validate passphrase by opening the workspace
+		w, err := workspace.Open(name, pass)
+		if err != nil {
+			return fmt.Errorf("invalid passphrase for workspace %q: %w", name, err)
+		}
+		// Close the workspace (we just needed to verify the passphrase)
+		_ = w.Close()
 		if err := workspace.Delete(name); err != nil {
 			return err
 		}
@@ -173,6 +188,7 @@ func init() {
 	wsCreateCmd.Flags().StringVar(&wsCreatePassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env)")
 	wsCreateCmd.Flags().BoolVar(&wsAllowKeyless, "allow-empty-passphrase", false, "Explicitly create a keyless workspace (strongly discouraged; emits warnings on every open)")
 	wsDeleteCmd.Flags().BoolVar(&wsForce, "force", false, "Confirm deletion")
+	wsDeleteCmd.Flags().StringVar(&wsPassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env)")
 	wsReportCmd.Flags().StringVar(&wsPassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env)")
 	wsReportCmd.Flags().StringVar(&wsOutput, "output", "", "Write report to file")
 	wsStatsCmd.Flags().StringVar(&wsPassphrase, "passphrase", "", "Workspace passphrase (or AETHER_PASSPHRASE env)")

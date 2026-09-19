@@ -36,6 +36,17 @@ type jwtHeader struct {
 // pubKey is the RSA public key fetched from the target's JWKS;
 // overrides optionally replace claim values in the forged token.
 func ConfuseJWT(token string, pubKey *rsa.PublicKey, overrides map[string]any) (*ConfuseResult, error) {
+	if pubKey == nil {
+		return nil, fmt.Errorf("public key is nil")
+	}
+	
+	// Validate modulus size before use (F-001/F-008 regression hardening:
+	// a too-short modulus previously panicked on slice bounds).
+	modBytes := pubKey.N.Bytes()
+	if len(modBytes) < 8 {
+		return nil, fmt.Errorf("modulus too short: %d bytes (minimum 8 bytes for preview, 128 for security)", len(modBytes))
+	}
+
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("not a JWT (got %d parts)", len(parts))
