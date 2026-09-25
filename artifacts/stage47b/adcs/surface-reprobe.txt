@@ -1,0 +1,102 @@
+﻿STAGE 47B - AD CS SURFACE RE-PROBE   (G3206-F / G / H)
+date: 2026-09-26 01:17:14 +05:30
+DC:   aether-ad-lab  172.18.0.2  realm AETHER.TEST  Samba4 AD DC
+tool: ldapsearch (openldap client inside the DC container)
+bind: CN=Administrator,CN=Users,DC=aether,DC=test   password REDACTED
+      (disposable lab credential, documented in scripts/ad-lab/docker-compose.yml)
+
+SCOPE NOTE: this is the SAMBA lab. It is NOT a Windows AD CS
+environment. Samba does not implement AD CS, so nothing observed here
+can satisfy G3206-F/G/H/I/J/K. The probe is recorded to state precisely
+what the existing lab does and does not provide.
+
+=== 0. CONTROL QUERY - proves the bind and query path work ===
+base DC=aether,DC=test  filter (objectClass=domainDNS)
+dn: DC=aether,DC=test
+
+# refldap://aether.test/CN=Configuration,DC=aether,DC=test
+
+# refldap://aether.test/DC=DomainDnsZones,DC=aether,DC=test
+
+# refldap://aether.test/DC=ForestDnsZones,DC=aether,DC=test
+
+=== 1. PKI containers in the Configuration NC  (G3206-G) ===
+base: CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=test
+  -> dn: CN=AIA,CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=te ;  st ;  ; dn: CN=KRA,CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=te ;  st ;  ; dn: CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration ;  ,DC=aether,DC=test ;  ; dn: CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configurati ;  on,DC=aether,DC=test ;  ; dn: CN=CDP,CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=te ;  st ;  ; dn: CN=OID,CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=te ;  st ;  ; dn: CN=Certification Authorities,CN=Public Key Services,CN=Services,CN=Configu ;  ration,DC=aether,DC=test ;  ; dn: CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=test
+base: CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=test
+  -> dn: CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration ;  ,DC=aether,DC=test
+base: CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=aether,DC=test
+  -> dn: CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configurati ;  on,DC=aether,DC=test
+
+=== 2. Template / CA OBJECT instances  (G3206-H, G3206-F) ===
+base CN=Configuration,DC=aether,DC=test
+HOW TO READ THIS SECTION: every line above is a '# refldap://' continuation
+referral, not a result. ldapsearch prints referral comments while a search is
+being chased into another partition. A returned ENTRY is always a 'dn:' line.
+There are ZERO 'dn:' lines in this section, so every filter below matched
+nothing: 0 pKICertificateTemplate objects, 0 certificationAuthority objects, and
+0 of the five named ESC test templates exist anywhere in the Configuration NC.
+  filter (objectClass=pKICertificateTemplate)
+    -> # refldap://aether.test/CN=Schema,CN=Configuration,DC=aether,DC=test
+  filter (objectClass=certificationAuthority)
+    -> # refldap://aether.test/CN=Schema,CN=Configuration,DC=aether,DC=test
+  filter (cn=ESC1-Test)
+    -> # refldap://aether.test/CN=Schema,CN=Configuration,DC=aether,DC=test
+  filter (cn=ESC6-Test)
+    -> # refldap://aether.test/CN=Schema,CN=Configuration,DC=aether,DC=test
+  filter (cn=ESC15-Test)
+    -> # refldap://aether.test/CN=Schema,CN=Configuration,DC=aether,DC=test
+  filter (cn=ESC2-Test)
+    -> # refldap://aether.test/CN=Schema,CN=Configuration,DC=aether,DC=test
+  filter (cn=ESC3-Test)
+    -> # refldap://aether.test/CN=Schema,CN=Configuration,DC=aether,DC=test
+
+=== 3. PKI schema classes  (CORRECTS A STAGE 46i CLAIM) ===
+base CN=Schema,CN=Configuration,DC=aether,DC=test
+  filter (cn=PKI-Certificate-Template)  requesting cn/lDAPDisplayName/objectClass
+dn: CN=PKI-Certificate-Template,CN=Schema,CN=Configuration,DC=aether,DC=test
+objectClass: top
+objectClass: classSchema
+cn: PKI-Certificate-Template
+lDAPDisplayName: pKICertificateTemplate
+
+  filters for classes that are NOT present:
+    (cn=pKIEnrollmentService) -> <0 entries>
+    (cn=certificationAuthority) -> <0 entries>
+    (cn=pKIExtendedKeyUsage) -> <0 entries>
+
+=== 4. CORRECTION TO PRIOR EVIDENCE ===
+docs/stage46i-certification.md and artifacts/stage47/baseline/
+adcs-surface-probe.txt record two findings that this probe contradicts.
+They are corrected here; the original files are NOT edited or deleted.
+
+  WRONG (Stage 46i):  'pKICertificateTemplate classSchema in schema -> absent'
+  ACTUAL:              the classSchema IS present:
+                       cn=PKI-Certificate-Template, lDAPDisplayName=pKICertificateTemplate
+
+  INCOMPLETE (Stage 46i): only CN=Public Key Services was listed as present.
+  ACTUAL:                 CN=Enrollment Services and CN=Certificate Templates
+                           are ALSO present under it.
+
+  This strengthens rather than weakens the conclusion. Samba ships the AD
+  PKI schema class and the PKI container skeleton, but the containers are
+  EMPTY and the classes pKIEnrollmentService, certificationAuthority and
+  pKIExtendedKeyUsage are absent. A schema class and an empty container are
+  not a CA: there is no CA signing key, no CA certificate, no
+  certificate database, no templates to analyse, and no MS-WCCE endpoint.
+  The absence is a runtime/servicing absence, not a schema absence, which
+  is precisely why this cannot be substituted for Windows AD CS.
+
+=== 5. RESULT ===
+  G3206-F  Enterprise CA exists ............... NOT SATISFIED (0 CA objects)
+  G3206-G  Public Key Services populated ...... NOT SATISFIED (containers exist, 0 children)
+  G3206-H  Five expected test templates ...... NOT SATISFIED (0 pKICertificateTemplate objects)
+  G3206-I  Template ACLs correct ............. NOT SATISFIED (no templates exist)
+  G3206-J  CA configuration correct .......... NOT SATISFIED (no CA exists)
+  G3206-K  Certificate enrollment works ..... NOT SATISFIED (no CA to enrol against)
+  G3206-L  Certificate validation works ..... NOT SATISFIED (no CA certificate)
+  G3206-M  KDC trusts issuing CA ............ NOT SATISFIED (no CA certificate to publish)
+  G3206-N  PKINIT works independently ...... NOT SATISFIED (no KDC-trusted CA)
+  G3206-O  Negative controls work .......... NOT SATISFIED (no certificate to negate)
+
+  G3206 status: OPEN. Owner action required. See docs/stage47b-certification.md.

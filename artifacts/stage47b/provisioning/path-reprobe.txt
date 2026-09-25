@@ -1,0 +1,33 @@
+﻿STAGE 47B - G3206 PROVISIONING PATH RE-PROBE
+date: 2026-09-26 01:15:05 +05:30
+host:  DARKPURPLE-01
+user:  Debajyoti0-0
+IsAdministrator: False
+
+az	ABSENT
+aws	ABSENT
+gcloud	ABSENT
+VBoxManage	ABSENT
+vmrun	ABSENT
+qemu-system-x86_64	ABSENT
+multishare	ABSENT
+terraform	ABSENT
+packer	ABSENT
+Vagrant	ABSENT
+
+credential stores:
+  absent  C:\Users\Debajyoti0-0\.azure\azureProfile.json
+  absent  C:\Users\Debajyoti0-0\.aws\credentials
+  absent  C:\Users\Debajyoti0-0\.kube\config
+  absent  C:\Users\Debajyoti0-0\AppData\Roaming\gcloud\credentials.db
+
+hypervisor features (require elevation to query):
+  QUERY DENIED: The requested operation requires elevation.
+
+  Get-VM DENIED: You do not have the required permission to complete this task. Contact the administrator of the authorization policy for the computer 'DARKPURPLE-01'.
+
+docker OSType:
+linux 29.7.2
+windows container manifest probe:
+{
+   "schemaVersion": 2,
