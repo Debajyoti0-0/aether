@@ -1,0 +1,42 @@
+=== acl get user1 ===
+panic: runtime error: slice bounds out of range [3145728:2200]
+
+goroutine 1 [running]:
+github.com/Debajyoti0-0/aether/internal/protocol/ldap.ParseSecurityDescriptor({0x237a18bcc000, 0x898, 0x898})
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/protocol/ldap/sd.go:221 +0x55f
+github.com/Debajyoti0-0/aether/internal/engine/ad/acl.(*Engine).GetObjectACL(0x237a18a99a18, {0x12b40a8, 0x137cee0}, {0x7fff4aba6ef0, 0x28})
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/engine/ad/acl/engine.go:297 +0x488
+github.com/Debajyoti0-0/aether/internal/cli/ad.newLDAPACLGetCmd.func1(0x237a18c16608, {0x237a18c26960, 0x2, 0xa})
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/cli/ad/ldap.go:896 +0x667
+github.com/spf13/cobra.(*Command).execute(0x237a18c16608, {0x237a18c26820, 0xa, 0xa})
+	C:/Users/Debajyoti0-0/go/pkg/mod/github.com/spf13/cobra@v1.8.0/command.go:983 +0xb5c
+github.com/spf13/cobra.(*Command).ExecuteC(0x1345be0)
+	C:/Users/Debajyoti0-0/go/pkg/mod/github.com/spf13/cobra@v1.8.0/command.go:1115 +0x43d
+github.com/spf13/cobra.(*Command).Execute(...)
+	C:/Users/Debajyoti0-0/go/pkg/mod/github.com/spf13/cobra@v1.8.0/command.go:1039
+github.com/Debajyoti0-0/aether/internal/cli.Execute()
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/cli/root.go:77 +0x65
+main.main()
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/cmd/aether/main.go:16 +0x5b
+=== acl effective user1 on user1 ===
+panic: runtime error: slice bounds out of range [3145728:2200]
+
+goroutine 1 [running]:
+github.com/Debajyoti0-0/aether/internal/protocol/ldap.ParseSecurityDescriptor({0x18befe366000, 0x898, 0x898})
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/protocol/ldap/sd.go:221 +0x55f
+github.com/Debajyoti0-0/aether/internal/engine/ad/acl.(*Engine).GetObjectACL(0x18befe173a10, {0x12b40a8, 0x137cee0}, {0x7ffc14476eb5, 0x28})
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/engine/ad/acl/engine.go:297 +0x488
+github.com/Debajyoti0-0/aether/internal/engine/ad/acl.(*Engine).GetEffectiveRights(0x7ffc14476eea?, {0x12b40a8?, 0x137cee0?}, 0x18befe20e300, {0x7ffc14476eb5?, 0x7ffc14476f27?})
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/engine/ad/acl/engine.go:474 +0x48
+github.com/Debajyoti0-0/aether/internal/cli/ad.newLDAPACLEffectiveCmd.func1(0x18befe318908, {0x18befe2463c0, 0x2, 0xc})
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/cli/ad/ldap.go:995 +0x745
+github.com/spf13/cobra.(*Command).execute(0x18befe318908, {0x18befe246300, 0xc, 0xc})
+	C:/Users/Debajyoti0-0/go/pkg/mod/github.com/spf13/cobra@v1.8.0/command.go:983 +0xb5c
+github.com/spf13/cobra.(*Command).ExecuteC(0x1345be0)
+	C:/Users/Debajyoti0-0/go/pkg/mod/github.com/spf13/cobra@v1.8.0/command.go:1115 +0x43d
+github.com/spf13/cobra.(*Command).Execute(...)
+	C:/Users/Debajyoti0-0/go/pkg/mod/github.com/spf13/cobra@v1.8.0/command.go:1039
+github.com/Debajyoti0-0/aether/internal/cli.Execute()
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/cli/root.go:77 +0x65
+main.main()
+	C:/Users/Debajyoti0-0/OneDrive/Documents/aether/cmd/aether/main.go:16 +0x5b

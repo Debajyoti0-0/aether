@@ -1,0 +1,70 @@
+{
+  "packages": [
+    "github.com/Debajyoti0-0/aether/cmd/aether",
+    "github.com/Debajyoti0-0/aether/internal/api",
+    "github.com/Debajyoti0-0/aether/internal/behavior",
+    "github.com/Debajyoti0-0/aether/internal/cli",
+    "github.com/Debajyoti0-0/aether/internal/engine/cap",
+    "github.com/Debajyoti0-0/aether/internal/engine/exec",
+    "github.com/Debajyoti0-0/aether/internal/engine/graph",
+    "github.com/Debajyoti0-0/aether/internal/engine/mutation",
+    "github.com/Debajyoti0-0/aether/internal/engine/orchestrate",
+    "github.com/Debajyoti0-0/aether/internal/engine/orchestrator",
+    "github.com/Debajyoti0-0/aether/internal/engine/pivot",
+    "github.com/Debajyoti0-0/aether/internal/engine/relay",
+    "github.com/Debajyoti0-0/aether/internal/engine/rollback",
+    "github.com/Debajyoti0-0/aether/internal/engine/spine",
+    "github.com/Debajyoti0-0/aether/internal/engine/token",
+    "github.com/Debajyoti0-0/aether/internal/engine/validate",
+    "github.com/Debajyoti0-0/aether/internal/engine/watch",
+    "github.com/Debajyoti0-0/aether/internal/intel",
+    "github.com/Debajyoti0-0/aether/internal/paths",
+    "github.com/Debajyoti0-0/aether/internal/protocol/msoapx",
+    "github.com/Debajyoti0-0/aether/internal/protocol/oauth2",
+    "github.com/Debajyoti0-0/aether/internal/protocol/saml",
+    "github.com/Debajyoti0-0/aether/internal/protocol/wstrust",
+    "github.com/Debajyoti0-0/aether/internal/rl",
+    "github.com/Debajyoti0-0/aether/internal/store",
+    "github.com/Debajyoti0-0/aether/internal/transport",
+    "github.com/Debajyoti0-0/aether/internal/types",
+    "github.com/Debajyoti0-0/aether/internal/version",
+    "github.com/Debajyoti0-0/aether/internal/workspace",
+    "github.com/Debajyoti0-0/aether/pkg/plugins",
+    "github.com/Debajyoti0-0/aether/pkg/plugins/gcp",
+    "github.com/Debajyoti0-0/aether/pkg/plugins/gitlab",
+    "github.com/Debajyoti0-0/aether/pkg/plugins/kubernetes",
+    "github.com/Debajyoti0-0/aether/pkg/plugins/okta",
+    "github.com/Debajyoti0-0/aether/pkg/plugins/sdk",
+    "github.com/Debajyoti0-0/aether/scripts/genman",
+    "github.com/Debajyoti0-0/aether/scripts/rmdir",
+    "github.com/Debajyoti0-0/aether/test/mock"
+  ],
+  "protocol_packages_existing": [
+    "msoapx",
+    "oauth2",
+    "saml",
+    "wstrust"
+  ],
+  "protocol_packages_missing_for_stage45": [
+    "kerberos"
+  ],
+  "engine_packages_existing": [
+    "cap", "exec", "graph", "mutation", "orchestrate", "orchestrator",
+    "pivot", "relay", "rollback", "spine", "token", "validate", "watch"
+  ],
+  "engine_packages_missing_for_stage45": [
+    "ad",
+    "ad/kerberos"
+  ],
+  "cli_packages_existing": [
+    "cap", "connect", "doctor", "exec", "extras", "governance", "graph",
+    "pivot", "providers_exec", "prt", "relay", "replay", "root", "run",
+    "serve_cert", "serve_dispatch", "signals_unix", "signals_windows",
+    "token", "v3", "v31", "v32", "v33", "v3b", "v3c", "validate",
+    "workspace"
+  ],
+  "cli_packages_missing_for_stage45": [
+    "ad",
+    "ad_kerberos"
+  ]
+}

@@ -1,0 +1,24 @@
+Found 4 objects with SPNs
+  DC01$ () SID=S-1-5-21-3443072978-3862387813-1790103675-1000
+    HOST/dc01.aether.test
+    HOST/DC01
+    HOST/dc01.aether.test/dc01.aether.test
+    HOST/dc01.aether.test/AETHER
+    ldap/dc01.aether.test/AETHER
+    GC/dc01.aether.test/aether.test
+    ldap/dc01.aether.test
+    HOST/dc01.aether.test/aether.test
+    ldap/dc01.aether.test/aether.test
+    E3514235-4B06-11D1-AB04-00C04FC2DCD2/e59f327a-a8d2-4688-a1f4-f572a97a1179/aether.test
+    ldap/e59f327a-a8d2-4688-a1f4-f572a97a1179._msdcs.aether.test
+    ldap/DC01
+    RestrictedKrbHost/DC01
+    RestrictedKrbHost/dc01.aether.test
+    ldap/dc01.aether.test/DomainDnsZones.aether.test
+    ldap/dc01.aether.test/ForestDnsZones.aether.test
+  krbtgt () SID=S-1-5-21-3443072978-3862387813-1790103675-502
+    kadmin/changepw
+  svc_sql (SQL Service) SID=S-1-5-21-3443072978-3862387813-1790103675-1107
+    MSSQLSvc/sql01.aether.test:1433
+  svc_web (Web Service) SID=S-1-5-21-3443072978-3862387813-1790103675-1108
+    HTTP/web01.aether.test

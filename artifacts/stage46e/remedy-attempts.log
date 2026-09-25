@@ -1,0 +1,42 @@
+# Stage 46e Remedy Attempts Log
+
+## Infrastructure Remedies
+
+| Remedy | Date | Result | Details |
+|--------|------|--------|---------|
+| Fix Samba bind interfaces | 2026-09-23 | SUCCESS | Changed `bind interfaces only = No` in smb.conf on ad-lab_samba_etc volume |
+| Docker Desktop NAT fix | 2026-09-23 | FAILED | TCP handshake succeeds on all ports but application data is dropped/reset. Confirmed via: Test-NetConnection (TCP OK), netsh portproxy (timeout), socat proxy (EOF), direct container IP (timeout), localhost (TCP OK but data drops) |
+| netsh portproxy (elevated) | 2026-09-23 | FAILED | TCP handshake through portproxy succeeds but data read times out |
+| --network host | 2026-09-23 | FAILED | Container joins Docker VM network; Samba listens on 172.17.0.x which is NOT the Windows host subnet |
+| WSL2 native Samba | 2026-09-23 | ATTEMPTED | Ubuntu WSL2 installed successfully but cannot reach 172.18.0.x container network; WSL2 is on 172.29.x.x subnet; container→host (172.18.0.1) also unreachable |
+| socat TCP proxy | 2026-09-23 | PARTIAL | Proxy at host:12080→container:389 accepts TLS handshake but LDAP bind gets EOF (same issue bypasses NAT) |
+| WSL2 localhost redirect | 2026-09-23 | FAILED | localhost:389 from Windows host fails for data; WSL2 localhost:80 works via Docker bridge but WSL2 cannot reach container IPs |
+
+## Code/Protocol Remedies
+
+| Remedy | Date | Result | Details |
+|--------|------|--------|---------|
+| Fix LDAP wire format (engine.go) | 2026-09-23 | PARTIAL | Removed non-standard 4-byte length prefix; still EOF on bind |
+| Fix BindRequest ASN.1 tags (types.go) | 2026-09-23 | PARTIAL | Added RFC 4511 context-specific tags; still EOF on bind |
+| LDAPS via proxy (tlscheck.go) | 2026-09-23 | PARTIAL | TLS handshake to 636 works through proxy chain; LDAP bind after TLS still EOF |
+| Workspace passphrase workaround | 2026-09-23 | PARTIAL | AETHER_PASSPHRASE env var resolves workspace open; workspace create --passphrase makes keyless workspace cannot be reopened without env var |
+
+## Qualification Test Results
+
+### From test-client container (container-to-container network, aether-ad-net):
+
+| Test | Result | Notes |
+|------|--------|-------|
+| LDAP bind LDAPS (172.18.0.2:636 --tls) | EOF | TCP+TLS handshake OK, Samba closes connection after receiving bind request |
+| LDAP bind plain (172.18.0.2:389) | N/A | Samba requires TLS (Strong auth required) |
+| AD enum users | BLOCKED | Requires successful bind first |
+| Kerberos enum | BLOCKED | Requires KDC connectivity (UDP timeout, TCP fallback stuck even on container network) |
+
+### From Windows host:
+
+| Test | Result | Notes |
+|------|--------|-------|
+| TCP handshake to container ports | OK | All ports (88, 389, 445, 53, 636) accept TCP connections |
+| Data flow to container ports | FAIL | Application data dropped after handshake on all ports |
+| localhost:389 TCP | OK | TCP handshake succeeds |
+| localhost:389 data | FAIL | Data drops (Docker NAT issue) |

@@ -1,0 +1,11 @@
+{
+  "git_status": "clean (only new artifact directories)",
+  "commit_sha": "a887a0ed9c9fcdbf0400a5d59ccad162cfcac202",
+  "branch": "master",
+  "version_file": "3.4.0-stage3",
+  "tags_at_head": [],
+  "go_version": "go1.27.1 windows/amd64",
+  "timestamp": "2026-09-21T11:55:00Z",
+  "tree_state": "clean - only artifacts/stage45/, stage47/, track-b-recovery/ are new",
+  "baseline_verified": true
+}

@@ -1,0 +1,52 @@
+{
+  "existing_capabilities": [
+    "cap.read",
+    "cap.write",
+    "exec.azure",
+    "exec.azure.subscription",
+    "exec.gcp",
+    "exec.gcp.project",
+    "exec.kubernetes",
+    "exec.kubernetes.namespace",
+    "graph.read",
+    "graph.write",
+    "identity.read",
+    "identity.write",
+    "pivot.cross",
+    "pivot.lateral",
+    "prt.read",
+    "prt.write",
+    "relay.read",
+    "relay.write",
+    "token.read",
+    "token.write",
+    "workspace.create",
+    "workspace.delete",
+    "workspace.modify"
+  ],
+  "missing_capabilities_for_stage45": [
+    {
+      "id": "ad.enum.read",
+      "description": "Active Directory enumeration (users, groups, computers, OUs)",
+      "risk_score": 10,
+      "reversible": true,
+      "category": "enumeration"
+    },
+    {
+      "id": "ad.kerberos.roast",
+      "description": "Kerberoasting and AS-REP roasting operations",
+      "risk_score": 20,
+      "reversible": true,
+      "category": "credential-access"
+    },
+    {
+      "id": "ad.kerberos.tgt",
+      "description": "Ticket Granting Ticket acquisition and ccache management",
+      "risk_score": 15,
+      "reversible": true,
+      "category": "credential-access"
+    }
+  ],
+  "capability_registration_location": "internal/engine/cap/registry.go",
+  "default_policy": "DENY_ALL"
+}

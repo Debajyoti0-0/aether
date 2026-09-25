@@ -1,0 +1,6 @@
+Action: mut-1790343504413242293-cb62e30c
+Status: completed
+AS-REP roasted 7 accounts
+  Administrator -> Administrator@AETHER.TEST (etype=23 hash=7e82010830820104...)
+  user1 -> user1@AETHER.TEST (etype=23 hash=7e81f73081f4a003...)
+  user2 -> user2@AETHER.TEST (etype=23 hash=7e81f73081f4a003...)

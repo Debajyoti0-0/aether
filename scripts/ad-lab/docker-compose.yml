@@ -1,0 +1,92 @@
+services:
+  aether-ad-lab:
+    image: aether-samba-ad-dc:latest
+    hostname: dc01
+    domainname: aether.test
+    container_name: aether-ad-lab
+    privileged: true
+    environment:
+      - SAMBA_DOMAIN=AETHER
+      - SAMBA_REALM=AETHER.TEST
+      - ADMIN_PASSWORD=Passw0rd123!
+      - KERBEROS_ENCRYPTION_TYPES=aes256-cts-hmac-sha1-96,aes128-cts-hmac-sha1-96,rc4-hmac
+      - DNS_FORWARDER=1.1.1.1
+    ports:
+      - "88:88/tcp"
+      - "88:88/udp"
+      - "135:135/tcp"
+      - "139:139/tcp"
+      - "389:389/tcp"
+      - "389:389/udp"
+      - "4445:445/tcp"
+      - "464:464/tcp"
+      - "464:464/udp"
+      - "636:636/tcp"
+      - "3268:3268/tcp"
+      - "3269:3269/tcp"
+    volumes:
+      - samba_data:/var/lib/samba
+      - samba_etc:/etc/samba
+    networks:
+      aether-ad-net:
+        ipv4_address: 172.18.0.2
+    healthcheck:
+      test: ["CMD", "samba-tool", "domain", "info", "127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  test-client:
+    # Alpine with the AD client tooling preinstalled. The previous file named
+    # ubuntu:22.04 with "sleep infinity", which does not match the container
+    # the lab actually runs and would recreate the client without dig,
+    # ldapsearch or nc, breaking every documented verification command.
+    image: alpine:latest
+    hostname: test-client
+    container_name: aether-test-client
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+    volumes:
+      # Relative host path, resolved by Compose against this file's own
+      # directory (scripts/ad-lab), so "../.." is the repository root. The
+      # previous entry used a WSL-style "/mnt/c/Users/..." host path, which
+      # only exists when Docker runs inside WSL. On Docker Desktop for Windows
+      # the path does not exist, so the mount silently resolved to an empty
+      # directory and /aether was unusable. A relative path is portable across
+      # Docker Desktop, WSL and native Linux.
+      - ../..:/aether:ro
+    # D6: the client must resolve the AD zone. Without this it inherits only
+    # Docker's embedded resolver, which knows container names but forwards
+    # everything else to the host resolver, so aether.test and every AD SRV
+    # record (_kerberos._tcp, _ldap._tcp, _kerberos._udp) returned NXDOMAIN and
+    # any service-discovery-based client could not find the KDC. Pointing the
+    # embedded resolver at the Samba DNS fixes zone and SRV lookups while still
+    # resolving container names such as dc01.
+    dns:
+      - 172.18.0.2
+    networks:
+      aether-ad-net:
+        ipv4_address: 172.18.0.3
+    command: >-
+      sh -c "apk add --no-cache openldap-clients netcat-openbsd bind-tools
+      2>/dev/null; tail -f /dev/null"
+    depends_on:
+      aether-ad-lab:
+        condition: service_healthy
+
+volumes:
+  samba_data:
+  samba_etc:
+
+networks:
+  aether-ad-net:
+    driver: bridge
+    ipam:
+      config:
+        # Pinned so the DC keeps the address every documented command and the
+        # test-client resolver entry below refer to. Docker's default automatic
+        # pool assignment can hand out a different address after a lab
+        # rebuild, which silently breaks --dc 172.18.0.2 and the DNS override.
+        - subnet: 172.18.0.0/16
+          gateway: 172.18.0.1

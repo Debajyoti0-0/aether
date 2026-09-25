@@ -3,3 +3,56 @@ ad_sampledata/
 
 # local build output (make build) — regenerated, never committed
 /bin/
+
+# Quarantined development scratch: throwaway protocol probes, capture scripts
+# and one-off debug programs left behind by earlier stages. The Go tool ignores
+# directories beginning with "_", so keeping them here (rather than deleting
+# them) preserves the debugging history without breaking `go build ./...`.
+/_scratch/
+
+# Kilo agent tooling. This directory contains a full nested git worktree (a
+# second copy of the entire source tree plus its own .git file), so committing
+# it would duplicate the repository inside itself.
+.kilo/
+
+# Stray root-level binaries from ad-hoc cross-compiles
+/aether
+/aether.exe
+/aether-linux
+/aether-linux-fixed
+/aether_linux
+/ad.test.exe
+/aether-test.exe
+/ldaptest.exe
+/test_hello.exe
+/test_integration_ad.exe
+/test_tcp.exe
+/test_tcp2.exe
+/test_tcp3.exe
+/test_tcp4.exe
+/test_tcp5.exe
+/test_tcp6.exe
+/test_tcp7.exe
+/test_tls*.exe
+/ldapdebug-linux
+/ldaptest_linux
+/ldsaftest-linux
+/test_hello_linux
+/test_tcp*_linux
+/test_tls*_linux
+/test_integration_ad_linux
+/kcdump_tmp/
+/claude_desktop_config.json
+/.freebuff/
+
+# One-off scratch scripts and lab-exported keytabs. Keytabs are credential
+# material and must never be committed regardless of which lab produced them.
+*.keytab
+/test_bind.py
+
+# Per-stage evidence produced by live qualification runs. Cross-compiled test
+# binaries land here too and are matched by extension and by the aether-* stem
+# (a bare `aether-linux-d1` carries no extension at all).
+/artifacts/stage46h/*.linux
+/artifacts/stage46h/*.exe
+/artifacts/stage46h/aether-*

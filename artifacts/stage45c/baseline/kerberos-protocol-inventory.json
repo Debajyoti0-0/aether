@@ -1,0 +1,90 @@
+{
+  "protocol": "Kerberos v5 (RFC 4120)",
+  "messages_implemented": [
+    "AS-REQ (KRB5_AS_REQ = 10)",
+    "AS-REP (KRB5_AS_REP = 11)",
+    "TGS-REQ (KRB5_TGS_REQ = 12)",
+    "TGS-REP (KRB5_TGS_REP = 13)",
+    "AP-REQ (KRB5_AP_REQ = 14)",
+    "AP-REP (KRB5_AP_REP = 15)",
+    "KRB-ERROR (KRB5_ERROR = 30)"
+  ],
+  "asn1_structures": {
+    "KDCREQ": {
+      "file": "internal/protocol/kerberos/types.go:218",
+      "fields": {
+        "PVNO": "int32 - missing tag [1]",
+        "MsgType": "int32 - missing tag [2]",
+        "PAData": "[]PAData - missing tag [3]",
+        "ReqBody": "KDCREQBody - missing tag [4]"
+      },
+      "rfc4120_spec": "KDC-REQ ::= SEQUENCE { pvno [1] INTEGER, msg-type [2] INTEGER, padata [3] SEQUENCE OF PA-DATA OPTIONAL, req-body [4] KDC-REQ-BODY }"
+    },
+    "KDCREQBody": {
+      "file": "internal/protocol/kerberos/types.go:203",
+      "fields": {
+        "KDCOptions": "KDCOptions - missing tag [0]",
+        "CName": "PrincipalName - missing tag [1]",
+        "Realm": "Realm - missing tag [2]",
+        "SName": "PrincipalName - missing tag [3]",
+        "From": "KerberosTime - missing tag [4]",
+        "Till": "KerberosTime - missing tag [5]",
+        "RTime": "KerberosTime - missing tag [6]",
+        "Nonce": "int32 - missing tag [7]",
+        "EType": "[]int32 - missing tag [8]",
+        "Addresses": "[]HostAddress - missing tag [9]",
+        "EncryptedData": "*EncryptedData - has tag:0 (wrong)",
+        "AdditionalTickets": "[]Ticket - missing tag [10]"
+      },
+      "rfc4120_spec": "KDC-REQ-BODY ::= SEQUENCE { kdc-options [0] KDCOptions, cname [1] PrincipalName OPTIONAL, realm [2] Realm, sname [3] PrincipalName OPTIONAL, from [4] KerberosTime OPTIONAL, till [5] KerberosTime, rtime [6] KerberosTime OPTIONAL, nonce [7] UInt32, etype [8] SEQUENCE OF Int32, ... }"
+    },
+    "PAData": {
+      "file": "internal/protocol/kerberos/types.go:149",
+      "fields": {
+        "PADataType": "int32 - missing tag [1]",
+        "PADataValue": "[]byte - missing tag [2]"
+      },
+      "rfc4120_spec": "PA-DATA ::= SEQUENCE { padata-type [1] Int32, padata-value [2] OCTET STRING }"
+    },
+    "PrincipalName": {
+      "file": "internal/protocol/kerberos/types.go:87",
+      "fields": {
+        "NameType": "int32 - missing tag [0]",
+        "NameString": "[]string - missing tag [1]"
+      },
+      "custom_marshaler": "internal/protocol/kerberos/principal.go:120 - principalNameASN1 with tag:0 and tag:1 (CORRECT but not used when embedded)",
+      "rfc4120_spec": "PrincipalName ::= SEQUENCE { name-type [0] Int32, name-string [1] SEQUENCE OF KerberosString }"
+    },
+    "Realm": {
+      "file": "internal/protocol/kerberos/types.go:99",
+      "type": "type Realm string",
+      "issue": "Defaults to IA5String/PrintableString, Kerberos requires GeneralString (tag 27)",
+      "rfc4120_spec": "Realm ::= KerberosString; KerberosString ::= GeneralString"
+    },
+    "KDCOptions": {
+      "file": "internal/protocol/kerberos/types.go:196",
+      "type": "type KDCOptions asn1.BitString",
+      "status": "CORRECT - uses asn1.BitString"
+    }
+  },
+  "encryption_types_supported": [
+    "ETYPE_AES256_CTS_HMAC_SHA1_96 (18)",
+    "ETYPE_AES128_CTS_HMAC_SHA1_96 (17)",
+    "ETYPE_RC4_HMAC (23)"
+  ],
+  "pa_data_types": [
+    "PA_DATA_TYPE_ENC_TIMESTAMP (2)",
+    "PA_DATA_TYPE_PW_SALT (3)",
+    "PA_DATA_TYPE_ETYPE_INFO (11)",
+    "PA_DATA_TYPE_ETYPE_INFO2 (19)",
+    "PA_DATA_TYPE_PK_AS_REQ (16)",
+    "PA_DATA_TYPE_PK_AS_REP (17)",
+    "PA_DATA_TYPE_PA_PAC_REQUEST (128)"
+  ],
+  "defects": {
+    "D45b-001": "CRITICAL - ASN.1 encoding mismatch: KDCREQ and KDCREQBody missing all context-specific tags",
+    "D45b-002": "HIGH - PAData missing context-specific tags [1] and [2]",
+    "D45b-003": "HIGH - PrincipalName missing context-specific tags [0] and [1] when embedded in KDCREQBody (custom marshaler exists but not used)",
+    "D45b-004": "MEDIUM - Realm requires GeneralString encoding (tag 27), currently defaults to IA5String"
+  }
+}

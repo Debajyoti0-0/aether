@@ -1,0 +1,31 @@
+{
+  "stage45": {
+    "claimed_status": "COMPLETE (per program plan)",
+    "actual_status": "NOT IMPLEMENTED",
+    "kerberos_protocol": "MISSING - internal/protocol/kerberos/ does not exist",
+    "kerberos_engine": "MISSING - internal/engine/ad/kerberos/ does not exist",
+    "enumeration": "NOT IMPLEMENTED",
+    "asrep_roasting": "NOT IMPLEMENTED",
+    "kerberoasting": "NOT IMPLEMENTED",
+    "cli_commands": "MISSING - no 'ad kerberos' subcommands",
+    "evidence_artifacts": "NONE - artifacts/stage45/ does not exist",
+    "live_lab_qualification": "NOT POSSIBLE - no implementation",
+    "fuzz_targets": "NONE"
+  },
+  "stage46": {
+    "claimed_status": "IMPLEMENTATION COMPLETE (pending live lab)",
+    "actual_status": "NOT IMPLEMENTED",
+    "ldap_protocol": "MISSING - internal/protocol/ldap/ does not exist",
+    "ldap_engine": "MISSING - internal/engine/ad/ldap/ does not exist",
+    "enumeration": "NOT IMPLEMENTED",
+    "acl_path_analysis": "NOT IMPLEMENTED",
+    "cli_commands": "MISSING - no 'ad ldap' subcommands",
+    "evidence_artifacts": "NONE - artifacts/stage46/ does not exist",
+    "live_lab_qualification": "NOT POSSIBLE - no implementation",
+    "fuzz_targets": "NONE"
+  },
+  "artifacts_directories": {
+    "artifacts/stage45": "DOES NOT EXIST",
+    "artifacts/stage46": "DOES NOT EXIST"
+  }
+}

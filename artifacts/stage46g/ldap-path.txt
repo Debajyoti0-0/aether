@@ -1,0 +1,10 @@
+=== path user1->user4 (expect 0: no grant) ===
+Found 0 attack paths
+=== path DomainAdmins->user4 (expect paths) ===
+Found 2 attack paths
+
+Path 1 (Risk Score: 50):
+  Step 1: &{CN=Domain Admins,CN=Users,DC=aether,DC=test S-1-5-21-3443072978-3862387813-1790103675-512   } -> &{CN=Target User4,CN=Users,DC=aether,DC=test S-1-5-21-3443072978-3862387813-1790103675-1106   } (direct_ace) Rights: WRITE_OWNER, WRITE_DAC, READ_CONTROL, DELETE, CREATE_CHILD, DELETE_CHILD, LIST_CHILDREN, SELF, READ_PROPERTY, WRITE_PROPERTY, DELETE_TREE, LIST_OBJECT, CONTROL_ACCESS
+
+Path 2 (Risk Score: 38):
+  Step 1: &{CN=Domain Admins,CN=Users,DC=aether,DC=test S-1-5-21-3443072978-3862387813-1790103675-512   } -> &{CN=Target User4,CN=Users,DC=aether,DC=test S-1-5-21-3443072978-3862387813-1790103675-1106   } (direct_ace) Rights: WRITE_OWNER, WRITE_DAC, READ_CONTROL, DELETE, CREATE_CHILD, LIST_CHILDREN, SELF, READ_PROPERTY, WRITE_PROPERTY, LIST_OBJECT, CONTROL_ACCESS

@@ -1,0 +1,26 @@
+{
+  "gate": "TB45-G00",
+  "name": "Baseline Integrity",
+  "status": "PASS",
+  "requirements": [
+    "Expected baseline confirmed: 3.4.0-stage3 at commit a887a0ed9c9fcdbf0400a5d59ccad162cfcac202",
+    "Clean tree state: only artifact directories added",
+    "No unexpected modifications to source",
+    "All existing tests pass: go test ./... (31 packages)",
+    "No vet issues: go vet ./...",
+    "No race issues: go test -race ./...",
+    "Version file reads 3.4.0-stage3",
+    "No v4.* or v5.* tags exist"
+  ],
+  "evidence_paths": [
+    "artifacts/stage45/baseline/repository-status.json",
+    "artifacts/stage45/baseline/package-inventory.json",
+    "artifacts/stage45/baseline/dependency-inventory.json",
+    "artifacts/stage45/baseline/architecture-inventory.json",
+    "artifacts/stage45/baseline/capability-inventory.json",
+    "artifacts/stage45/baseline/baseline-summary.md",
+    "artifacts/stage45/baseline/SHA256SUMS"
+  ],
+  "verdict": "Baseline verified. Ready to proceed with Stage 45 implementation.",
+  "timestamp": "2026-09-21T12:00:00Z"
+}

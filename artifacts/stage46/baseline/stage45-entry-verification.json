@@ -1,0 +1,94 @@
+{
+  "stage45_verification": {
+    "protocol_package": {
+      "path": "internal/protocol/kerberos/",
+      "exists": true,
+      "files": [
+        "types.go",
+        "errors.go",
+        "principal.go",
+        "etypes.go",
+        "crypto.go",
+        "asreq.go",
+        "tgsreq.go",
+        "pac.go",
+        "ccache.go",
+        "spn.go",
+        "kerberos_test.go"
+      ],
+      "unit_tests": "18 PASS",
+      "fuzz_targets": [
+        "FuzzASREP",
+        "FuzzTGSREP",
+        "FuzzPAC",
+        "FuzzCCache"
+      ]
+    },
+    "engine_package": {
+      "path": "internal/engine/ad/kerberos/",
+      "exists": true,
+      "files": [
+        "enum.go",
+        "roast.go",
+        "tgt.go",
+        "engine_test.go"
+      ],
+      "mutations": [
+        "EnumUsersMutation",
+        "EnumASREPMutation",
+        "EnumSPNMutation",
+        "KerberoastMutation",
+        "ASREPRoastMutation",
+        "TGTMutation",
+        "CCacheMutation"
+      ],
+      "unit_tests": "10 PASS"
+    },
+    "cli_package": {
+      "path": "internal/cli/ad/",
+      "exists": true,
+      "files": [
+        "ad.go",
+        "enum.go",
+        "roast.go",
+        "tgt.go"
+      ],
+      "commands": [
+        "ad enum users",
+        "ad enum asrep",
+        "ad enum spn",
+        "ad kerberoast",
+        "ad asreproast",
+        "ad tgt",
+        "ad ccache show",
+        "ad ccache convert"
+      ]
+    },
+    "spine_capabilities": {
+      "ad.enum.read": "registered (risk 10)",
+      "ad.kerberos.roast": "registered (risk 20)",
+      "ad.kerberos.tgt": "registered (risk 15)"
+    },
+    "lab_harness": {
+      "path": "scripts/ad-lab/",
+      "exists": true,
+      "docker_compose": false,
+      "seed_script": false,
+      "note": "Directory exists but empty - no docker-compose.yml or seed.sh found"
+    },
+    "evidence_artifacts": {
+      "artifacts/stage45/baseline/": true,
+      "raw_transcripts": false,
+      "note": "Only baseline artifacts present - no live Samba4 qualification evidence"
+    }
+  },
+  "verification_result": "PARTIALLY_VERIFIED",
+  "blocking_issues": [
+    "Samba4 lab harness empty - no docker-compose.yml or seed.sh",
+    "No live integration tests against Samba4 found",
+    "No evidence of Samba4 qualification in artifacts/stage45/",
+    "Integration test directory test/integration/ad/ does not exist"
+  ],
+  "stage45_status": "IMPLEMENTED BUT NOT LIVE-QUALIFIED",
+  "timestamp": "2026-09-21T14:25:00Z"
+}

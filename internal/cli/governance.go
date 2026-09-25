@@ -2,12 +2,14 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/Debajyoti0-0/aether/internal/engine/exec"
@@ -308,4 +310,38 @@ func buildIntentMutation(fields []string) (mutation.Mutation, string, string, er
 			"unsupported action kind %q — the spine whitelist covers: exec azure, exec aws, exec github, exec gcp",
 			strings.Join(fields, " "))
 	}
+}
+
+// GetWorkspaceFlag returns the --workspace flag value from a command.
+func GetWorkspaceFlag(cmd *cobra.Command) string {
+	if cmd == nil {
+		return ""
+	}
+	if f := cmd.Flags().Lookup("workspace"); f != nil {
+		return f.Value.String()
+	}
+	return ""
+}
+
+// OpenGovernedWorkspace opens a workspace for governed operations.
+func OpenGovernedWorkspace(name string) (*workspace.Workspace, error) {
+	return openGovernedWorkspace(name)
+}
+
+// IsJSONOutput returns true if --output json is set.
+func IsJSONOutput(cmd *cobra.Command) bool {
+	if cmd == nil {
+		return false
+	}
+	if f := cmd.Flags().Lookup("output"); f != nil {
+		return f.Value.String() == "json"
+	}
+	return false
+}
+
+// PrintJSON prints a value as JSON to stdout.
+func PrintJSON(v any) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(v)
 }

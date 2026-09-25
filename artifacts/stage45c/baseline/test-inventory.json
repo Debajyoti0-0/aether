@@ -1,0 +1,51 @@
+{
+  "unit_tests": {
+    "package": "internal/protocol/kerberos",
+    "file": "kerberos_test.go",
+    "tests": 18,
+    "status": "PASS",
+    "functions": [
+      "TestPrincipalParsing",
+      "TestMakePrincipalName",
+      "TestMakeSPNPrincipal",
+      "TestEtypeSupport",
+      "TestPreferredEtype",
+      "TestKeySize",
+      "TestEtypeName",
+      "TestKerberosTime",
+      "TestStringToKeyRC4",
+      "TestStringToKeyAES128",
+      "TestStringToKeyAES256",
+      "TestStringToKeyUnsupported",
+      "TestEncryptDecryptRC4",
+      "TestEncryptDecryptAES128",
+      "TestEncryptDecryptAES256",
+      "TestTamperDetection",
+      "TestWrongKeyDetection",
+      "TestSPNParsing",
+      "TestSPNCanonicalize",
+      "TestErrorClassification"
+    ]
+  },
+  "integration_tests": {
+    "package": "test/integration/ad",
+    "file": "kerberos_test.go",
+    "build_tag": "integration",
+    "tests": 6,
+    "status": "BLOCKED by D45b-001 through D45b-004",
+    "functions": [
+      "TestKerberosASREP - AS-REQ -> AS-REP for user1",
+      "TestKerberosTGSREP - TGS-REQ -> TGS-REP for svc_sql",
+      "TestKerberoast - Extract kerberoast blob from svc_sql",
+      "TestASREPRoast - Extract AS-REP roast blob for user2",
+      "TestCcacheRoundTrip - MIT + Heimdal ccache round-trip",
+      "TestEngagementBoundary - Governance boundary enforcement"
+    ],
+    "requires": "Samba4 AD lab (scripts/ad-lab/)"
+  },
+  "engine_tests": {
+    "package": "internal/engine/ad/kerberos",
+    "file": "engine_test.go",
+    "status": "PASS (unit tests only, no live KDC)"
+  }
+}

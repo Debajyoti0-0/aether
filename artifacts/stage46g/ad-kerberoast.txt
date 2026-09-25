@@ -1,0 +1,7 @@
+Action: mut-1790345842114914989-60411ae0
+Status: completed
+Kerberoasted 0 SPNs
+  ERROR: HOST/dc01.aether.test: KDC error 60: Generic error (Generic error)
+  ERROR: HOST/DC01: KDC error 60: Generic error (Generic error)
+  ERROR: ldap/dc01.aether.test: KDC error 60: Generic error (Generic error)
+  ERROR: GC/dc01.aether.test: KDC error 60: Generic error (Generic error)

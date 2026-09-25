@@ -1,0 +1,57 @@
+{
+  "existing_abstractions": {
+    "transport": "internal/transport/ - TCP/TLS/Dialer abstractions",
+    "tls": "internal/transport/tls.go - mTLS client/server",
+    "dns": "internal/transport/dns.go - DNS resolution",
+    "authentication": "internal/protocol/ - OAuth2, SAML, WS-Trust, MSOAPX",
+    "credential": "internal/types/credential.go - Credential types",
+    "secret": "internal/store/ - Vault, workspace storage",
+    "vault": "internal/store/vault.go - Encrypted storage",
+    "audit": "internal/engine/spine/ - Audit chain, signed hashes",
+    "evidence": "internal/types/evidence.go - Evidence registration",
+    "capability": "internal/engine/cap/ - Capability definitions",
+    "authorization": "internal/engine/spine/ - AuthZ decisions",
+    "risk": "internal/types/risk.go - Risk scoring",
+    "policy": "internal/types/policy.go - Policy engine",
+    "approval": "internal/engine/spine/ - Approval workflow",
+    "rollback": "internal/engine/rollback/ - Rollback operations",
+    "workspace": "internal/workspace/ - Workspace management",
+    "configuration": "internal/cli/ - Viper-based config",
+    "cli": "internal/cli/ - Cobra-based CLI framework",
+    "output": "internal/cli/ - JSON/human output",
+    "error": "internal/types/ - Error types",
+    "logging": "go.uber.org/zap - Structured logging"
+  },
+  "reuse_strategy": {
+    "transport": "USE existing internal/transport for TCP/TLS to KDC",
+    "tls": "USE existing TLS config for KDC connections if TLS required",
+    "credential": "EXTEND existing credential types for Kerberos creds",
+    "secret": "USE existing vault/store for ticket/key storage",
+    "audit": "USE existing audit chain for every operation",
+    "evidence": "USE existing evidence registration",
+    "capability": "REGISTER new ad.* capabilities",
+    "authorization": "USE existing AuthZ flow",
+    "risk": "USE existing risk scoring",
+    "policy": "USE existing policy engine",
+    "approval": "USE existing approval workflow",
+    "rollback": "NOT NEEDED - read-only operations",
+    "workspace": "USE existing workspace for engagement isolation",
+    "configuration": "EXTEND engagement file format",
+    "cli": "USE existing Cobra pattern",
+    "output": "USE existing JSON/human output",
+    "error": "EXTEND with Kerberos-specific errors",
+    "logging": "USE existing zap logger"
+  },
+  "new_packages_required": [
+    "internal/protocol/kerberos/",
+    "internal/engine/ad/kerberos/",
+    "internal/cli/ad_*.go"
+  ],
+  "integration_points": [
+    "spine.Action for all operations",
+    "capability authz on every command",
+    "audit entry per operation",
+    "evidence registration per result",
+    "engagement boundary enforcement"
+  ]
+}

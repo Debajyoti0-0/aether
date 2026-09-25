@@ -1,0 +1,39 @@
+{
+  "gate": "TB46-G00",
+  "name": "Stage 45 Entry Verification",
+  "status": "BLOCKED-WITH-OWNER",
+  "requirements": [
+    "Stage 45 source present and compiles",
+    "Stage 45 unit tests pass",
+    "Stage 45 race tests pass",
+    "Stage 45 vet pass",
+    "Stage 45 lab harness available and functional",
+    "Stage 45 live qualification evidence present",
+    "Stage 45 capability registrations available",
+    "Stage 45 working tree state understood"
+  ],
+  "results": {
+    "source_present": true,
+    "unit_tests_pass": true,
+    "race_tests_pass": true,
+    "vet_pass": true,
+    "lab_harness_available": false,
+    "live_qualification_evidence": false,
+    "capability_registrations": true,
+    "working_tree_understood": true
+  },
+  "blocking_issues": [
+    "scripts/ad-lab/ exists but empty - no docker-compose.yml, no seed.sh",
+    "test/integration/ad/ directory does not exist",
+    "artifacts/stage45/ contains only baseline - no live Samba4 transcripts",
+    "No integration tests found for Stage 45 Kerberos against Samba4",
+    "Stage 45 declared CLOSED but live verification never executed"
+  ],
+  "verdict": "Stage 45 implementation exists but is NOT LIVE-QUALIFIED. Stage 46 cannot proceed until Samba4 lab harness is implemented, integration tests created, live qualification executed, and evidence captured.",
+  "evidence_paths": [
+    "artifacts/stage46/baseline/stage45-entry-verification.json",
+    "artifacts/stage46/baseline/baseline-summary.md"
+  ],
+  "owner": "Stage 45 implementation team",
+  "timestamp": "2026-09-21T14:30:00Z"
+}

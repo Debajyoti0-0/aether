@@ -1,0 +1,66 @@
+{
+  "head_commit": "a887a0ed9c9fcdbf0400a5d59ccad162cfcac202",
+  "head_branch": "master",
+  "version_file": "3.4.0-stage3",
+  "tags_local": [],
+  "tags_remote": [],
+  "branches": {
+    "master": "a887a0ed9c9fcdbf0400a5d59ccad162cfcac202",
+    "onyx-crepe": "990426b",
+    "sincere-plume": "990426b"
+  },
+  "key_commits": [
+    {
+      "sha": "a887a0ed9c9fcdbf0400a5d59ccad162cfcac202",
+      "date": "2026-09-21",
+      "message": "chore(artifacts): rename stage*/ to release/, audit/, handoff/"
+    },
+    {
+      "sha": "eeb86e704152627e922c5e5c348c909f9ebf35d8",
+      "date": "2026-09-19",
+      "message": "stage44-47 (re-based, World B): operational qualification, supply chain, 3 defect fixes, evidence package"
+    },
+    {
+      "sha": "0dae3ae",
+      "date": "2026-09-12",
+      "message": "docs: Stage 7 G0/G26 — Baseline reconciliation and lineage resolution"
+    },
+    {
+      "sha": "c9ca3e3",
+      "date": "2026-09-12",
+      "message": "docs: Stage 6 baseline — actual repository state (Stage 3, 3.4.0-stage3)"
+    },
+    {
+      "sha": "bfc7c86",
+      "date": "2026-09-02",
+      "message": "V: Stage 3 documentation — CHANGELOG 3.4.0-stage3, README teamserver v2 section, evidence/threat-model/deferred docs, final implementation report, VERSION bump"
+    }
+  ],
+  "search_results": {
+    "kerberos": {
+      "commits": [],
+      "file_history": "NO HISTORY - internal/protocol/kerberos/ never existed"
+    },
+    "ldap": {
+      "commits": [],
+      "file_history": "NO HISTORY - internal/protocol/ldap/ never existed"
+    },
+    "stage45_ad": {
+      "commits": [],
+      "note": "eeb86e7 references 'stage45' but for supply chain artifacts, not Kerberos"
+    },
+    "stage46_ad": {
+      "commits": [],
+      "note": "eeb86e7 references 'stage46' but for independent audit, not LDAP"
+    },
+    "internal_engine_ad": {
+      "file_history": "NO HISTORY - internal/engine/ad/ never existed"
+    },
+    "internal_protocol_ms_wcce": {
+      "file_history": "NO HISTORY - internal/protocol/ms-wcce/ never existed"
+    },
+    "scripts_ad_lab": {
+      "file_history": "NO HISTORY - scripts/ad-lab/ never existed"
+    }
+  }
+}
