@@ -400,9 +400,32 @@ Two environment notes recorded for the next operator:
   (`0x400000` alone), omitting `NORMAL_ACCOUNT` (`0x200`). The correct value is
   `4194816` (`0x400200`); this was corrected. It makes no behavioural difference
   on this Samba (see limitation 1) but is now correct.
-- **WSL is not usable for Kerberos testing** on this host — no `/bin/bash`, and
-  `krb5-user` installation previously hung holding the dpkg lock. Use the DC
-  container's `kinit`/`klist` instead; it is the same MIT implementation.
+- **WSL was misdiagnosed, then repaired.** An earlier version of this document
+  stated that WSL was unusable for Kerberos testing because it had no
+  `/bin/bash`. **That was wrong**, and the correction is recorded here rather
+  than quietly removed.
+
+  What actually happened: WSL's default distribution is `docker-desktop`, which
+  has no shell. Invoking `bash` from PowerShell resolves through the WSL interop
+  shim to that default distro, so it failed with
+  `execvpe(/bin/bash) failed: No such file or directory`. Selecting the
+  distribution explicitly — `wsl -d Ubuntu -- ...` — works correctly. The host
+  has a fully functional **Ubuntu 26.04.1** WSL2 distro with a working shell,
+  `apt`, `dpkg` and passwordless `sudo`.
+
+  The related "krb5-user install hung" claim was, however, **substantively
+  correct**: the install had left `krb5-user` in state `iU` (unpacked, not
+  configured) and `krb5-config` in `iF` (failed configuration), because
+  `krb5-user`'s postinst raises a whiptail prompt for the default realm, which
+  blocks forever with no TTY attached. Seeding the debconf answers and
+  configuring under `DEBIAN_FRONTEND=noninteractive` repairs it. MIT
+  `kinit`/`klist`/`kvno` and the `krb5-pkinit` plugin are now installed in WSL,
+  giving Stage 47 an **independent** PKINIT reference implementation. See
+  `docs/stage46i-provisioning-attempt.md` (repair detail) and
+  `docs/stage46i-certification.md` (what it does and does not prove).
+
+  The DC container's `kinit`/`klist` remain a valid alternative for ccache
+  interop; the two are the same MIT implementation.
 
 ### 7.1 This limitation is not limited to AS-REP roasting
 

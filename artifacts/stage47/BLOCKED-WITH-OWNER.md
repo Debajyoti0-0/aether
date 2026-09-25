@@ -103,3 +103,18 @@ The three carry-forward items from Stage 46h closure are complete:
 
 Entry gate result: G3201, G3202, G3203, G3204, G3205, G3207 **PASS**;
 **G3206 FAIL** (this blocker). Gates G3208–G3280 are not reached.
+
+## Status after Stage 46i
+
+Unchanged: still `BLOCKED-WITH-OWNER` on G3206 alone. Stage 46i re-tested every
+provisioning path and none is executable from the operator's host, so the remedy
+above stands unchanged. Two additions:
+
+- `artifacts/stage47/baseline/baseline-correction.md` corrects the stale
+  2026-09-21 baseline, which wrongly recorded Stages 45/46 as unimplemented.
+- `docs/stage46i-certification.md` gives the full owner procedure: the exact
+  provisioning commands, the CA-validation evidence to capture (5 templates,
+  `Esc6CaFlagPresent = True`), the PKINIT positive run, and the three negative
+  controls that must fail. MIT `krb5-pkinit` is now installed in WSL as the
+  independent reference implementation.
+
