@@ -1,0 +1,37 @@
+{
+  "config_keys": {
+    "config": {
+      "consumed_by": [
+        "viper config loading in initConfig()"
+      ],
+      "description": "Config file path",
+      "observable": true,
+      "precedence": "file \u003c env \u003c flag"
+    },
+    "log-level": {
+      "consumed_by": [
+        "initLogging() -\u003e slog.SetDefault()"
+      ],
+      "description": "Log level (debug, info, warn, error)",
+      "observable": true,
+      "precedence": "default \u003c env \u003c flag"
+    }
+  },
+  "flags_bound_to_viper": [
+    "config",
+    "log-level"
+  ],
+  "precedence_chain": [
+    "default",
+    "config_file",
+    "environment",
+    "flag"
+  ],
+  "verification": {
+    "config_file_selection": "verified via config-precedence.csv cases 2-4",
+    "invalid_log_level": "verified via config-precedence.csv case 8",
+    "log_level_env": "verified via AETHER_LOG_LEVEL=debug test",
+    "log_level_flag": "verified via config-precedence.csv cases 5-8",
+    "log_level_flag_wins": "verified via --log-level=error with AETHER_LOG_LEVEL=debug"
+  }
+}

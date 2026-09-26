@@ -1,0 +1,5191 @@
+{
+  "commands": [
+    {
+      "path": "aether ad",
+      "parent": "aether",
+      "description": "Active Directory operations (Kerberos, LDAP, AD CS)",
+      "subcommands": [
+        {
+          "path": "aether ad asreproast",
+          "parent": "aether ad",
+          "description": "AS-REP roast accounts without pre-authentication",
+          "local_flags": [
+            {
+              "name": "dc",
+              "usage": "Domain controller hostname or IP",
+              "required": true
+            },
+            {
+              "name": "domain",
+              "usage": "Target domain (FQDN)",
+              "required": true
+            },
+            {
+              "name": "engagement",
+              "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+              "required": true
+            },
+            {
+              "name": "userlist",
+              "usage": "Path to file with usernames (one per line)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required for governance)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "dc",
+            "domain",
+            "engagement",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ad ccache",
+          "parent": "aether ad",
+          "description": "CCache management (show, convert)",
+          "subcommands": [
+            {
+              "path": "aether ad ccache convert",
+              "parent": "aether ad ccache",
+              "description": "Convert ccache between MIT and Heimdal formats",
+              "local_flags": [
+                {
+                  "name": "input",
+                  "usage": "Input ccache path",
+                  "required": false
+                },
+                {
+                  "name": "output",
+                  "usage": "Output ccache path",
+                  "required": true
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "output",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ad ccache show",
+              "parent": "aether ad ccache",
+              "description": "Show contents of a ccache file",
+              "local_flags": [
+                {
+                  "name": "ccache",
+                  "usage": "Path to ccache file",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": false
+                }
+              ],
+              "is_group": false,
+              "is_runnable": true
+            }
+          ],
+          "is_group": true,
+          "is_runnable": false
+        },
+        {
+          "path": "aether ad enum",
+          "parent": "aether ad",
+          "description": "Active Directory enumeration",
+          "subcommands": [
+            {
+              "path": "aether ad enum asrep",
+              "parent": "aether ad enum",
+              "description": "Enumerate AS-REP roastable accounts (no pre-auth)",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "userlist",
+                  "usage": "Path to file with usernames (one per line)",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ad enum spn",
+              "parent": "aether ad enum",
+              "description": "Enumerate Service Principal Names",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ad enum users",
+              "parent": "aether ad enum",
+              "description": "Enumerate valid usernames via Kerberos AS-REQ",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "userlist",
+                  "usage": "Path to file with usernames (one per line)",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            }
+          ],
+          "is_group": true,
+          "is_runnable": false
+        },
+        {
+          "path": "aether ad kerberoast",
+          "parent": "aether ad",
+          "description": "Kerberoast SPNs to extract crackable hashes",
+          "local_flags": [
+            {
+              "name": "ccache",
+              "usage": "Path to ccache file for authentication",
+              "required": false
+            },
+            {
+              "name": "creds",
+              "usage": "Path to file with SPN:password pairs",
+              "required": false
+            },
+            {
+              "name": "dc",
+              "usage": "Domain controller hostname or IP",
+              "required": true
+            },
+            {
+              "name": "domain",
+              "usage": "Target domain (FQDN)",
+              "required": true
+            },
+            {
+              "name": "engagement",
+              "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+              "required": true
+            },
+            {
+              "name": "max-requests",
+              "usage": "Maximum number of requests (0 = unlimited)",
+              "default_value": "0",
+              "required": false
+            },
+            {
+              "name": "rate-limit",
+              "usage": "Rate limit between requests (e.g., 100ms)",
+              "default_value": "0s",
+              "required": false
+            },
+            {
+              "name": "spnlist",
+              "usage": "Path to file with SPNs (one per line)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required for governance)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "dc",
+            "domain",
+            "engagement",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ad ldap",
+          "parent": "aether ad",
+          "description": "LDAP enumeration and ACL analysis",
+          "subcommands": [
+            {
+              "path": "aether ad ldap acl",
+              "parent": "aether ad ldap",
+              "description": "Security descriptor and ACL analysis",
+              "subcommands": [
+                {
+                  "path": "aether ad ldap acl effective",
+                  "parent": "aether ad ldap acl",
+                  "description": "Get effective rights for a principal on an object",
+                  "local_flags": [
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "object",
+                      "usage": "Object DN",
+                      "required": true
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "principal",
+                      "usage": "Principal SID",
+                      "required": true
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "object",
+                    "principal",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                },
+                {
+                  "path": "aether ad ldap acl get",
+                  "parent": "aether ad ldap acl",
+                  "description": "Get and analyze ACL on an object",
+                  "local_flags": [
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "object",
+                      "usage": "Object DN to analyze",
+                      "required": true
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "object",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                }
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ad ldap bind",
+              "parent": "aether ad ldap",
+              "description": "Test LDAP bind/connection",
+              "local_flags": [
+                {
+                  "name": "bind-dn",
+                  "usage": "Bind DN",
+                  "required": true
+                },
+                {
+                  "name": "bind-pass",
+                  "usage": "Bind password",
+                  "required": true
+                },
+                {
+                  "name": "host",
+                  "usage": "LDAP server hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "bind-dn",
+                "bind-pass",
+                "host",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ad ldap enum",
+              "parent": "aether ad ldap",
+              "description": "LDAP directory enumeration",
+              "subcommands": [
+                {
+                  "path": "aether ad ldap enum all",
+                  "parent": "aether ad ldap enum",
+                  "description": "Enumerate all object types",
+                  "local_flags": [
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "limit",
+                      "usage": "Maximum results per type",
+                      "default_value": "1000",
+                      "required": false
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                },
+                {
+                  "path": "aether ad ldap enum computers",
+                  "parent": "aether ad ldap enum",
+                  "description": "Enumerate computer objects",
+                  "local_flags": [
+                    {
+                      "name": "attrs",
+                      "usage": "Comma-separated attributes to retrieve",
+                      "required": false
+                    },
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "filter",
+                      "usage": "LDAP filter",
+                      "default_value": "(objectClass=computer)",
+                      "required": false
+                    },
+                    {
+                      "name": "limit",
+                      "usage": "Maximum results",
+                      "default_value": "1000",
+                      "required": false
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                },
+                {
+                  "path": "aether ad ldap enum groups",
+                  "parent": "aether ad ldap enum",
+                  "description": "Enumerate group objects",
+                  "local_flags": [
+                    {
+                      "name": "attrs",
+                      "usage": "Comma-separated attributes to retrieve",
+                      "required": false
+                    },
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "filter",
+                      "usage": "LDAP filter",
+                      "default_value": "(objectClass=group)",
+                      "required": false
+                    },
+                    {
+                      "name": "limit",
+                      "usage": "Maximum results",
+                      "default_value": "1000",
+                      "required": false
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                },
+                {
+                  "path": "aether ad ldap enum ous",
+                  "parent": "aether ad ldap enum",
+                  "description": "Enumerate organizational units",
+                  "local_flags": [
+                    {
+                      "name": "attrs",
+                      "usage": "Comma-separated attributes to retrieve",
+                      "required": false
+                    },
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "filter",
+                      "usage": "LDAP filter",
+                      "default_value": "(objectClass=organizationalUnit)",
+                      "required": false
+                    },
+                    {
+                      "name": "limit",
+                      "usage": "Maximum results",
+                      "default_value": "1000",
+                      "required": false
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                },
+                {
+                  "path": "aether ad ldap enum spns",
+                  "parent": "aether ad ldap enum",
+                  "description": "Enumerate service principal names via LDAP",
+                  "local_flags": [
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "limit",
+                      "usage": "Maximum results",
+                      "default_value": "1000",
+                      "required": false
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                },
+                {
+                  "path": "aether ad ldap enum users",
+                  "parent": "aether ad ldap enum",
+                  "description": "Enumerate user objects",
+                  "local_flags": [
+                    {
+                      "name": "attrs",
+                      "usage": "Comma-separated attributes to retrieve",
+                      "required": false
+                    },
+                    {
+                      "name": "dc",
+                      "usage": "Domain controller hostname or IP",
+                      "required": true
+                    },
+                    {
+                      "name": "domain",
+                      "usage": "Target domain (FQDN)",
+                      "required": true
+                    },
+                    {
+                      "name": "engagement",
+                      "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                      "required": true
+                    },
+                    {
+                      "name": "filter",
+                      "usage": "LDAP filter",
+                      "default_value": "(\u0026(objectClass=user)(!(objectClass=computer)))",
+                      "required": false
+                    },
+                    {
+                      "name": "limit",
+                      "usage": "Maximum results",
+                      "default_value": "1000",
+                      "required": false
+                    },
+                    {
+                      "name": "port",
+                      "usage": "LDAP server port",
+                      "default_value": "389",
+                      "required": false
+                    },
+                    {
+                      "name": "starttls",
+                      "usage": "Use StartTLS",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "tls",
+                      "usage": "Use LDAPS (TLS)",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
+                      "name": "workspace",
+                      "usage": "Workspace name (required for governance)",
+                      "required": true
+                    }
+                  ],
+                  "required_flags": [
+                    "dc",
+                    "domain",
+                    "engagement",
+                    "workspace"
+                  ],
+                  "is_group": false,
+                  "is_runnable": true
+                }
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ad ldap path",
+              "parent": "aether ad ldap",
+              "description": "Find ACL-based attack paths",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "max-depth",
+                  "usage": "Maximum path depth (the search is single-hop, so only 1 is supported)",
+                  "default_value": "1",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "start-user",
+                  "usage": "Start user SID",
+                  "required": true
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "target",
+                  "usage": "Target object DN",
+                  "required": true
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "start-user",
+                "target",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ad ldap rootdse",
+              "parent": "aether ad ldap",
+              "description": "Query RootDSE",
+              "local_flags": [
+                {
+                  "name": "bind-dn",
+                  "usage": "Bind DN",
+                  "required": true
+                },
+                {
+                  "name": "bind-pass",
+                  "usage": "Bind password",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN) for RootDSE base DN",
+                  "required": false
+                },
+                {
+                  "name": "host",
+                  "usage": "LDAP server hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "port",
+                  "usage": "Port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use TLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "bind-dn",
+                "bind-pass",
+                "host",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ad tgt",
+          "parent": "aether ad",
+          "description": "Acquire Ticket Granting Ticket (TGT) and store in ccache",
+          "local_flags": [
+            {
+              "name": "ccache",
+              "usage": "Path to existing ccache for auth",
+              "required": false
+            },
+            {
+              "name": "dc",
+              "usage": "Domain controller hostname or IP",
+              "required": true
+            },
+            {
+              "name": "domain",
+              "usage": "Target domain (FQDN)",
+              "required": true
+            },
+            {
+              "name": "engagement",
+              "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+              "required": true
+            },
+            {
+              "name": "keytab",
+              "usage": "Path to keytab file (not yet implemented)",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output ccache path (default: /tmp/\u003cuser\u003e_\u003ctimestamp\u003e.ccache)",
+              "required": false
+            },
+            {
+              "name": "password",
+              "usage": "Password for the user",
+              "required": false
+            },
+            {
+              "name": "username",
+              "usage": "Username to authenticate as",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required for governance)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "dc",
+            "domain",
+            "engagement",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether audit",
+      "parent": "aether",
+      "description": "Tamper-evident audit trail (signed hash chain)",
+      "subcommands": [
+        {
+          "path": "aether audit record",
+          "parent": "aether audit",
+          "description": "Record a command into the signed audit chain",
+          "local_flags": [
+            {
+              "name": "cmd",
+              "usage": "Command to record (required)",
+              "required": true
+            },
+            {
+              "name": "result",
+              "usage": "Result detail",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "cmd",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether audit verify",
+          "parent": "aether audit",
+          "description": "Verify the workspace audit chain integrity",
+          "local_flags": [
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether cap",
+      "parent": "aether",
+      "description": "Conditional Access policy operations",
+      "subcommands": [
+        {
+          "path": "aether cap evaluate",
+          "parent": "aether cap",
+          "description": "Evaluate policies offline for a user/app pair",
+          "local_flags": [
+            {
+              "name": "app",
+              "usage": "Target app (id or name)",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output file for strategy (JSON)",
+              "required": false
+            },
+            {
+              "name": "policies",
+              "usage": "Policies JSON file (from export)",
+              "required": false
+            },
+            {
+              "name": "user",
+              "usage": "Target user (UPN)",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether cap exploit",
+          "parent": "aether cap",
+          "description": "Simulate a live CAP bypass (OS/IP/Browser spoofing)",
+          "local_flags": [
+            {
+              "name": "app",
+              "usage": "Target app id/name",
+              "required": false
+            },
+            {
+              "name": "browser-preset",
+              "usage": "TLS preset",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "policies",
+              "usage": "Policies JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "probe",
+              "usage": "URL to probe with spoofed headers (optional; offline without it)",
+              "required": false
+            },
+            {
+              "name": "spoof-ip",
+              "usage": "Source IP to claim (X-Forwarded-For)",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "30",
+              "required": false
+            },
+            {
+              "name": "user",
+              "usage": "Target user UPN",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "policies"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether cap matrix",
+          "parent": "aether cap",
+          "description": "Build the user×app policy decision matrix",
+          "local_flags": [
+            {
+              "name": "apps",
+              "usage": "Apps to evaluate (required)",
+              "default_value": "[]",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Write matrix JSON to file",
+              "required": false
+            },
+            {
+              "name": "policies",
+              "usage": "Policies JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "users",
+              "usage": "Users to evaluate (required)",
+              "default_value": "[]",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "apps",
+            "policies",
+            "users"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether cap parse",
+          "parent": "aether cap",
+          "description": "Fetch or load CAP policies",
+          "local_flags": [
+            {
+              "name": "browser-preset",
+              "usage": "TLS fingerprint preset",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "graph-base",
+              "usage": "Graph API base URL",
+              "default_value": "https://graph.microsoft.com/v1.0",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output file for policies (JSON)",
+              "required": false
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant id (required)",
+              "required": true
+            },
+            {
+              "name": "timeout",
+              "usage": "Request timeout seconds",
+              "default_value": "30",
+              "required": false
+            },
+            {
+              "name": "token",
+              "usage": "Access token for Microsoft Graph (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "tenant",
+            "token"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether cap predict",
+          "parent": "aether cap",
+          "description": "Forecast CAP activity windows from historical state changes",
+          "local_flags": [
+            {
+              "name": "at",
+              "usage": "Forecast time (RFC3339; default now)",
+              "required": false
+            },
+            {
+              "name": "history",
+              "usage": "Historical observations JSON (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Write forecast JSON to file",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "history"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether completion",
+      "parent": "aether",
+      "description": "Generate the autocompletion script for the specified shell",
+      "subcommands": [
+        {
+          "path": "aether completion bash",
+          "parent": "aether completion",
+          "description": "Generate the autocompletion script for bash",
+          "local_flags": [
+            {
+              "name": "no-descriptions",
+              "usage": "disable completion descriptions",
+              "default_value": "false",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether completion fish",
+          "parent": "aether completion",
+          "description": "Generate the autocompletion script for fish",
+          "local_flags": [
+            {
+              "name": "no-descriptions",
+              "usage": "disable completion descriptions",
+              "default_value": "false",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether completion powershell",
+          "parent": "aether completion",
+          "description": "Generate the autocompletion script for powershell",
+          "local_flags": [
+            {
+              "name": "no-descriptions",
+              "usage": "disable completion descriptions",
+              "default_value": "false",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether completion zsh",
+          "parent": "aether completion",
+          "description": "Generate the autocompletion script for zsh",
+          "local_flags": [
+            {
+              "name": "no-descriptions",
+              "usage": "disable completion descriptions",
+              "default_value": "false",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether connect",
+      "parent": "aether",
+      "description": "Connect to the teamserver as an authenticated operator",
+      "local_flags": [
+        {
+          "name": "exec",
+          "usage": "Execute one command on the teamserver and exit",
+          "required": false
+        },
+        {
+          "name": "i-know-what-im-doing",
+          "usage": "Required confirmation alongside --insecure",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "insecure",
+          "usage": "Skip server cert verification (research only)",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "operator-cert",
+          "usage": "Operator client certificate (PEM; from 'serve cert issue')",
+          "required": false
+        },
+        {
+          "name": "operator-key",
+          "usage": "Operator client key (PEM)",
+          "required": false
+        },
+        {
+          "name": "server",
+          "usage": "Teamserver address",
+          "default_value": "127.0.0.1:7788",
+          "required": false
+        },
+        {
+          "name": "server-ca",
+          "usage": "Teamserver CA certificate to verify the server (default: \u003coperator-cert dir\u003e/teamserver-ca.crt)",
+          "required": false
+        },
+        {
+          "name": "workspace",
+          "usage": "Workspace to sync",
+          "required": false
+        }
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether dashboard",
+      "parent": "aether",
+      "description": "Token-authenticated web dashboard: graph view + activity stream",
+      "local_flags": [
+        {
+          "name": "bind",
+          "usage": "Bind address (default 127.0.0.1; non-loopback requires TLS)",
+          "default_value": "127.0.0.1",
+          "required": false
+        },
+        {
+          "name": "graph",
+          "usage": "Graph JSON file (required)",
+          "required": true
+        },
+        {
+          "name": "operator-cert",
+          "usage": "Operator client certificate (required with --teamserver)",
+          "required": false
+        },
+        {
+          "name": "operator-key",
+          "usage": "Operator client key (required with --teamserver)",
+          "required": false
+        },
+        {
+          "name": "port",
+          "usage": "Listen port",
+          "default_value": "8080",
+          "required": false
+        },
+        {
+          "name": "server-ca",
+          "usage": "Teamserver CA certificate (default: \u003coperator-cert dir\u003e/teamserver-ca.crt)",
+          "required": false
+        },
+        {
+          "name": "teamserver",
+          "usage": "Teamserver address for live events (optional; offline banner otherwise)",
+          "required": false
+        },
+        {
+          "name": "tls-cert",
+          "usage": "TLS certificate (required for non-loopback binds)",
+          "required": false
+        },
+        {
+          "name": "tls-key",
+          "usage": "TLS key (required for non-loopback binds)",
+          "required": false
+        },
+        {
+          "name": "workspace",
+          "usage": "Workspace name (required)",
+          "required": true
+        }
+      ],
+      "required_flags": [
+        "graph",
+        "workspace"
+      ],
+      "subcommands": [
+        {
+          "path": "aether dashboard view",
+          "parent": "aether dashboard",
+          "description": "Serve the read-only engagement dashboard (signed audit chain, time travel, choke points)",
+          "local_flags": [
+            {
+              "name": "allow-remote-binding",
+              "usage": "Second, independent switch required to bind a non-loopback address",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "audit",
+              "usage": "Audit chain file to verify and replay",
+              "default_value": "aether-audit.jsonl",
+              "required": false
+            },
+            {
+              "name": "audit-key",
+              "usage": "Ed25519 audit signing key file",
+              "default_value": "aether-audit.key",
+              "required": false
+            },
+            {
+              "name": "bind-all",
+              "usage": "Bind all interfaces (also requires --allow-remote-binding)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "graph",
+              "usage": "Identity graph file to render",
+              "default_value": "aether-graph.json",
+              "required": false
+            },
+            {
+              "name": "no-audit",
+              "usage": "Start without an audit chain (nothing can be verified; the UI says so)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "operator",
+              "usage": "Operator identity shown in the UI, and whose capability file is checked",
+              "required": false
+            },
+            {
+              "name": "operators-dir",
+              "usage": "Directory holding per-operator capability files, read when --operator is given",
+              "default_value": ".",
+              "required": false
+            },
+            {
+              "name": "port",
+              "usage": "TCP port to listen on (loopback by default)",
+              "default_value": "8443",
+              "required": false
+            },
+            {
+              "name": "require-capability",
+              "usage": "Capability token every request must present in X-Aether-Capability",
+              "required": false
+            },
+            {
+              "name": "tls-cert",
+              "usage": "Serve HTTPS with this certificate",
+              "required": false
+            },
+            {
+              "name": "tls-key",
+              "usage": "Serve HTTPS with this key (required with --tls-cert)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Engagement/workspace name shown in the UI",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether doctor",
+      "parent": "aether",
+      "description": "Check host environment health",
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether exec",
+      "parent": "aether",
+      "description": "Cloud command execution (governed: audit + rollback recorded)",
+      "subcommands": [
+        {
+          "path": "aether exec aws",
+          "parent": "aether exec",
+          "description": "AWS EC2 SSM RunCommand",
+          "local_flags": [
+            {
+              "name": "access-key",
+              "usage": "AWS access key (required)",
+              "required": true
+            },
+            {
+              "name": "cmd",
+              "usage": "Shell command to run (required)",
+              "required": true
+            },
+            {
+              "name": "instance-id",
+              "usage": "EC2 instance id (required)",
+              "required": true
+            },
+            {
+              "name": "region",
+              "usage": "AWS region",
+              "default_value": "us-east-1",
+              "required": false
+            },
+            {
+              "name": "secret-key",
+              "usage": "AWS secret key (required)",
+              "required": true
+            },
+            {
+              "name": "session-token",
+              "usage": "AWS session token",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "300",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "access-key",
+            "cmd",
+            "instance-id",
+            "secret-key"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether exec azure",
+          "parent": "aether exec",
+          "description": "Azure VM RunCommand",
+          "local_flags": [
+            {
+              "name": "browser-preset",
+              "usage": "TLS fingerprint preset (chrome | edge | firefox)",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "cmd",
+              "usage": "Shell command to run (required)",
+              "required": true
+            },
+            {
+              "name": "resource-group",
+              "usage": "Resource group (required)",
+              "required": true
+            },
+            {
+              "name": "subscription-id",
+              "usage": "Azure subscription id (required)",
+              "required": true
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "300",
+              "required": false
+            },
+            {
+              "name": "token",
+              "usage": "Access token for management.azure.com (required)",
+              "required": true
+            },
+            {
+              "name": "vm-id",
+              "usage": "VM name (required)",
+              "required": true
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "cmd",
+            "resource-group",
+            "subscription-id",
+            "token",
+            "vm-id"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether exec gcp",
+          "parent": "aether exec",
+          "description": "GCP Compute Engine exec staging (OS Login / serial console path)",
+          "local_flags": [
+            {
+              "name": "cmd",
+              "usage": "Command to stage (required)",
+              "required": true
+            },
+            {
+              "name": "project",
+              "usage": "GCP project id (required)",
+              "required": true
+            },
+            {
+              "name": "target",
+              "usage": "zone/instance (required)",
+              "required": true
+            },
+            {
+              "name": "token",
+              "usage": "OAuth2 access token (required)",
+              "required": true
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "cmd",
+            "project",
+            "target",
+            "token"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether exec github",
+          "parent": "aether exec",
+          "description": "GitHub Actions workflow dispatch",
+          "local_flags": [
+            {
+              "name": "browser-preset",
+              "usage": "TLS fingerprint preset (chrome | edge | firefox)",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "ref",
+              "usage": "Git ref to dispatch",
+              "default_value": "main",
+              "required": false
+            },
+            {
+              "name": "repo",
+              "usage": "owner/repo (required)",
+              "required": true
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "60",
+              "required": false
+            },
+            {
+              "name": "token",
+              "usage": "GitHub token (required)",
+              "required": true
+            },
+            {
+              "name": "workflow",
+              "usage": "Workflow file name (required)",
+              "required": true
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "repo",
+            "token",
+            "workflow"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether exec imds",
+          "parent": "aether exec",
+          "description": "Azure IMDS managed identity exploitation (from a compromised VM)",
+          "local_flags": [
+            {
+              "name": "client-id",
+              "usage": "Pin user-assigned identity by client id",
+              "required": false
+            },
+            {
+              "name": "object-id",
+              "usage": "Pin user-assigned identity by object id",
+              "required": false
+            },
+            {
+              "name": "out",
+              "usage": "Save token JSON to file",
+              "required": false
+            },
+            {
+              "name": "resource",
+              "usage": "Resource to request",
+              "default_value": "https://management.azure.com/",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "30",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether exec parallel",
+          "parent": "aether exec",
+          "description": "Fan a command out over many targets with a worker pool",
+          "local_flags": [
+            {
+              "name": "access-key",
+              "usage": "AWS access key",
+              "required": false
+            },
+            {
+              "name": "backend",
+              "usage": "azure | aws",
+              "default_value": "azure",
+              "required": false
+            },
+            {
+              "name": "cmd",
+              "usage": "Command to run on each target (required)",
+              "required": true
+            },
+            {
+              "name": "parallel",
+              "usage": "Max concurrent workers",
+              "default_value": "5",
+              "required": false
+            },
+            {
+              "name": "region",
+              "usage": "AWS region",
+              "default_value": "us-east-1",
+              "required": false
+            },
+            {
+              "name": "resource-group",
+              "usage": "Azure resource group",
+              "required": false
+            },
+            {
+              "name": "secret-key",
+              "usage": "AWS secret key",
+              "required": false
+            },
+            {
+              "name": "session-token",
+              "usage": "AWS session token",
+              "required": false
+            },
+            {
+              "name": "subscription-id",
+              "usage": "Azure subscription id",
+              "required": false
+            },
+            {
+              "name": "targets",
+              "usage": "Comma-separated targets",
+              "required": false
+            },
+            {
+              "name": "targets-file",
+              "usage": "Targets file (one per line)",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "300",
+              "required": false
+            },
+            {
+              "name": "token",
+              "usage": "Access token (azure)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "cmd"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether export",
+      "parent": "aether",
+      "description": "Export evidence, reports, and graph topologies",
+      "subcommands": [
+        {
+          "path": "aether export attck",
+          "parent": "aether export",
+          "description": "Export exercised techniques as a MITRE ATT\u0026CK Navigator layer",
+          "local_flags": [
+            {
+              "name": "actions",
+              "usage": "Comma-separated actions (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Output Navigator JSON file",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Engagement label for the Navigator layer title (inputs come from --actions)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "actions",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export audit",
+          "parent": "aether export",
+          "description": "Export the signed audit trail as JSONL",
+          "local_flags": [
+            {
+              "name": "output",
+              "usage": "Output JSONL file",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export executive",
+          "parent": "aether export",
+          "description": "Generate the executive engagement report (KPIs + remediation)",
+          "local_flags": [
+            {
+              "name": "bh-json",
+              "usage": "BloodHound path JSON to validate and include",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Base output path (writes .md and .json)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Engagement label for report titles (report inputs come from --bh-json/--actions, not workspace records)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export graph",
+          "parent": "aether export",
+          "description": "Export the identity graph topology",
+          "local_flags": [
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Output file",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "graph"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export pdf",
+          "parent": "aether export",
+          "description": "Export the executive report as a PDF",
+          "local_flags": [
+            {
+              "name": "bh-json",
+              "usage": "BloodHound path JSON to include",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output PDF file",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Engagement label for the PDF title (report inputs come from --bh-json)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export prioritize",
+          "parent": "aether export",
+          "description": "Prioritize attack paths by CISA KEV exposure (+30% boost)",
+          "local_flags": [
+            {
+              "name": "cve-map",
+              "usage": "JSON mapping path-key → CVEs (required for KEV boost)",
+              "required": false
+            },
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "kev-file",
+              "usage": "Local CISA KEV catalog JSON",
+              "required": false
+            },
+            {
+              "name": "kev-url",
+              "usage": "Live CISA KEV feed URL",
+              "required": false
+            },
+            {
+              "name": "max-paths",
+              "usage": "Max paths to consider",
+              "default_value": "10",
+              "required": false
+            },
+            {
+              "name": "risk-threshold",
+              "usage": "Risk ceiling",
+              "default_value": "60",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "graph"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export report",
+          "parent": "aether export",
+          "description": "Export the workspace journal as a markdown report",
+          "local_flags": [
+            {
+              "name": "output",
+              "usage": "Output file",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export sarif",
+          "parent": "aether export",
+          "description": "Export path validation results as SARIF",
+          "local_flags": [
+            {
+              "name": "bh-json",
+              "usage": "BloodHound path JSON (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Output SARIF file",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "bh-json"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether export verify-evidence",
+          "parent": "aether export",
+          "description": "Verify evidence with revocation checking",
+          "local_flags": [
+            {
+              "name": "cache-ttl",
+              "usage": "Cache TTL for OCSP/CRL responses",
+              "default_value": "5m",
+              "required": false
+            },
+            {
+              "name": "cert",
+              "usage": "Certificate PEM file to verify (required for ocsp/crl/file modes)",
+              "required": false
+            },
+            {
+              "name": "crl-file",
+              "usage": "Local CRL file path (for crl mode)",
+              "required": false
+            },
+            {
+              "name": "crl-url",
+              "usage": "CRL distribution point URL (optional, from cert CDP if omitted)",
+              "required": false
+            },
+            {
+              "name": "fail-closed",
+              "usage": "Fail closed on network/validation errors",
+              "default_value": "true",
+              "required": false
+            },
+            {
+              "name": "issuer",
+              "usage": "Issuer certificate PEM file (required for ocsp/crl)",
+              "required": false
+            },
+            {
+              "name": "json",
+              "usage": "Emit JSON output",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "responder",
+              "usage": "OCSP responder URL (optional, from cert AIA if omitted)",
+              "required": false
+            },
+            {
+              "name": "revocation",
+              "usage": "Revocation checking mode: none, ocsp, crl, file",
+              "default_value": "none",
+              "required": false
+            },
+            {
+              "name": "revocation-file",
+              "usage": "File-based revocation list (serial numbers, one per line; required for file mode)",
+              "required": false
+            },
+            {
+              "name": "skip-sig-verify",
+              "usage": "Skip signature verification (testing only)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "HTTP timeout for OCSP/CRL requests",
+              "default_value": "10s",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether graph",
+      "parent": "aether",
+      "description": "Cross-provider identity graph",
+      "subcommands": [
+        {
+          "path": "aether graph build",
+          "parent": "aether graph",
+          "description": "Build the identity graph from exports or live Graph",
+          "local_flags": [
+            {
+              "name": "browser-preset",
+              "usage": "TLS preset",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "graph-base",
+              "usage": "Graph base URL",
+              "default_value": "https://graph.microsoft.com/v1.0",
+              "required": false
+            },
+            {
+              "name": "input",
+              "usage": "Input JSON export file(s)",
+              "default_value": "[]",
+              "required": false
+            },
+            {
+              "name": "kind",
+              "usage": "Kind per input: entra:users, entra:servicePrincipals, entra:roleAssignments, aws, gcp",
+              "default_value": "[]",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output graph file",
+              "default_value": "aether-graph.json",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "30",
+              "required": false
+            },
+            {
+              "name": "token",
+              "usage": "Graph token for live fetch",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether graph correlate",
+          "parent": "aether graph",
+          "description": "Discover cross-cloud attack paths (Entra → AWS → GCP)",
+          "local_flags": [
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "max-paths",
+              "usage": "Max paths per provider pair",
+              "default_value": "3",
+              "required": false
+            },
+            {
+              "name": "risk-threshold",
+              "usage": "Risk ceiling",
+              "default_value": "60",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "graph"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether graph generate",
+          "parent": "aether graph",
+          "description": "Auto-generate a DAG plan from a graph path",
+          "local_flags": [
+            {
+              "name": "cae-fallback",
+              "usage": "Wire CAE claims-handler fallback into auth steps",
+              "default_value": "true",
+              "required": false
+            },
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Write plan JSON to file",
+              "required": false
+            },
+            {
+              "name": "path",
+              "usage": "Comma-separated node IDs (required)",
+              "required": true
+            },
+            {
+              "name": "risk-threshold",
+              "usage": "Risk ceiling",
+              "default_value": "60",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "graph",
+            "path"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether graph qualify",
+          "parent": "aether graph",
+          "description": "Qualify a node path into an executable runbook",
+          "local_flags": [
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "path",
+              "usage": "Comma-separated node IDs (required)",
+              "required": true
+            },
+            {
+              "name": "risk-threshold",
+              "usage": "Risk ceiling",
+              "default_value": "60",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "graph",
+            "path"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether graph stats",
+          "parent": "aether graph",
+          "description": "Show graph statistics",
+          "local_flags": [
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "graph"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether graph visualize",
+          "parent": "aether graph",
+          "description": "Export the identity graph as an interactive HTML visualization",
+          "local_flags": [
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Output HTML file",
+              "required": false
+            },
+            {
+              "name": "title",
+              "usage": "Visualization title",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "graph"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether help",
+      "parent": "aether",
+      "description": "Help about any command",
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether ldap",
+      "parent": "aether",
+      "description": "LDAP enumeration and ACL analysis",
+      "subcommands": [
+        {
+          "path": "aether ldap acl",
+          "parent": "aether ldap",
+          "description": "Security descriptor and ACL analysis",
+          "subcommands": [
+            {
+              "path": "aether ldap acl effective",
+              "parent": "aether ldap acl",
+              "description": "Get effective rights for a principal on an object",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "object",
+                  "usage": "Object DN",
+                  "required": true
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "principal",
+                  "usage": "Principal SID",
+                  "required": true
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "object",
+                "principal",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ldap acl get",
+              "parent": "aether ldap acl",
+              "description": "Get and analyze ACL on an object",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "object",
+                  "usage": "Object DN to analyze",
+                  "required": true
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "object",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ldap bind",
+          "parent": "aether ldap",
+          "description": "Test LDAP bind/connection",
+          "local_flags": [
+            {
+              "name": "bind-dn",
+              "usage": "Bind DN",
+              "required": true
+            },
+            {
+              "name": "bind-pass",
+              "usage": "Bind password",
+              "required": true
+            },
+            {
+              "name": "host",
+              "usage": "LDAP server hostname or IP",
+              "required": true
+            },
+            {
+              "name": "port",
+              "usage": "LDAP server port",
+              "default_value": "389",
+              "required": false
+            },
+            {
+              "name": "starttls",
+              "usage": "Use StartTLS",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "tls",
+              "usage": "Use LDAPS (TLS)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required for governance)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "bind-dn",
+            "bind-pass",
+            "host",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ldap enum",
+          "parent": "aether ldap",
+          "description": "LDAP directory enumeration",
+          "subcommands": [
+            {
+              "path": "aether ldap enum all",
+              "parent": "aether ldap enum",
+              "description": "Enumerate all object types",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "limit",
+                  "usage": "Maximum results per type",
+                  "default_value": "1000",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ldap enum computers",
+              "parent": "aether ldap enum",
+              "description": "Enumerate computer objects",
+              "local_flags": [
+                {
+                  "name": "attrs",
+                  "usage": "Comma-separated attributes to retrieve",
+                  "required": false
+                },
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "filter",
+                  "usage": "LDAP filter",
+                  "default_value": "(objectClass=computer)",
+                  "required": false
+                },
+                {
+                  "name": "limit",
+                  "usage": "Maximum results",
+                  "default_value": "1000",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ldap enum groups",
+              "parent": "aether ldap enum",
+              "description": "Enumerate group objects",
+              "local_flags": [
+                {
+                  "name": "attrs",
+                  "usage": "Comma-separated attributes to retrieve",
+                  "required": false
+                },
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "filter",
+                  "usage": "LDAP filter",
+                  "default_value": "(objectClass=group)",
+                  "required": false
+                },
+                {
+                  "name": "limit",
+                  "usage": "Maximum results",
+                  "default_value": "1000",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ldap enum ous",
+              "parent": "aether ldap enum",
+              "description": "Enumerate organizational units",
+              "local_flags": [
+                {
+                  "name": "attrs",
+                  "usage": "Comma-separated attributes to retrieve",
+                  "required": false
+                },
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "filter",
+                  "usage": "LDAP filter",
+                  "default_value": "(objectClass=organizationalUnit)",
+                  "required": false
+                },
+                {
+                  "name": "limit",
+                  "usage": "Maximum results",
+                  "default_value": "1000",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ldap enum spns",
+              "parent": "aether ldap enum",
+              "description": "Enumerate service principal names via LDAP",
+              "local_flags": [
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "limit",
+                  "usage": "Maximum results",
+                  "default_value": "1000",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether ldap enum users",
+              "parent": "aether ldap enum",
+              "description": "Enumerate user objects",
+              "local_flags": [
+                {
+                  "name": "attrs",
+                  "usage": "Comma-separated attributes to retrieve",
+                  "required": false
+                },
+                {
+                  "name": "dc",
+                  "usage": "Domain controller hostname or IP",
+                  "required": true
+                },
+                {
+                  "name": "domain",
+                  "usage": "Target domain (FQDN)",
+                  "required": true
+                },
+                {
+                  "name": "engagement",
+                  "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+                  "required": true
+                },
+                {
+                  "name": "filter",
+                  "usage": "LDAP filter",
+                  "default_value": "(\u0026(objectClass=user)(!(objectClass=computer)))",
+                  "required": false
+                },
+                {
+                  "name": "limit",
+                  "usage": "Maximum results",
+                  "default_value": "1000",
+                  "required": false
+                },
+                {
+                  "name": "port",
+                  "usage": "LDAP server port",
+                  "default_value": "389",
+                  "required": false
+                },
+                {
+                  "name": "starttls",
+                  "usage": "Use StartTLS",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "tls",
+                  "usage": "Use LDAPS (TLS)",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
+                  "name": "workspace",
+                  "usage": "Workspace name (required for governance)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "dc",
+                "domain",
+                "engagement",
+                "workspace"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ldap path",
+          "parent": "aether ldap",
+          "description": "Find ACL-based attack paths",
+          "local_flags": [
+            {
+              "name": "dc",
+              "usage": "Domain controller hostname or IP",
+              "required": true
+            },
+            {
+              "name": "domain",
+              "usage": "Target domain (FQDN)",
+              "required": true
+            },
+            {
+              "name": "engagement",
+              "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
+              "required": true
+            },
+            {
+              "name": "max-depth",
+              "usage": "Maximum path depth (the search is single-hop, so only 1 is supported)",
+              "default_value": "1",
+              "required": false
+            },
+            {
+              "name": "port",
+              "usage": "LDAP server port",
+              "default_value": "389",
+              "required": false
+            },
+            {
+              "name": "start-user",
+              "usage": "Start user SID",
+              "required": true
+            },
+            {
+              "name": "starttls",
+              "usage": "Use StartTLS",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "target",
+              "usage": "Target object DN",
+              "required": true
+            },
+            {
+              "name": "tls",
+              "usage": "Use LDAPS (TLS)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required for governance)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "dc",
+            "domain",
+            "engagement",
+            "start-user",
+            "target",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ldap rootdse",
+          "parent": "aether ldap",
+          "description": "Query RootDSE",
+          "local_flags": [
+            {
+              "name": "bind-dn",
+              "usage": "Bind DN",
+              "required": true
+            },
+            {
+              "name": "bind-pass",
+              "usage": "Bind password",
+              "required": true
+            },
+            {
+              "name": "domain",
+              "usage": "Target domain (FQDN) for RootDSE base DN",
+              "required": false
+            },
+            {
+              "name": "host",
+              "usage": "LDAP server hostname or IP",
+              "required": true
+            },
+            {
+              "name": "port",
+              "usage": "Port",
+              "default_value": "389",
+              "required": false
+            },
+            {
+              "name": "starttls",
+              "usage": "Use StartTLS",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "tls",
+              "usage": "Use TLS",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required for governance)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "bind-dn",
+            "bind-pass",
+            "host",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether pivot",
+      "parent": "aether",
+      "description": "Cross-boundary pivoting operations",
+      "subcommands": [
+        {
+          "path": "aether pivot cloud-to-onprem",
+          "parent": "aether pivot",
+          "description": "Extract a Kerberos TGT from a cloud token via MS-KKDCP",
+          "local_flags": [
+            {
+              "name": "domain",
+              "usage": "On-prem realm, e.g. INTERNAL.LOCAL (required)",
+              "required": true
+            },
+            {
+              "name": "kkdcp",
+              "usage": "MS-KKDCP endpoint",
+              "default_value": "https://login.microsoftonline.com/common/Kerberos/api",
+              "required": false
+            },
+            {
+              "name": "out",
+              "usage": "Output ccache path",
+              "default_value": "aether.ccache",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "60",
+              "required": false
+            },
+            {
+              "name": "token",
+              "usage": "Cloud token / PRT binding used as pre-auth (required)",
+              "required": true
+            },
+            {
+              "name": "user",
+              "usage": "Username without realm (required)",
+              "required": true
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "domain",
+            "token",
+            "user"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether pivot imds",
+          "parent": "aether pivot",
+          "description": "Hijack the managed identity of a compromised Azure VM via IMDS",
+          "local_flags": [
+            {
+              "name": "client-id",
+              "usage": "Pin user-assigned identity by client id",
+              "required": false
+            },
+            {
+              "name": "object-id",
+              "usage": "Pin user-assigned identity by object id",
+              "required": false
+            },
+            {
+              "name": "out",
+              "usage": "Save token JSON to file",
+              "required": false
+            },
+            {
+              "name": "resource",
+              "usage": "Resource to request",
+              "default_value": "https://management.azure.com/",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "30",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether pivot verify-imds",
+          "parent": "aether pivot",
+          "description": "Verify the full IMDS v2 two-step handshake (PUT token → GET identity)",
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether plan",
+      "parent": "aether",
+      "description": "RL planner: train, export episodes, generate adaptive plans",
+      "subcommands": [
+        {
+          "path": "aether plan export",
+          "parent": "aether plan",
+          "description": "Export workspace operations as RL training episodes (vault; --output for JSONL)",
+          "local_flags": [
+            {
+              "name": "output",
+              "usage": "Output episodes JSONL file",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether plan generate",
+          "parent": "aether plan",
+          "description": "Generate a plan using the trained RL policy",
+          "local_flags": [
+            {
+              "name": "graph",
+              "usage": "Graph JSON (for density discretization)",
+              "required": false
+            },
+            {
+              "name": "max-steps",
+              "usage": "Max plan steps",
+              "default_value": "8",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Write plan JSON to file",
+              "required": false
+            },
+            {
+              "name": "parallel",
+              "usage": "Plan max_parallel",
+              "default_value": "2",
+              "required": false
+            },
+            {
+              "name": "policy",
+              "usage": "Trained policy JSON (required)",
+              "required": true
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace (for token-count discretization)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "policy"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether plan train",
+          "parent": "aether plan",
+          "description": "Train the RL planner from exported episodes",
+          "local_flags": [
+            {
+              "name": "episodes",
+              "usage": "Episodes JSONL file (required)",
+              "required": true
+            },
+            {
+              "name": "epochs",
+              "usage": "Training epochs",
+              "default_value": "50",
+              "required": false
+            },
+            {
+              "name": "epsilon",
+              "usage": "Initial exploration rate",
+              "default_value": "0.3",
+              "required": false
+            },
+            {
+              "name": "learning-rate",
+              "usage": "Q-learning alpha",
+              "default_value": "0.1",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output policy JSON",
+              "default_value": "policy.json",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "episodes"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether plugins",
+      "parent": "aether",
+      "description": "Plugin registry: search and install community plugins",
+      "local_flags": [
+        {
+          "name": "index",
+          "usage": "Registry index URL",
+          "default_value": "https://raw.githubusercontent.com/Debajyoti0-0/aether-plugins/main/index.json",
+          "required": false
+        }
+      ],
+      "persistent_flags": [
+        {
+          "name": "index",
+          "usage": "Registry index URL",
+          "default_value": "https://raw.githubusercontent.com/Debajyoti0-0/aether-plugins/main/index.json",
+          "required": false
+        }
+      ],
+      "subcommands": [
+        {
+          "path": "aether plugins install",
+          "parent": "aether plugins",
+          "description": "Install a plugin from the registry (checksum-verified)",
+          "local_flags": [
+            {
+              "name": "allow-unsigned",
+              "usage": "INSECURE: allow installing artifacts whose manifest declares no checksum",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "name",
+              "usage": "Plugin name (required)",
+              "required": true
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "name"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether plugins installed",
+          "parent": "aether plugins",
+          "description": "List locally installed plugins",
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether plugins search",
+          "parent": "aether plugins",
+          "description": "Search the remote plugin registry",
+          "local_flags": [
+            {
+              "name": "query",
+              "usage": "Search substring",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether providers",
+      "parent": "aether",
+      "description": "Third-party provider plugins (okta, gitlab, kubernetes)",
+      "local_flags": [
+        {
+          "name": "domain",
+          "usage": "Provider base URL, e.g. https://org.okta.com (required)",
+          "required": false
+        },
+        {
+          "name": "token",
+          "usage": "API/PAT/SA token (required)",
+          "required": false
+        }
+      ],
+      "persistent_flags": [
+        {
+          "name": "domain",
+          "usage": "Provider base URL, e.g. https://org.okta.com (required)",
+          "required": false
+        },
+        {
+          "name": "token",
+          "usage": "API/PAT/SA token (required)",
+          "required": false
+        }
+      ],
+      "subcommands": [
+        {
+          "path": "aether providers exec",
+          "parent": "aether providers",
+          "description": "Run a provider action (gitlab: pipeline, kubernetes: pod stage)",
+          "local_flags": [
+            {
+              "name": "cmd",
+              "usage": "gitlab: ref | kubernetes: command to stage (required)",
+              "required": true
+            },
+            {
+              "name": "target",
+              "usage": "gitlab: project id | kubernetes: namespace/pod (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "cmd",
+            "target"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether providers list",
+          "parent": "aether providers",
+          "description": "List registered provider plugins",
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether providers users",
+          "parent": "aether providers",
+          "description": "okta: enumerate users",
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether providers validate",
+          "parent": "aether providers",
+          "description": "Validate provider configuration and connectivity (okta, gitlab, kubernetes)",
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether prt",
+      "parent": "aether",
+      "description": "Primary Refresh Token operations",
+      "subcommands": [
+        {
+          "path": "aether prt convert",
+          "parent": "aether prt",
+          "description": "Convert a PRT to OAuth2 tokens",
+          "local_flags": [
+            {
+              "name": "browser-preset",
+              "usage": "TLS fingerprint preset (chrome, edge, firefox)",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "client-id",
+              "usage": "Public client id",
+              "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output file for tokens (JSON)",
+              "required": false
+            },
+            {
+              "name": "prt-file",
+              "usage": "PRT JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "resource",
+              "usage": "Resource/scope to request",
+              "default_value": "https://graph.microsoft.com/.default",
+              "required": false
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant override (defaults to PRT tenant)",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Request timeout seconds",
+              "default_value": "30",
+              "required": false
+            },
+            {
+              "name": "tls-binding",
+              "usage": "Channel binding dump (Token Protection bypass)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "prt-file"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether prt extract",
+          "parent": "aether prt",
+          "description": "Extract PRTs from registry/credential dumps",
+          "local_flags": [
+            {
+              "name": "dump",
+              "usage": "Dump file(s) to scan (required)",
+              "default_value": "[]",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Write extracted PRTs JSON to file",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "dump"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether prt import",
+          "parent": "aether prt",
+          "description": "Import a PRT (and optional TLS binding) into a workspace",
+          "local_flags": [
+            {
+              "name": "prt",
+              "usage": "PRT JSON/bin file (required)",
+              "required": false
+            },
+            {
+              "name": "tls-binding",
+              "usage": "TLS binding dump file (Token Protection bypass)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Target workspace (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether prt show",
+          "parent": "aether prt",
+          "description": "Display PRT metadata without exchanging",
+          "local_flags": [
+            {
+              "name": "prt-file",
+              "usage": "PRT JSON file (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "prt-file"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether relay",
+      "parent": "aether",
+      "description": "Authentication relay operations",
+      "subcommands": [
+        {
+          "path": "aether relay cae-handler",
+          "parent": "aether relay",
+          "description": "Auto-retry on CAE claims challenges to keep sessions alive",
+          "aliases": [
+            "cae"
+          ],
+          "local_flags": [
+            {
+              "name": "client-id",
+              "usage": "Public client id",
+              "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "refresh-token",
+              "usage": "Refresh token (required)",
+              "required": true
+            },
+            {
+              "name": "resource",
+              "usage": "Resource to verify against",
+              "default_value": "https://graph.microsoft.com",
+              "required": false
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant id (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "refresh-token",
+            "tenant"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether relay devicecode",
+          "parent": "aether relay",
+          "description": "Run a device code flow and poll for tokens",
+          "local_flags": [
+            {
+              "name": "client-id",
+              "usage": "Public client id",
+              "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant id or domain (required)",
+              "required": true
+            },
+            {
+              "name": "timeout",
+              "usage": "Polling timeout seconds",
+              "default_value": "300",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "tenant"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether relay fido2-downgrade",
+          "parent": "aether relay",
+          "description": "Build and preview a WS-Trust wauth spoof RST (password/SMS class) — not sent",
+          "aliases": [
+            "fido2"
+          ],
+          "local_flags": [
+            {
+              "name": "device-claim",
+              "usage": "Spoofed PRT device claim",
+              "required": false
+            },
+            {
+              "name": "domain",
+              "usage": "Federated domain (required)",
+              "required": true
+            },
+            {
+              "name": "mex",
+              "usage": "Local MEX XML file (optional; else discovery by convention)",
+              "required": false
+            },
+            {
+              "name": "username",
+              "usage": "Username (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "domain",
+            "username"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether relay mex",
+          "parent": "aether relay",
+          "description": "Parse federation metadata (MEX) and detect downgrade opportunity",
+          "local_flags": [
+            {
+              "name": "domain",
+              "usage": "Federated domain (required)",
+              "required": true
+            },
+            {
+              "name": "mex",
+              "usage": "Local MEX XML file (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "domain",
+            "mex"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether relay mfa",
+          "parent": "aether relay",
+          "description": "WS-Trust/SAML relay to OAuth tokens",
+          "local_flags": [
+            {
+              "name": "applies-to",
+              "usage": "AppliesTo realm",
+              "default_value": "urn:federation:MicrosoftOnline",
+              "required": false
+            },
+            {
+              "name": "browser-preset",
+              "usage": "TLS fingerprint preset",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "client-id",
+              "usage": "Public client id",
+              "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output file for tokens (JSON)",
+              "required": false
+            },
+            {
+              "name": "password",
+              "usage": "Password (or AETHER_PASSWORD env)",
+              "required": false
+            },
+            {
+              "name": "sts-endpoint",
+              "usage": "WS-Trust STS endpoint (required)",
+              "required": true
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant id or domain (required)",
+              "required": true
+            },
+            {
+              "name": "timeout",
+              "usage": "Request timeout seconds",
+              "default_value": "30",
+              "required": false
+            },
+            {
+              "name": "username",
+              "usage": "Username (user@domain)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "sts-endpoint",
+            "tenant"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether relay saml-strip",
+          "parent": "aether relay",
+          "description": "Strip ds:Signature elements from a SAML document",
+          "local_flags": [
+            {
+              "name": "file",
+              "usage": "SAML XML file (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Write stripped XML to file",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "file"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether relay stretch",
+          "parent": "aether relay",
+          "description": "Keep a session alive via continuous refresh",
+          "local_flags": [
+            {
+              "name": "client-id",
+              "usage": "Public client id",
+              "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "max-refresh",
+              "usage": "Maximum refresh rounds",
+              "default_value": "10",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output file for tokens (JSON)",
+              "required": false
+            },
+            {
+              "name": "refresh-token",
+              "usage": "Refresh token to stretch (required)",
+              "required": true
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant id or domain (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "refresh-token",
+            "tenant"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether relay ztna",
+          "parent": "aether relay",
+          "description": "Route the auth relay through the detected ZTNA broker",
+          "local_flags": [
+            {
+              "name": "applies-to",
+              "usage": "AppliesTo realm",
+              "default_value": "urn:federation:MicrosoftOnline",
+              "required": false
+            },
+            {
+              "name": "client-id",
+              "usage": "Public client id",
+              "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "password",
+              "usage": "Password (or AETHER_PASSWORD env)",
+              "required": false
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant id (required)",
+              "required": true
+            },
+            {
+              "name": "username",
+              "usage": "Username (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "tenant",
+            "username"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether replay",
+      "parent": "aether",
+      "description": "Replay past operations from a runbook (dry-run by default)",
+      "local_flags": [
+        {
+          "name": "confirm",
+          "usage": "Actually execute the steps (default: dry-run)",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "file",
+          "usage": "Operation file: runbook JSON, or one command per line (required)",
+          "required": true
+        },
+        {
+          "name": "filter",
+          "usage": "Only replay steps containing this substring",
+          "required": false
+        }
+      ],
+      "required_flags": [
+        "file"
+      ],
+      "subcommands": [
+        {
+          "path": "aether replay save",
+          "parent": "aether replay",
+          "description": "Save a graph path's runbook as a replayable operation file",
+          "local_flags": [
+            {
+              "name": "graph",
+              "usage": "Graph JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "output",
+              "usage": "Output operation file",
+              "default_value": "operation.json",
+              "required": false
+            },
+            {
+              "name": "path",
+              "usage": "Comma-separated node IDs (required)",
+              "required": true
+            },
+            {
+              "name": "risk-threshold",
+              "usage": "Risk ceiling",
+              "default_value": "60",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "graph",
+            "path"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether rollback",
+      "parent": "aether",
+      "description": "Revert engagement changes (deterministic cleanup)",
+      "subcommands": [
+        {
+          "path": "aether rollback list",
+          "parent": "aether rollback",
+          "description": "List recorded reversible actions",
+          "local_flags": [
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether rollback push",
+          "parent": "aether rollback",
+          "description": "Record a reverse action manually",
+          "local_flags": [
+            {
+              "name": "detail",
+              "usage": "Human detail",
+              "required": false
+            },
+            {
+              "name": "kind",
+              "usage": "Action kind e.g. sp_secret (required)",
+              "required": true
+            },
+            {
+              "name": "op",
+              "usage": "Reversal primitive e.g. remove_password",
+              "required": false
+            },
+            {
+              "name": "provider",
+              "usage": "Reversal provider",
+              "default_value": "entra",
+              "required": false
+            },
+            {
+              "name": "target",
+              "usage": "Action target (required)",
+              "required": true
+            },
+            {
+              "name": "undo-cmd",
+              "usage": "Full aether command to execute on undo",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "kind",
+            "target",
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether rollback undo",
+          "parent": "aether rollback",
+          "description": "Undo all recorded actions (newest first)",
+          "local_flags": [
+            {
+              "name": "workspace",
+              "usage": "Workspace name (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "workspace"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether run",
+      "parent": "aether",
+      "description": "Execute the kill chain inside a workspace",
+      "local_flags": [
+        {
+          "name": "auto",
+          "usage": "Autonomous mode: continue past risk gates, use stored PRT",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "behavior",
+          "usage": "Behavior mode: realistic (human pacing) or empty (fast)",
+          "required": false
+        },
+        {
+          "name": "bh-json",
+          "usage": "BloodHound path JSON (optional)",
+          "required": false
+        },
+        {
+          "name": "low-slow",
+          "usage": "Randomize 1-5s jitter between phases",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "passphrase",
+          "usage": "Workspace passphrase (falls back to AETHER_PASSPHRASE)",
+          "required": false
+        },
+        {
+          "name": "persona",
+          "usage": "Persona for realistic behavior: engineer, hr, executive, analyst",
+          "default_value": "engineer",
+          "required": false
+        },
+        {
+          "name": "policies",
+          "usage": "CAP export JSON (optional)",
+          "required": false
+        },
+        {
+          "name": "prt-file",
+          "usage": "PRT JSON to convert in the chain (optional; auto mode uses the stored PRT)",
+          "required": false
+        },
+        {
+          "name": "respect-hours",
+          "usage": "Delay execution until the persona's active window",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "risk-threshold",
+          "usage": "Risk ceiling 0-100",
+          "default_value": "50",
+          "required": false
+        },
+        {
+          "name": "seed",
+          "usage": "Deterministic seed for behavior engine (-1 = random)",
+          "default_value": "-1",
+          "required": false
+        },
+        {
+          "name": "workspace",
+          "usage": "Workspace name (required)",
+          "required": true
+        }
+      ],
+      "required_flags": [
+        "workspace"
+      ],
+      "subcommands": [
+        {
+          "path": "aether run plan",
+          "parent": "aether run",
+          "description": "Execute an adaptive DAG plan (JSON) with fallbacks and retries",
+          "local_flags": [
+            {
+              "name": "parallel",
+              "usage": "Max concurrent nodes",
+              "default_value": "3",
+              "required": false
+            },
+            {
+              "name": "plan",
+              "usage": "Workflow plan JSON (required)",
+              "required": true
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+evidence records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "plan"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether serve",
+      "parent": "aether",
+      "description": "Start the mTLS teamserver (cert-bound operators, capability authz, spine dispatch)",
+      "local_flags": [
+        {
+          "name": "ca-cert",
+          "usage": "CA certificate PEM used to verify operators (required)",
+          "required": false
+        },
+        {
+          "name": "health-path",
+          "usage": "Health endpoint path",
+          "default_value": "/healthz",
+          "required": false
+        },
+        {
+          "name": "listen",
+          "usage": "Listen address",
+          "default_value": "127.0.0.1:7788",
+          "required": false
+        },
+        {
+          "name": "max-conns",
+          "usage": "Maximum concurrent connections",
+          "default_value": "32",
+          "required": false
+        },
+        {
+          "name": "metrics-addr",
+          "usage": "Metrics/health listen address (e.g., 127.0.0.1:9090); empty disables",
+          "required": false
+        },
+        {
+          "name": "metrics-path",
+          "usage": "Metrics endpoint path",
+          "default_value": "/metrics",
+          "required": false
+        },
+        {
+          "name": "operators-dir",
+          "usage": "Operator capability directory (default: \u003cca-cert dir\u003e/operators)",
+          "required": false
+        },
+        {
+          "name": "passphrase",
+          "usage": "Workspace passphrase (or AETHER_PASSPHRASE env); required with --workspace",
+          "required": false
+        },
+        {
+          "name": "ready-path",
+          "usage": "Readiness endpoint path",
+          "default_value": "/readyz",
+          "required": false
+        },
+        {
+          "name": "revoked",
+          "usage": "Revocation list path (default: \u003cca-cert dir\u003e/revoked.txt)",
+          "required": false
+        },
+        {
+          "name": "server-cert",
+          "usage": "Server certificate PEM (required; from 'serve cert init')",
+          "required": false
+        },
+        {
+          "name": "server-key",
+          "usage": "Server key PEM (required)",
+          "required": false
+        },
+        {
+          "name": "workspace",
+          "usage": "Workspace to attach (remote commands execute through the spine)",
+          "required": false
+        }
+      ],
+      "subcommands": [
+        {
+          "path": "aether serve cert",
+          "parent": "aether serve",
+          "description": "Teamserver PKI management (CA, operator certificates, revocation)",
+          "subcommands": [
+            {
+              "path": "aether serve cert init",
+              "parent": "aether serve cert",
+              "description": "Generate the teamserver CA and server certificate",
+              "local_flags": [
+                {
+                  "name": "dir",
+                  "usage": "Teamserver PKI directory",
+                  "default_value": "C:\\Users\\Debajyoti0-0\\AppData\\Roaming\\aether\\teamserver",
+                  "required": false
+                },
+                {
+                  "name": "extra-hosts",
+                  "usage": "Extra SAN hosts for the server cert (comma-separated)",
+                  "required": false
+                }
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether serve cert issue",
+              "parent": "aether serve cert",
+              "description": "Issue an operator client certificate (+ capability file)",
+              "local_flags": [
+                {
+                  "name": "caps",
+                  "usage": "Comma-separated execute capabilities to grant (e.g. exec.azure,exec.aws); read caps are granted by default",
+                  "required": false
+                },
+                {
+                  "name": "days",
+                  "usage": "Certificate validity in days",
+                  "default_value": "365",
+                  "required": false
+                },
+                {
+                  "name": "dir",
+                  "usage": "Teamserver PKI directory",
+                  "default_value": "C:\\Users\\Debajyoti0-0\\AppData\\Roaming\\aether\\teamserver",
+                  "required": false
+                },
+                {
+                  "name": "operator",
+                  "usage": "Operator name (required)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "operator"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether serve cert revoke",
+              "parent": "aether serve cert",
+              "description": "Revoke an operator (connections fail closed)",
+              "local_flags": [
+                {
+                  "name": "dir",
+                  "usage": "Teamserver PKI directory",
+                  "default_value": "C:\\Users\\Debajyoti0-0\\AppData\\Roaming\\aether\\teamserver",
+                  "required": false
+                },
+                {
+                  "name": "operator",
+                  "usage": "Operator name to revoke (required)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "operator"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            }
+          ],
+          "is_group": true,
+          "is_runnable": false
+        }
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether simulate",
+      "parent": "aether",
+      "description": "Emulate SOC telemetry and log signals (detection engineering)",
+      "local_flags": [
+        {
+          "name": "action",
+          "usage": "Action e.g. prt_exchange, wstrust_relay, vm_runcommand (required)",
+          "required": true
+        },
+        {
+          "name": "json",
+          "usage": "Output JSON",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "new-device",
+          "usage": "Sign-in from new device",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "time-of-day",
+          "usage": "business_hours or off_hours",
+          "default_value": "business_hours",
+          "required": false
+        },
+        {
+          "name": "unknown-location",
+          "usage": "Sign-in from unfamiliar location",
+          "default_value": "false",
+          "required": false
+        }
+      ],
+      "required_flags": [
+        "action"
+      ],
+      "subcommands": [
+        {
+          "path": "aether simulate fuzz",
+          "parent": "aether simulate",
+          "description": "Generate telemetry variants to test detection rule robustness",
+          "local_flags": [
+            {
+              "name": "count",
+              "usage": "Number of variants (1-100)",
+              "default_value": "20",
+              "required": false
+            },
+            {
+              "name": "ndjson",
+              "usage": "NDJSON output (one variant per line)",
+              "default_value": "true",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Write variants to file",
+              "required": false
+            },
+            {
+              "name": "seed",
+              "usage": "Base telemetry JSON file (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "seed"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether simulate stream",
+          "parent": "aether simulate",
+          "description": "Stream fuzzed telemetry directly into Splunk HEC (governed: audited)",
+          "local_flags": [
+            {
+              "name": "count",
+              "usage": "Variant count",
+              "default_value": "20",
+              "required": false
+            },
+            {
+              "name": "hec-token",
+              "usage": "HEC token (required)",
+              "required": true
+            },
+            {
+              "name": "hec-url",
+              "usage": "Splunk HEC endpoint (required)",
+              "required": true
+            },
+            {
+              "name": "index",
+              "usage": "Splunk index",
+              "default_value": "redteam",
+              "required": false
+            },
+            {
+              "name": "seed",
+              "usage": "Seed telemetry JSON (required)",
+              "required": true
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "30",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace for audit+rollback records (required)",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "hec-token",
+            "hec-url",
+            "seed"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether token",
+      "parent": "aether",
+      "description": "Token Protection \u0026 channel binding operations",
+      "subcommands": [
+        {
+          "path": "aether token confuse",
+          "parent": "aether token",
+          "description": "Forge a JWT via RS256→HS256 algorithm confusion",
+          "local_flags": [
+            {
+              "name": "e",
+              "usage": "RSA exponent hex (public key)",
+              "required": false
+            },
+            {
+              "name": "jwt",
+              "usage": "RS256 JWT to confuse (required)",
+              "required": true
+            },
+            {
+              "name": "n",
+              "usage": "RSA modulus hex (public key)",
+              "required": true
+            },
+            {
+              "name": "set-claim",
+              "usage": "key=value claim override (repeatable)",
+              "default_value": "[]",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "jwt",
+            "n"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether token protect",
+          "parent": "aether token",
+          "description": "Convert a PRT with Token Protection binding spoof",
+          "local_flags": [
+            {
+              "name": "browser-preset",
+              "usage": "TLS fingerprint preset",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "client-id",
+              "usage": "Public client id",
+              "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Output tokens JSON file",
+              "required": false
+            },
+            {
+              "name": "prt-file",
+              "usage": "PRT JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "resource",
+              "usage": "Resource/scope",
+              "default_value": "https://graph.microsoft.com/.default",
+              "required": false
+            },
+            {
+              "name": "tenant",
+              "usage": "Tenant override",
+              "required": false
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout seconds",
+              "default_value": "30",
+              "required": false
+            },
+            {
+              "name": "tls-binding",
+              "usage": "tls-unique binding dump (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "prt-file",
+            "tls-binding"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether token repurpose",
+          "parent": "aether token",
+          "description": "Rewrite the aud claim into an unsigned test artifact",
+          "local_flags": [
+            {
+              "name": "aud",
+              "usage": "New audience claim (required)",
+              "required": true
+            },
+            {
+              "name": "jwt",
+              "usage": "JWT to repurpose (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "aud",
+            "jwt"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether token show",
+          "parent": "aether token",
+          "description": "Render the channel binding header for a binding dump",
+          "local_flags": [
+            {
+              "name": "binding",
+              "usage": "Binding dump file (required)",
+              "required": true
+            }
+          ],
+          "required_flags": [
+            "binding"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether tunnel",
+      "parent": "aether",
+      "description": "Single proxy reachability probe via an external proxy (HTTP/SOCKS5) — not a tunnel",
+      "local_flags": [
+        {
+          "name": "browser-preset",
+          "usage": "TLS preset",
+          "default_value": "chrome",
+          "required": false
+        },
+        {
+          "name": "proxy",
+          "usage": "Proxy URL: http(s):// or socks5:// (required)",
+          "required": true
+        },
+        {
+          "name": "rotate-ja4",
+          "usage": "Rotate TLS fingerprints per connection",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "test-url",
+          "usage": "URL to probe through the proxy",
+          "default_value": "https://login.microsoftonline.com/common/discovery/instance",
+          "required": false
+        }
+      ],
+      "required_flags": [
+        "proxy"
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether validate",
+      "parent": "aether",
+      "description": "Attack path validation and OPSEC scoring",
+      "subcommands": [
+        {
+          "path": "aether validate path",
+          "parent": "aether validate",
+          "description": "Validate a BloodHound JSON attack path",
+          "local_flags": [
+            {
+              "name": "bh-json",
+              "usage": "BloodHound path JSON file (required)",
+              "required": true
+            },
+            {
+              "name": "graph-base",
+              "usage": "Graph base URL",
+              "default_value": "https://graph.microsoft.com/v1.0",
+              "required": false
+            },
+            {
+              "name": "graph-token",
+              "usage": "Optional Graph token for live user checks",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Report output file (markdown)",
+              "required": false
+            },
+            {
+              "name": "risk-threshold",
+              "usage": "Warn when risk exceeds this",
+              "default_value": "50",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "bh-json"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether validate profile",
+          "parent": "aether validate",
+          "description": "Engagement profile presets (banking, red-team, incident-response, ...)",
+          "subcommands": [
+            {
+              "path": "aether validate profile apply",
+              "parent": "aether validate profile",
+              "description": "Apply a profile to a config file",
+              "local_flags": [
+                {
+                  "name": "output",
+                  "usage": "Config file to write",
+                  "default_value": "aether.json",
+                  "required": false
+                },
+                {
+                  "name": "profile",
+                  "usage": "Profile name (required)",
+                  "required": true
+                }
+              ],
+              "required_flags": [
+                "profile"
+              ],
+              "is_group": false,
+              "is_runnable": true
+            },
+            {
+              "path": "aether validate profile show",
+              "parent": "aether validate profile",
+              "description": "Show all built-in profiles",
+              "is_group": false,
+              "is_runnable": true
+            }
+          ],
+          "is_group": true,
+          "is_runnable": false
+        },
+        {
+          "path": "aether validate risk",
+          "parent": "aether validate",
+          "description": "Score OPSEC risk for an action",
+          "local_flags": [
+            {
+              "name": "action",
+              "usage": "Action name e.g. prt_exchange (required)",
+              "required": true
+            },
+            {
+              "name": "blueteam",
+              "usage": "Blue team active",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "business-hours",
+              "usage": "It is business hours",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "edr",
+              "usage": "EDR detected on target",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "output",
+              "usage": "Report output file (markdown)",
+              "required": false
+            },
+            {
+              "name": "risk-threshold",
+              "usage": "Warn when risk exceeds this",
+              "default_value": "50",
+              "required": false
+            },
+            {
+              "name": "siem",
+              "usage": "SIEM logging assumed",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "target",
+              "usage": "Target of the action",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "action"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether validate soc",
+          "parent": "aether validate",
+          "description": "Predict SOC signals an action will generate",
+          "local_flags": [
+            {
+              "name": "action",
+              "usage": "Action name e.g. wstrust_relay (required)",
+              "required": true
+            },
+            {
+              "name": "new-device",
+              "usage": "Sign-in from new device",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "time-of-day",
+              "usage": "business_hours or off_hours",
+              "default_value": "business_hours",
+              "required": false
+            },
+            {
+              "name": "unknown-location",
+              "usage": "Sign-in from unfamiliar location",
+              "default_value": "false",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "action"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether validate stealth",
+          "parent": "aether validate",
+          "description": "Validate the stealth posture of a planned operation",
+          "local_flags": [
+            {
+              "name": "action",
+              "usage": "Action e.g. prt_exchange (required)",
+              "required": true
+            },
+            {
+              "name": "browser-preset",
+              "usage": "TLS preset that will be used",
+              "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "low-slow",
+              "usage": "Jitter pacing will be enabled",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "new-device",
+              "usage": "Operating from a new device",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "time-of-day",
+              "usage": "business_hours or off_hours",
+              "default_value": "business_hours",
+              "required": false
+            },
+            {
+              "name": "unknown-location",
+              "usage": "Operating from an unfamiliar location",
+              "default_value": "false",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "action"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether watch",
+      "parent": "aether",
+      "description": "Continuously monitor the environment for new attack paths",
+      "local_flags": [
+        {
+          "name": "autopilot",
+          "usage": "Automatically execute new paths under the risk ceiling",
+          "default_value": "false",
+          "required": false
+        },
+        {
+          "name": "interval",
+          "usage": "Poll interval",
+          "default_value": "5m0s",
+          "required": false
+        },
+        {
+          "name": "max-risk",
+          "usage": "Autopilot risk ceiling",
+          "default_value": "40",
+          "required": false
+        },
+        {
+          "name": "seed-graph",
+          "usage": "Graph JSON to watch (static seed; live providers via future hooks)",
+          "required": false
+        },
+        {
+          "name": "workspace",
+          "usage": "Workspace name (required)",
+          "required": true
+        }
+      ],
+      "required_flags": [
+        "workspace"
+      ],
+      "is_group": false,
+      "is_runnable": true
+    },
+    {
+      "path": "aether workspace",
+      "parent": "aether",
+      "description": "Engagement workspace management",
+      "subcommands": [
+        {
+          "path": "aether workspace create",
+          "parent": "aether workspace",
+          "description": "Create a workspace",
+          "local_flags": [
+            {
+              "name": "allow-empty-passphrase",
+              "usage": "Explicitly create a keyless workspace (strongly discouraged; emits warnings on every open)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "passphrase",
+              "usage": "Workspace passphrase (or AETHER_PASSPHRASE env)",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether workspace delete",
+          "parent": "aether workspace",
+          "description": "Securely delete a workspace (shred + remove)",
+          "local_flags": [
+            {
+              "name": "force",
+              "usage": "Confirm deletion",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "passphrase",
+              "usage": "Workspace passphrase (or AETHER_PASSPHRASE env)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (or pass as arg)",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether workspace info",
+          "parent": "aether workspace",
+          "description": "Show workspace details",
+          "local_flags": [
+            {
+              "name": "passphrase",
+              "usage": "Workspace passphrase (or AETHER_PASSPHRASE env)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (or pass as arg)",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether workspace list",
+          "parent": "aether workspace",
+          "description": "List workspaces",
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether workspace rekey",
+          "parent": "aether workspace",
+          "description": "Rotate the workspace encryption passphrase",
+          "local_flags": [
+            {
+              "name": "confirm-keyless",
+              "usage": "Required when migrating a keyless/legacy workspace (empty old passphrase)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "new-passphrase",
+              "usage": "New passphrase (or AETHER_NEW_PASSPHRASE env)",
+              "required": false
+            },
+            {
+              "name": "old-passphrase",
+              "usage": "Current passphrase (or AETHER_PASSPHRASE env); empty only for keyless/legacy migration",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (or pass as arg)",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether workspace report",
+          "parent": "aether workspace",
+          "description": "Generate the workspace engagement report",
+          "local_flags": [
+            {
+              "name": "output",
+              "usage": "Write report to file",
+              "required": false
+            },
+            {
+              "name": "passphrase",
+              "usage": "Workspace passphrase (or AETHER_PASSPHRASE env)",
+              "required": false
+            },
+            {
+              "name": "workspace",
+              "usage": "Workspace name (or pass as arg)",
+              "required": false
+            }
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    },
+    {
+      "path": "aether ztna",
+      "parent": "aether",
+      "description": "ZTNA broker detection \u0026 broker-routed execution",
+      "local_flags": [
+        {
+          "name": "browser-preset",
+          "usage": "TLS fingerprint preset",
+          "default_value": "chrome",
+          "required": false
+        }
+      ],
+      "persistent_flags": [
+        {
+          "name": "browser-preset",
+          "usage": "TLS fingerprint preset",
+          "default_value": "chrome",
+          "required": false
+        }
+      ],
+      "subcommands": [
+        {
+          "path": "aether ztna detect",
+          "parent": "aether ztna",
+          "description": "Detect the ZTNA broker in the network path",
+          "is_group": false,
+          "is_runnable": true
+        },
+        {
+          "path": "aether ztna exec",
+          "parent": "aether ztna",
+          "description": "Broker-routed reachability probe of an internal target (does not execute commands)",
+          "local_flags": [
+            {
+              "name": "cmd",
+              "usage": "Command to hand to the handler (required)",
+              "required": true
+            },
+            {
+              "name": "target",
+              "usage": "Internal target URL (required)",
+              "required": true
+            },
+            {
+              "name": "timeout",
+              "usage": "Timeout",
+              "default_value": "30s",
+              "required": false
+            }
+          ],
+          "required_flags": [
+            "cmd",
+            "target"
+          ],
+          "is_group": false,
+          "is_runnable": true
+        }
+      ],
+      "is_group": true,
+      "is_runnable": false
+    }
+  ],
+  "generated_at": "2026-09-26",
+  "root": "aether",
+  "source": "in-process cobra tree via cli.NewRootCommand()"
+}

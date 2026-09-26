@@ -23,8 +23,9 @@ var rootCmd = &cobra.Command{
 }
 
 var (
-	modulesMu sync.Mutex
-	modules   []Module
+	modulesMu     sync.Mutex
+	modules       []Module
+	modulesLoaded bool
 )
 
 type Module interface {
@@ -38,14 +39,23 @@ func RegisterModule(m Module) {
 	modules = append(modules, m)
 }
 
+// loadModules attaches every module-registered command to the root command.
+//
+// It is guarded because cobra's AddCommand appends unconditionally: calling this
+// twice would register the same *cobra.Command pointers twice and duplicate every
+// module subcommand in help output and in any generated inventory.
 func loadModules() {
 	modulesMu.Lock()
 	defer modulesMu.Unlock()
+	if modulesLoaded {
+		return
+	}
 	for _, m := range modules {
 		for _, cmd := range m.Commands() {
 			rootCmd.AddCommand(cmd)
 		}
 	}
+	modulesLoaded = true
 }
 
 // SetVersion overrides the CLI version from build-time injection.
@@ -66,7 +76,15 @@ func init() {
 
 // NewRootCommand builds and returns the full command tree. It is used
 // both by Execute() and by the docs/man generators.
+//
+// It loads the registered modules itself rather than relying on the caller to do
+// it. The generators that build the command inventory do not go through
+// Execute(), so when loading was left to the caller they silently produced a
+// tree missing every module-registered command: the generated inventory held
+// 110 commands while the shipped binary exposes 152. Loading here makes the
+// documented contract true for every caller.
 func NewRootCommand() *cobra.Command {
+	loadModules()
 	if !rootCmd.Runnable() {
 		rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()

@@ -1,0 +1,14 @@
+[
+  {
+    "command_path": "aether help",
+    "position": 1,
+    "name": "command",
+    "description": ""
+  },
+  {
+    "command_path": "aether providers validate",
+    "position": 1,
+    "name": "provider",
+    "description": ""
+  }
+]

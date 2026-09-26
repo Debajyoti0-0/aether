@@ -1,0 +1,27 @@
+{
+  "0": "success",
+  "1": "general error / unknown command / invalid flag / invalid argument / validation failure",
+  "130": "SIGINT (Ctrl+C)",
+  "143": "SIGTERM",
+  "2": "usage error (Cobra default for flag parsing errors)",
+  "known_exit_codes": [
+    {
+      "code": "0",
+      "commands": "all successful operations",
+      "meaning": "success"
+    },
+    {
+      "code": "1",
+      "commands": "failed operations, validation errors, auth failures",
+      "meaning": "error"
+    },
+    {
+      "code": "2",
+      "commands": "unknown flag, unknown command, missing required flag",
+      "meaning": "usage error"
+    },
+    {
+      "note": "Security-sensitive commands return 1 on authorization failure, never 0"
+    }
+  ]
+}

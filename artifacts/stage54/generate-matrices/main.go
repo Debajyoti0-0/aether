@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Debajyoti0-0/aether/internal/cli"
+	_ "github.com/Debajyoti0-0/aether/internal/cli/ad"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -50,6 +51,12 @@ type CommandDetail struct {
 
 func main() {
 	rootCmd := cli.NewRootCommand()
+
+	// cobra attaches these two during Execute(), not while the tree is being
+	// built, so a walk that does not trigger them reports 155 - 6 = 149 nodes
+	// and the inventory silently disagrees with the shipped binary's help.
+	rootCmd.InitDefaultHelpCmd()
+	rootCmd.InitDefaultCompletionCmd()
 
 	var flags []FlagDetail
 	var args []ArgDetail
