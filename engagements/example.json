@@ -1,0 +1,8 @@
+{
+  "engagement_id": "example-001",
+  "authorized_domains": ["example.com"],
+  "authorized_dcs": ["dc01.example.com"],
+  "authorized_capabilities": ["ad.enum.read", "ad.kerberos.roast", "ad.kerberos.tgt"],
+  "time_window": {"start": "2020-01-01T00:00:00Z", "end": "2999-01-01T00:00:00Z"},
+  "operator": "replace-me"
+}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Debajyoti0-0/aether/internal/cli"
+	"github.com/Debajyoti0-0/aether/internal/engagement"
 	"github.com/Debajyoti0-0/aether/internal/engine/ad/kerberos"
 	"github.com/Debajyoti0-0/aether/internal/engine/mutation"
 	"github.com/spf13/cobra"
@@ -12,14 +13,15 @@ import (
 
 func newTGTCmd() *cobra.Command {
 	var (
-		domain       string
-		dc           string
-		username     string
-		password     string
-		ccachePath   string
-		keytabPath   string
-		outputPath   string
-		workspace    string
+		domain     string
+		dc         string
+		username   string
+		password   string
+		ccachePath string
+		keytabPath string
+		outputPath string
+		workspace  string
+		engFile    string
 	)
 
 	cmd := &cobra.Command{
@@ -28,6 +30,10 @@ func newTGTCmd() *cobra.Command {
 		Long: `Authenticate to the KDC and acquire a TGT for the specified user.
 Stores the resulting credentials in a ccache file for later use.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, engagement.CapKerbTGT); err != nil {
+				return err
+			}
+
 			ws, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -83,6 +89,7 @@ Stores the resulting credentials in a ccache file for later use.`,
 	cmd.Flags().StringVar(&keytabPath, "keytab", "", "Path to keytab file (not yet implemented)")
 	cmd.Flags().StringVar(&outputPath, "output", "", "Output ccache path (default: /tmp/<user>_<timestamp>.ccache)")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")

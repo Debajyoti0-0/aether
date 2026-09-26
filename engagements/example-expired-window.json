@@ -1,0 +1,8 @@
+{
+  "engagement_id": "example-narrow-window-004",
+  "authorized_domains": ["example.com"],
+  "authorized_dcs": ["dc01.example.com"],
+  "authorized_capabilities": ["ad.enum.read"],
+  "time_window": {"start": "2020-01-01T00:00:00Z", "end": "2020-01-02T00:00:00Z"},
+  "operator": "replace-me"
+}

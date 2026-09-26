@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Debajyoti0-0/aether/internal/cli"
+	"github.com/Debajyoti0-0/aether/internal/engagement"
 	"github.com/Debajyoti0-0/aether/internal/engine/ad/kerberos"
 	"github.com/Debajyoti0-0/aether/internal/engine/mutation"
 	protokrb "github.com/Debajyoti0-0/aether/internal/protocol/kerberos"
@@ -23,6 +24,7 @@ func newKerberoastCmd() *cobra.Command {
 		maxRequests int
 		rateLimit   time.Duration
 		workspace   string
+		engFile     string
 	)
 
 	cmd := &cobra.Command{
@@ -31,6 +33,10 @@ func newKerberoastCmd() *cobra.Command {
 		Long: `Request TGS tickets for SPNs and extract Kerberoast hashes (mode 13100).
 Requires valid credentials (password or ccache) for the requesting account.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, engagement.CapKerbRoast); err != nil {
+				return err
+			}
+
 			ws, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -129,6 +135,7 @@ Requires valid credentials (password or ccache) for the requesting account.`,
 	cmd.Flags().IntVar(&maxRequests, "max-requests", 0, "Maximum number of requests (0 = unlimited)")
 	cmd.Flags().DurationVar(&rateLimit, "rate-limit", 0, "Rate limit between requests (e.g., 100ms)")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
@@ -143,6 +150,7 @@ func newASREPRoastCmd() *cobra.Command {
 		dc        string
 		userlist  string
 		workspace string
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -151,6 +159,10 @@ func newASREPRoastCmd() *cobra.Command {
 		Long: `Request AS-REP for accounts without Kerberos pre-authentication.
 Extracts AS-REP hashes (mode 18200) for offline cracking.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, engagement.CapKerbRoast); err != nil {
+				return err
+			}
+
 			ws, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -223,6 +235,7 @@ Extracts AS-REP hashes (mode 18200) for offline cracking.`,
 	cmd.Flags().StringVar(&dc, "dc", "", "Domain controller hostname or IP")
 	cmd.Flags().StringVar(&userlist, "userlist", "", "Path to file with usernames (one per line)")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Debajyoti0-0/aether/internal/cli"
+	"github.com/Debajyoti0-0/aether/internal/engagement"
 	"github.com/Debajyoti0-0/aether/internal/engine/ad/kerberos"
 	"github.com/Debajyoti0-0/aether/internal/engine/mutation"
 	"github.com/spf13/cobra"
@@ -31,6 +32,7 @@ func newEnumUsersCmd() *cobra.Command {
 		dc        string
 		userlist  string
 		workspace string
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -40,6 +42,10 @@ func newEnumUsersCmd() *cobra.Command {
 Accounts that exist will return PREAUTH_REQUIRED or AS-REP.
 Accounts that don't exist will return KDC_ERR_C_PRINCIPAL_UNKNOWN.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, engagement.CapEnumRead); err != nil {
+				return err
+			}
+
 			ws, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -102,6 +108,7 @@ Accounts that don't exist will return KDC_ERR_C_PRINCIPAL_UNKNOWN.`,
 	cmd.Flags().StringVar(&dc, "dc", "", "Domain controller hostname or IP")
 	cmd.Flags().StringVar(&userlist, "userlist", "", "Path to file with usernames (one per line)")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
@@ -116,6 +123,7 @@ func newEnumASREPCmd() *cobra.Command {
 		dc        string
 		userlist  string
 		workspace string
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -124,6 +132,10 @@ func newEnumASREPCmd() *cobra.Command {
 		Long: `Enumerate accounts that do not require Kerberos pre-authentication.
 These accounts are vulnerable to AS-REP roasting.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, engagement.CapEnumRead); err != nil {
+				return err
+			}
+
 			ws, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -181,6 +193,7 @@ These accounts are vulnerable to AS-REP roasting.`,
 	cmd.Flags().StringVar(&dc, "dc", "", "Domain controller hostname or IP")
 	cmd.Flags().StringVar(&userlist, "userlist", "", "Path to file with usernames (one per line)")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
@@ -194,6 +207,7 @@ func newEnumSPNCmd() *cobra.Command {
 		domain    string
 		dc        string
 		workspace string
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -201,6 +215,10 @@ func newEnumSPNCmd() *cobra.Command {
 		Short: "Enumerate Service Principal Names",
 		Long:  `Enumerate SPN-registered accounts via LDAP.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, engagement.CapEnumRead); err != nil {
+				return err
+			}
+
 			ws, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -235,6 +253,7 @@ func newEnumSPNCmd() *cobra.Command {
 	cmd.Flags().StringVar(&domain, "domain", "", "Target domain (FQDN)")
 	cmd.Flags().StringVar(&dc, "dc", "", "Domain controller hostname or IP")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
