@@ -142,7 +142,10 @@ func DecodeBindResponse(data []byte) (*BindResponse, error) {
 		// Parse optional ServerSaslCreds (tag 7)
 		if len(rest) > 0 {
 			var saslRaw asn1.RawValue
-			rest, err = asn1.Unmarshal(rest, &saslRaw)
+			// The unconsumed remainder is not needed: ServerSaslCreds is the
+			// last element this function reads, so the remaining bytes are
+			// discarded rather than threaded through a variable nothing uses.
+			_, err = asn1.Unmarshal(rest, &saslRaw)
 			if err == nil && saslRaw.Tag == 7 && saslRaw.Class == asn1.ClassContextSpecific {
 				resp.ServerSaslCreds = saslRaw.Bytes
 			}

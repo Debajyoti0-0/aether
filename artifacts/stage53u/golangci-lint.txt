@@ -1,0 +1,12 @@
+govulncheck version: Go: go1.27.1 Scanner: govulncheck@v1.8.0 DB: https://vuln.go.dev DB updated: 2026-09-24 20:07:49 +0000 UTC
+workdir: C:\dev\aether
+HEAD: 5bb26bd4e3f1543871e80160a66a6cd8f31e645d
+internal\engine\ad\acl\engine.go:406:3: ineffectual assignment to maxDepth (ineffassign)
+		maxDepth = 5
+		^
+internal\protocol\ldap\bind.go:145:4: ineffectual assignment to rest (ineffassign)
+			rest, err = asn1.Unmarshal(rest, &saslRaw)
+			^
+2 issues:
+* ineffassign: 2
+EXITCODE=1

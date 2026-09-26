@@ -1182,7 +1182,7 @@ func newLDAPPathCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&startTLS, "starttls", false, "Use StartTLS")
 	cmd.Flags().StringVar(&startUser, "start-user", "", "Start user SID")
 	cmd.Flags().StringVar(&targetObj, "target", "", "Target object DN")
-	cmd.Flags().IntVar(&maxDepth, "max-depth", 5, "Maximum path depth")
+	cmd.Flags().IntVar(&maxDepth, "max-depth", acl.PathSearchDepth, "Maximum path depth (the search is single-hop, so only 1 is supported)")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
 	bindEngagementFlag(cmd, &engFile)

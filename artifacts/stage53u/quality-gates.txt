@@ -1,0 +1,24 @@
+Stage 53U quality-gate evidence (post-correction)
+captured-utc: 2026-09-26T07:37:43Z
+HEAD: 5bb26bd4e3f1543871e80160a66a6cd8f31e645d
+workdir: C:\dev\aether
+
+=== golangci-lint run ./... ===
+version: golangci-lint has version 2.13.2 built with go1.27.1 from (unknown, modified: ?, mod sum: "h1:bCyq3E4vo9qwzifjpzJqYndEt7Ncva80qkk8G2B4TXU=") on (unknown)
+0 issues.
+EXITCODE=0
+
+=== govulncheck ./... ===
+version: Scanner: govulncheck@v1.8.0
+DB: https://vuln.go.dev
+DB updated: 2026-09-24 20:07:49 +0000 UTC
+=== Symbol Results ===
+
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+Use '-show verbose' for more details.
+EXITCODE=0

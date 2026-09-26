@@ -81,6 +81,9 @@ func NewEngine(ldapEngine *ldapengine.Engine) *Engine {
 }
 
 func (e *Engine) EnumerateUsers(ctx context.Context, opts EnumerateObjectsOptions) ([]*Principal, error) {
+	if e.ldapEngine == nil {
+		return nil, fmt.Errorf("LDAP engine not configured")
+	}
 	if opts.Filter == "" {
 		opts.Filter = "(&(objectClass=user)(!(objectClass=computer)))"
 	}
@@ -129,6 +132,9 @@ func (e *Engine) EnumerateUsers(ctx context.Context, opts EnumerateObjectsOption
 }
 
 func (e *Engine) EnumerateGroups(ctx context.Context, opts EnumerateObjectsOptions) ([]*Principal, error) {
+	if e.ldapEngine == nil {
+		return nil, fmt.Errorf("LDAP engine not configured")
+	}
 	if opts.Filter == "" {
 		opts.Filter = "(objectClass=group)"
 	}
@@ -177,6 +183,9 @@ func (e *Engine) EnumerateGroups(ctx context.Context, opts EnumerateObjectsOptio
 }
 
 func (e *Engine) EnumerateComputers(ctx context.Context, opts EnumerateObjectsOptions) ([]*Principal, error) {
+	if e.ldapEngine == nil {
+		return nil, fmt.Errorf("LDAP engine not configured")
+	}
 	if opts.Filter == "" {
 		opts.Filter = "(objectClass=computer)"
 	}
@@ -225,6 +234,9 @@ func (e *Engine) EnumerateComputers(ctx context.Context, opts EnumerateObjectsOp
 }
 
 func (e *Engine) EnumerateOUs(ctx context.Context, opts EnumerateObjectsOptions) ([]*Principal, error) {
+	if e.ldapEngine == nil {
+		return nil, fmt.Errorf("LDAP engine not configured")
+	}
 	if opts.Filter == "" {
 		opts.Filter = "(objectClass=organizationalUnit)"
 	}
@@ -273,6 +285,9 @@ func (e *Engine) EnumerateOUs(ctx context.Context, opts EnumerateObjectsOptions)
 }
 
 func (e *Engine) GetObjectACL(ctx context.Context, objectDN string) (*ObjectACL, error) {
+	if e.ldapEngine == nil {
+		return nil, fmt.Errorf("LDAP engine not configured")
+	}
 	result, err := e.ldapEngine.Search(ctx, ldapengine.SearchOptions{
 		BaseDN:     objectDN,
 		Scope:      ldapproto.LDAP_SCOPE_BASE,
@@ -401,9 +416,23 @@ func (e *Engine) analyzeACE(ace ldapproto.ACE) ACEAnalysis {
 	}
 }
 
+// PathSearchDepth is the only search depth this package can honour.
+//
+// The traversal reads the target object's DACL and does not recurse through
+// further objects, so every path it can return is a single direct grant. The
+// depth is therefore a fixed 1, and it is exported so the CLI flag can default
+// to the truth rather than to a number the engine ignores.
+const PathSearchDepth = 1
+
 func (e *Engine) FindACLPaths(ctx context.Context, startPrincipal *Principal, targetObjectDN string, maxDepth int) ([]ACLPath, error) {
-	if maxDepth <= 0 {
-		maxDepth = 5
+	// An unsupported depth is refused rather than ignored. The previous code
+	// normalised a non-positive value to 5 and then never read maxDepth again,
+	// so `aether ad ldap path --max-depth N` exited 0 having bounded nothing:
+	// an operator who scoped the search was told it had been scoped. That is
+	// the same false-success shape this function was corrected for when it
+	// started honouring startPrincipal.
+	if maxDepth != PathSearchDepth {
+		return nil, fmt.Errorf("path search is single-hop: --max-depth must be %d, got %d", PathSearchDepth, maxDepth)
 	}
 	if startPrincipal == nil || startPrincipal.SID == nil {
 		return nil, fmt.Errorf("start principal with SID required")
@@ -472,6 +501,9 @@ func (e *Engine) FindACLPaths(ctx context.Context, startPrincipal *Principal, ta
 // ResolvePrincipalSIDSet returns the principal's own SID plus the SIDs of
 // every group it belongs to (memberOf and primaryGroupID).
 func (e *Engine) ResolvePrincipalSIDSet(ctx context.Context, p *Principal) ([]*ldapproto.SID, error) {
+	if e.ldapEngine == nil {
+		return nil, fmt.Errorf("LDAP engine not configured")
+	}
 	if p == nil || p.SID == nil {
 		return nil, fmt.Errorf("principal SID required")
 	}
@@ -583,6 +615,9 @@ func (e *Engine) calculateRiskScore(rights []string) int {
 }
 
 func (e *Engine) GetEffectiveRights(ctx context.Context, principalSID *ldapproto.SID, targetDN string) ([]string, error) {
+	if e.ldapEngine == nil {
+		return nil, fmt.Errorf("LDAP engine not configured")
+	}
 	targetACL, err := e.GetObjectACL(ctx, targetDN)
 	if err != nil {
 		return nil, err
