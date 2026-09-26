@@ -251,3 +251,41 @@ depends on. Stage 52b can start from `reconciliation/stage53r` @ `d14e847`
 without waiting, which is the recommendation in the handoff. If the owner wants
 the formal gate cleared first, installing `golangci-lint` and `govulncheck` and
 authorising promotion are the two actions that would do it.
+
+---
+
+## Update — Stage 53V Closure (2026-09-26)
+
+Stage 53T's charter is re-evaluated against the current state of
+`reconciliation/stage53r` @ `9c23a23`.
+
+| Item | Stage 53T said | Stage 53V verified |
+| --- | --- | --- |
+| Push | SUCCESS at `d14e847` | superseded; branch now `9c23a23`, pushed |
+| G53R-25 | PASS (6/6 CLI + 7/7 Go) | **PASS confirmed** — 9/9 Go, 8/8 behavioral |
+| go build / go vet | PASS | **was false** — now genuinely PASS after F-53V-01 |
+| lint | NOT PERFORMED (tool unavailable) | PASS, scoped to 3 linters; 668 findings deferred |
+| govulncheck | NOT PERFORMED (tool unavailable) | 0 code-affected; GO-2026-5932 accepted no-action |
+| G53R-20 | PASS (152 commands) | PASS confirmed (152); **matrices were 110 — fixed** |
+| G53R-23 | PASS (135 cases) | PASS; 6 cases re-run, control now genuinely reached |
+| G53R-24 | PASS | PASS; exit recorded for all 135 |
+| G53R-26 | BLOCKED-WITH-OWNER | **still BLOCKED-WITH-OWNER** (security reviewer) |
+| Browser cross-platform | BLOCKED-WITH-OWNER | **still BLOCKED-WITH-OWNER** — wrong reason corrected |
+| G53R-34 | BLOCKED-WITH-OWNER | **RESOLVED** |
+
+**Stage 53T exit status: `BLOCKED-WITH-OWNER`**, residual items G53R-26 (security
+differential, not performed) and browser cross-platform (not performed).
+
+**Two inherited claims were false and are corrected here.** "golangci-lint = 0
+issues" covered a single linter with `staticcheck` disabled. "Firefox is not
+installed" was wrong: Firefox 156.0.1 is present via a WindowsApps AppX alias, and
+the real blocker is that `scripts/browser-verify.mjs` speaks the DevTools protocol
+only, which Firefox does not implement.
+
+**A third was stale rather than false.** Stage 53T's G53R-25 PASS was correct;
+Stage 53U's blocker list for G53R-25 was wrong and is withdrawn.
+
+**Promotion status: unchanged.** `master` remains at `c75732a` on local and origin.
+Stage 54 §38 forbids promotion until the Stage 54 production matrix passes, and
+that matrix has not been run. The two remaining blockers are internal and closable;
+neither is waived.
