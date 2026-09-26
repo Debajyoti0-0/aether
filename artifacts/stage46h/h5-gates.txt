@@ -1,0 +1,64 @@
+﻿Aether Stage 46h - final quality gates
+Date:    2026-09-26T00:06:40+05:30
+Version: 5.0.0-alpha1
+Commit:  a887a0e (master)
+Go:      go version go1.27.1 windows/amd64
+
+=== go build ./... ===
+exit=0
+(no output)
+
+=== go vet ./... ===
+exit=0
+(no output)
+
+=== go test -count=1 ./... ===
+?   	github.com/Debajyoti0-0/aether/cmd/aether	[no test files]
+?   	github.com/Debajyoti0-0/aether/cmd/asn1probe	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/api	4.337s
+ok  	github.com/Debajyoti0-0/aether/internal/behavior	0.945s
+ok  	github.com/Debajyoti0-0/aether/internal/cli	0.669s
+?   	github.com/Debajyoti0-0/aether/internal/cli/ad	[no test files]
+?   	github.com/Debajyoti0-0/aether/internal/engine/ad/acl	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/engine/ad/kerberos	0.815s
+?   	github.com/Debajyoti0-0/aether/internal/engine/ad/ldap	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/engine/cap	1.947s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/exec	2.391s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/graph	1.175s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/mutation	2.983s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/orchestrate	3.069s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/orchestrator	0.312s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/pivot	1.506s
+?   	github.com/Debajyoti0-0/aether/internal/engine/relay	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/engine/rollback	1.309s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/spine	1.661s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/token	2.362s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/validate	1.526s
+ok  	github.com/Debajyoti0-0/aether/internal/engine/watch	1.405s
+ok  	github.com/Debajyoti0-0/aether/internal/intel	1.576s
+ok  	github.com/Debajyoti0-0/aether/internal/paths	0.348s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/kerberos	0.697s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/ldap	0.607s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/msoapx	1.701s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/oauth2	1.563s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/saml	0.939s
+ok  	github.com/Debajyoti0-0/aether/internal/protocol/wstrust	1.016s
+ok  	github.com/Debajyoti0-0/aether/internal/rl	1.610s
+ok  	github.com/Debajyoti0-0/aether/internal/store	3.376s
+ok  	github.com/Debajyoti0-0/aether/internal/transport	5.414s
+ok  	github.com/Debajyoti0-0/aether/internal/types	0.701s
+?   	github.com/Debajyoti0-0/aether/internal/version	[no test files]
+ok  	github.com/Debajyoti0-0/aether/internal/workspace	7.154s
+ok  	github.com/Debajyoti0-0/aether/pkg/plugins	1.569s
+ok  	github.com/Debajyoti0-0/aether/pkg/plugins/gcp	1.195s
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/gitlab	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/kubernetes	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/okta	[no test files]
+?   	github.com/Debajyoti0-0/aether/pkg/plugins/sdk	[no test files]
+?   	github.com/Debajyoti0-0/aether/scripts/genman	[no test files]
+?   	github.com/Debajyoti0-0/aether/scripts/rmdir	[no test files]
+?   	github.com/Debajyoti0-0/aether/test/mock	[no test files]
+exit=0
+
+packages ok:   31
+packages fail: 0

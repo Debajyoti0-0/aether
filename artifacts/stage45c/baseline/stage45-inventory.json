@@ -1,0 +1,43 @@
+{
+  "stage": "45",
+  "description": "Kerberos Batch 1 - AS-REQ, AS-REP, TGS-REQ, TGS-REP, Kerberoast, ASREPRoast, TGT, CCache",
+  "implementation_files": {
+    "protocol": [
+      "internal/protocol/kerberos/types.go",
+      "internal/protocol/kerberos/asreq.go",
+      "internal/protocol/kerberos/tgsreq.go",
+      "internal/protocol/kerberos/principal.go",
+      "internal/protocol/kerberos/etypes.go",
+      "internal/protocol/kerberos/crypto.go",
+      "internal/protocol/kerberos/ccache.go",
+      "internal/protocol/kerberos/errors.go",
+      "internal/protocol/kerberos/pac.go",
+      "internal/protocol/kerberos/spn.go",
+      "internal/protocol/kerberos/kerberos_test.go"
+    ],
+    "engine": [
+      "internal/engine/ad/kerberos/engine.go",
+      "internal/engine/ad/kerberos/tgt.go",
+      "internal/engine/ad/kerberos/roast.go",
+      "internal/engine/ad/kerberos/enum.go",
+      "internal/engine/ad/kerberos/engine_test.go"
+    ],
+    "cli": [
+      "internal/cli/ad/kerberos.go",
+      "internal/cli/ad/kerberos_test.go"
+    ]
+  },
+  "unit_tests": "internal/protocol/kerberos/kerberos_test.go - 18 test functions PASS",
+  "integration_tests": "test/integration/ad/kerberos_test.go - 6 test functions (BLOCKED by D45b-001)",
+  "cli_commands": [
+    "aether ad enum users",
+    "aether ad enum asrep",
+    "aether ad enum spn",
+    "aether ad kerberoast",
+    "aether ad asreproast",
+    "aether ad tgt",
+    "aether ad ccache show",
+    "aether ad ccache convert"
+  ],
+  "status": "BLOCKED-WITH-OWNER (D45b-001 through D45b-004)"
+}

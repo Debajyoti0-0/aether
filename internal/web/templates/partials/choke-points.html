@@ -1,0 +1,96 @@
+{{define "choke-points"}}
+<div class="card">
+  <h2>Choke points</h2>
+  <div class="controls">
+    <label for="choke-target">target</label>
+    <input type="text" id="choke-target" name="target" value="{{.Target}}"
+           placeholder="exact node ID or label, e.g. Domain Admins"
+           autocomplete="off" spellcheck="false">
+    <label for="choke-threshold">threshold</label>
+    <input type="text" id="choke-threshold" name="threshold" value="0.5" size="5"
+           autocomplete="off" inputmode="decimal">
+    <label for="choke-hops">max hops</label>
+    <input type="number" id="choke-hops" name="max_hops" value="6" min="1" max="12" class="w-70">
+    <button hx-get="/partials/choke-points"
+            hx-include="#choke-target,#choke-threshold,#choke-hops"
+            hx-target="#choke-points" hx-swap="innerHTML">Analyse</button>
+  </div>
+
+  {{if .Choke}}
+    {{if .Choke.Truncated}}
+      <div class="banner warn">
+        <strong>Result is incomplete.</strong> {{.Choke.TruncationCause}}
+      </div>
+    {{end}}
+
+    <p class="small">
+      Target <code>{{.Choke.Target}}</code> resolved by
+      <strong>{{.Choke.TargetMatchedBy}}</strong> &rarr; <code>{{.Choke.TargetID}}</code>.
+      Enumerated <strong class="num">{{.Choke.TotalPaths}}</strong> simple path(s)
+      from {{.Choke.Sources}} source(s), bounded at {{.Choke.MaxHops}} hops.
+      Threshold {{pct .Choke.Threshold}}.
+    </p>
+
+    {{if eq .Choke.TotalPaths 0}}
+      <p class="small txt-warn mb-0">
+        No path from any source to this target exists within the hop limit, so
+        coverage would be undefined and no choke point is reported. This is an
+        empty result, not a pass.
+      </p>
+    {{else if not .Choke.ChokePoints}}
+      <p class="small mb-0">
+        No single edge appears in at least {{pct .Choke.Threshold}} of the
+        enumerated paths. The path to this target is not funnelled through one
+        relationship; the whole enumerated set is in the sample below.
+      </p>
+    {{else}}
+      {{$top := index .Choke.ChokePoints 0}}
+      <p class="small">
+        Blocking the <strong>{{len .Choke.ChokePoints}}</strong> edge(s) below
+        breaks <strong class="txt-choke">{{pct $top.Coverage}}</strong> of
+        enumerated paths to <code>{{.Choke.Target}}</code>.
+      </p>
+      {{/*
+        The bar width is data, so it cannot be a class. It is carried in data-w
+        and applied by app.js through the CSSOM, because the CSP forbids style
+        attributes in markup. See the note in style.css.
+      */}}
+      <div class="scroll">
+        {{range .Choke.ChokePoints}}
+        <div class="choke-row" data-edge="{{.Key}}">
+          <span class="choke-rank">{{.Rank}}</span>
+          <span class="choke-edge">
+            {{.Source}} <span class="arrow">-{{.Type}}-&gt;</span> {{.Target}}
+            <span class="bar"><i data-w="{{pct .Coverage}}"></i></span>
+          </span>
+          <span class="choke-cov">{{pct .Coverage}}</span>
+        </div>
+        {{end}}
+      </div>
+    {{end}}
+
+    {{if .Choke.PathsToTarget}}
+    <h3>Enumerated paths (sample, capped at {{len .Choke.PathsToTarget}})</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th class="num">#</th><th>paths</th></tr></thead>
+        <tbody>
+          {{range $i, $p := .Choke.PathsToTarget}}
+          <tr><td class="num">{{add $i 1}}</td><td class="mono small">{{join $p " &rarr; "}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{end}}
+  {{else}}
+    <p class="small muted mb-0">
+      Enter an exact node ID or label. Matching is strict and ordered &mdash; exact ID,
+      then exact label, then case-insensitive label, then label suffix &mdash; and the
+      rule that fired is reported with the result. A choke-point figure computed
+      against the wrong target is worse than no figure, so no fuzzy matching is
+      offered. Enumeration is exact with explicit budgets; it never silently
+      switches to sampling, because sampling is not deterministic.
+    </p>
+  {{end}}
+</div>
+{{end}}

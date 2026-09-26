@@ -193,6 +193,66 @@ func (g *IdentityGraph) IngestGCPJSON(data []byte) error {
 	return nil
 }
 
+// RemoveNode deletes a node and every edge incident to it.
+//
+// Edges are removed with the node on purpose: a dangling edge would keep a
+// deleted identity reachable in path analysis, which silently inflates every
+// path count that includes it. Callers that need edge-level history should read
+// the audit chain, not the current graph.
+//
+// Removing an unknown node is a no-op, so replaying a removal twice is safe.
+func (g *IdentityGraph) RemoveNode(id string) {
+	nodes := g.Nodes[:0]
+	for _, n := range g.Nodes {
+		if n.ID != id {
+			nodes = append(nodes, n)
+		}
+	}
+	g.Nodes = nodes
+
+	edges := g.Edges[:0]
+	for _, e := range g.Edges {
+		if e.Source != id && e.Target != id {
+			edges = append(edges, e)
+		}
+	}
+	g.Edges = edges
+}
+
+// RemoveEdge deletes the edge identified by (source, target, type).
+func (g *IdentityGraph) RemoveEdge(source, target, typ string) {
+	edges := g.Edges[:0]
+	for _, e := range g.Edges {
+		if e.Source == source && e.Target == target && e.Type == typ {
+			continue
+		}
+		edges = append(edges, e)
+	}
+	g.Edges = edges
+}
+
+// Degree returns the in-degree and out-degree of a node, counting only edges
+// whose endpoints both exist in the graph. Edges referencing an absent node are
+// ignored so a malformed graph cannot report a phantom degree.
+func (g *IdentityGraph) Degree(id string) (in, out int) {
+	known := make(map[string]bool, len(g.Nodes))
+	for _, n := range g.Nodes {
+		known[n.ID] = true
+	}
+	for _, e := range g.Edges {
+		if !known[e.Source] || !known[e.Target] {
+			continue
+		}
+		if e.Source == id {
+			out++
+		}
+		if e.Target == id {
+			in++
+		}
+	}
+	return in, out
+}
+
 // Save writes the graph as JSON.
 func (g *IdentityGraph) Save(path string) error {
 	data, err := json.MarshalIndent(g, "", "  ")

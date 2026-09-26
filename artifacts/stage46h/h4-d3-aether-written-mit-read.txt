@@ -1,0 +1,33 @@
+﻿############ DIRECTION 2: Aether writes, MIT klist reads ############
+
+--- Aether acquires a live TGT and writes a ccache ---
+Action: mut-1790361304134163933-1592ce46
+Status: completed
+TGT acquired for user1@AETHER.TEST
+CCache stored at: /tmp/d3-aether.ccache
+Valid: 2026-09-25T18:35:04Z to 2026-09-25T18:40:04Z
+
+--- Aether's own view of the file it wrote ---
+Action: mut-1790361304364339093-160eb34e
+Status: completed
+CCache: /tmp/d3-aether.ccache (1 entries)
+  [0] user1@AETHER.TEST@AETHER.TEST -> krbtgt@AETHER.TEST@AETHER.TEST (etype=18, flags=0x40e00000, valid=2026-09-25T18:35:04Z to 2026-09-25T18:40:04Z)
+
+--- transferring the Aether-written ccache to the DC container ---
+bytes: 1189
+
+--- MIT klist -e on the Aether-written ccache (ground truth reader) ---
+Ticket cache: FILE:/tmp/d3-aether.ccache
+Default principal: user1@AETHER.TEST
+
+Valid starting     Expires            Service principal
+09/25/26 18:35:04  09/25/26 18:40:04  krbtgt@AETHER.TEST
+	renew until 10/02/26 18:35:04, Etype (skey, tkt): aes256-cts-hmac-sha1-96, aes256-cts-hmac-sha1-96 
+
+--- MIT klist -f (ticket flags) ---
+Ticket cache: FILE:/tmp/d3-aether.ccache
+Default principal: user1@AETHER.TEST
+
+Valid starting     Expires            Service principal
+09/25/26 18:35:04  09/25/26 18:40:04  krbtgt@AETHER.TEST
+	renew until 10/02/26 18:35:04, Flags: FRIA

@@ -1,0 +1,59 @@
+{
+  "existing_abstractions": {
+    "transport": "internal/transport/ - TCP/TLS/Dialer",
+    "tls": "internal/transport/tls.go - mTLS",
+    "dns": "internal/transport/dns.go",
+    "credential": "internal/types/credential.go",
+    "secret": "internal/store/ - Vault",
+    "vault": "internal/store/vault.go",
+    "audit": "internal/engine/spine/ - Audit chain",
+    "evidence": "internal/types/evidence.go",
+    "capability": "internal/engine/cap/",
+    "authorization": "internal/engine/spine/",
+    "risk": "internal/types/risk.go",
+    "policy": "internal/types/policy.go",
+    "approval": "internal/engine/spine/",
+    "rollback": "internal/engine/rollback/",
+    "workspace": "internal/workspace/",
+    "configuration": "internal/cli/ - Viper",
+    "cli": "internal/cli/ - Cobra",
+    "output": "internal/cli/ - JSON/human",
+    "error": "internal/types/",
+    "logging": "go.uber.org/zap",
+    "kerberos": "internal/protocol/kerberos/ - Stage 45"
+  },
+  "reuse_strategy": {
+    "transport": "USE for LDAP TCP/TLS",
+    "credential": "EXTEND for LDAP credentials",
+    "secret": "USE for LDAP credentials/results",
+    "audit": "USE for every LDAP/ACL operation",
+    "evidence": "USE for LDAP/ACL results",
+    "capability": "REGISTER ad.ldap.read, ad.acl.path",
+    "authorization": "USE existing AuthZ flow",
+    "risk": "USE existing risk scoring",
+    "policy": "USE existing policy engine",
+    "approval": "USE existing approval workflow",
+    "rollback": "NOT NEEDED - read-only",
+    "workspace": "USE existing workspace for engagement isolation",
+    "configuration": "EXTEND engagement file",
+    "cli": "USE existing Cobra pattern",
+    "output": "USE existing JSON/human output",
+    "error": "EXTEND with LDAP/ACL errors",
+    "logging": "USE existing zap logger",
+    "kerberos": "REUSE for GSSAPI/SASL bind"
+  },
+  "new_packages_required": [
+    "internal/protocol/ldap/",
+    "internal/engine/ad/ldap/",
+    "internal/engine/ad/acl/",
+    "internal/cli/ad/ldap*.go"
+  ],
+  "integration_points": [
+    "spine.Action for all operations",
+    "capability authz on every command",
+    "audit entry per operation",
+    "evidence registration per result",
+    "engagement boundary enforcement",
+    "Kerberos GSSAPI bind reuse"
+  ]
+}

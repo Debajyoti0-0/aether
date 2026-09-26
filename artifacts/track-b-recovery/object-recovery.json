@@ -1,0 +1,29 @@
+{
+  "dangling_objects": [
+    {
+      "sha": "15b086d7b3b09cc4c46f5893e5b6d050710f3b3d",
+      "type": "blob",
+      "content": "Stage 44 topology documentation (markdown)",
+      "relevance": "Documentation artifact, not implementation"
+    },
+    {
+      "sha": "a83144130002a159944cdae21cf43cc1272bbdc4",
+      "type": "blob",
+      "content": "Dashboard kill/restart test log",
+      "relevance": "Test artifact, not implementation"
+    },
+    {
+      "sha": "d760958312a5f4242469101ce88ff39e75ad9d0a",
+      "type": "tree",
+      "content": "Old repository tree snapshot (appears to be v1.0.0 era)",
+      "relevance": "Historical snapshot, no Track B AD code"
+    },
+    {
+      "sha": "eeaad29cc411c0cdcadeff53e3b6948f54cd668d",
+      "type": "tree",
+      "content": "Another old repository tree snapshot",
+      "relevance": "Historical snapshot, no Track B AD code"
+    }
+  ],
+  "recovery_conclusion": "No recoverable implementation code found in dangling objects"
+}

@@ -1,0 +1,17 @@
+﻿
+gate                         exit seconds
+----                         ---- -------
+go build ./...                  0     2.7
+go vet ./...                    0     1.7
+go test -count=1 ./...          0    15.6
+go test -race ./internal/web    0     9.8
+cargo test (graph)              0     0.5
+cargo test (verify)             0     0.7
+node wasm smoke test            0     0.5
+fuzz FuzzAuditChainJSON         0    22.6
+fuzz FuzzGraphJSON              0    25.1
+fuzz FuzzPartialQuery           0    23.5
+fuzz FuzzTimeTravelSeq          0    23.3
+
+
+

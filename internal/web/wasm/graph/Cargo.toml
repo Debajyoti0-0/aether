@@ -1,0 +1,26 @@
+[package]
+name = "aether-graph"
+version = "1.0.0"
+edition = "2021"
+description = "Force-directed identity-graph layout for the Aether dashboard"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# No dependencies, deliberately.
+#
+# This module is the one piece of the dashboard that runs inside the operator's
+# browser, and it does arithmetic, not parsing. Pulling in wasm-bindgen here
+# would add ~20 KB of generated glue to every page load in exchange for turning
+# two numbers into two numbers. The C ABI below is small enough to read in one
+# sitting, and graph.js is the only caller.
+[dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

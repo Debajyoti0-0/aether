@@ -1,0 +1,10 @@
+Action: mut-1790343340148892664-3d8ea4c4
+Status: completed
+Enumerated 7 users
+  Administrator (Administrator@AETHER.TEST) preauth=true
+  user1 (user1@AETHER.TEST) preauth=true
+  user2 (user2@AETHER.TEST) preauth=true
+  user3 (user3@AETHER.TEST) preauth=true
+  user4 (user4@AETHER.TEST) preauth=true
+  svc_web (svc_web@AETHER.TEST) preauth=true
+  svc_sql (svc_sql@AETHER.TEST) preauth=true

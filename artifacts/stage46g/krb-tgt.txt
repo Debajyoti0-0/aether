@@ -1,0 +1,5 @@
+Action: mut-1790343266876466190-e7eaef10
+Status: completed
+TGT acquired for Administrator@AETHER.TEST
+CCache stored at: /tmp/Administrator_1790343266.ccache
+Valid: 2026-09-25T13:34:26Z to 2026-09-25T13:39:26Z

@@ -1,0 +1,73 @@
+﻿graph.wasm
+  ok   module carries the wasm magic and is non-trivial in size
+  ok   exports memory
+  ok   exports aether_alloc
+  ok   exports aether_dealloc
+  ok   exports aether_layout
+  ok   alloc returned non-null pointers
+  ok   aether_layout returns OK
+  ok   every output coordinate is finite
+  ok   output count matches input
+  ok   quadtree reported cells
+  ok   iterations reported
+  ok   some nodes moved
+  ok   pinned node kept its x
+  ok   pinned node kept its y
+  ok   unpinned node 1 was displaced
+  ok   no output equals NaN from an uninitialised buffer
+  ok   second run also returns OK
+  ok   layout is deterministic across runs
+  ok   null input is rejected
+  ok   zero nodes is rejected
+  ok   absurd node count is rejected
+  ok   edges without a buffer are rejected
+  ok   dealloc survived the call
+  ok   single node runs
+  ok   single node stays finite
+verify.wasm
+  ok   module is non-trivial in size
+  ok   glue exports an initialiser
+  ok   glue exports verify_chain
+  ok   glue exports verify_chain_ndjson
+powershell.exe : (node:33372) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of 
+file:///C:/Users/Debajyoti0-0/OneDrive/Documents/aether/internal/web/static/verify.js is not specified and it doesn't 
+parse as CommonJS.
+At C:\Users\Debajyoti0-0\OneDrive\Documents\aether\scripts\stage52-evidence.ps1:52 char:11
++   $text = & powershell -NoProfile -Command $cmd 2>&1 | Out-String
++           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:33372) [M...se as CommonJS.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\Users\Debajyoti0-0\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   selftest reports ok
+  ok   selftest verified its known-answer vector
+  ok   selftest rejected the vector under an unrelated key
+  ok   an honest chain verifies
+  ok   all entries counted valid
+  ok   entry count echoed
+  ok   head hash echoed
+  ok   genesis reported
+  ok   verifier identifies itself
+  ok   per-entry verdicts returned on request
+  ok   every entry verdict is positive
+  ok   canonical timestamps recognised
+  ok   ndjson input verifies identically
+  ok   altered entry is detected
+  ok   altered entry is named
+  ok   the rest still verifies
+  ok   chain signed by another key is rejected
+  ok   every forged entry is flagged
+  ok   rejection reason is the signature
+  ok   a missing entry breaks linkage
+  ok   linkage break is located
+  ok   a reordered chain is rejected
+  ok   reorder is reported as a linkage break
+  ok   empty chain reports valid with a caveat
+  ok   a bad key yields an error
+  ok   a short key is rejected
+  ok   signing the raw digest instead of the hex string is rejected
+
+56/56 checks passed
+

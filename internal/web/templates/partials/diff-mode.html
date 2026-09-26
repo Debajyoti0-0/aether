@@ -1,0 +1,124 @@
+{{define "diff-mode"}}
+<div class="card">
+  <h2>Differential mode</h2>
+  <div class="controls">
+    <label for="diff-from">from seq</label>
+    <input type="number" id="diff-from" value="{{.FromSeq}}" min="0" max="{{.MaxSeq}}" class="w-110">
+    <label for="diff-to">to seq</label>
+    <input type="number" id="diff-to" value="{{.ToSeq}}" min="0" max="{{.MaxSeq}}" class="w-110">
+    <label for="diff-target">target (optional)</label>
+    <input type="text" id="diff-target" value="{{.Target}}" class="minw-200" placeholder="e.g. Domain Admins">
+    <button hx-get="/partials/diff-mode"
+            hx-include="#diff-from,#diff-to,#diff-target"
+            hx-target="#diff-mode" hx-swap="innerHTML">Compare</button>
+  </div>
+
+  {{if .Diff}}
+    {{if .Diff.Note}}<p class="small txt-warn">{{.Diff.Note}}</p>{{end}}
+    <p class="small">
+      Both endpoints are anchored to chain entry numbers, so this compares two
+      points in the signed history rather than two arbitrary graphs.
+    </p>
+    <p>
+      <span class="delta added">+{{len .Diff.AddedNodes}} nodes</span>
+      <span class="delta removed">-{{len .Diff.RemovedNode}} nodes</span>
+      <span class="delta modified">~{{len .Diff.ModNodes}} modified</span>
+      <span class="delta added">+{{len .Diff.AddedEdges}} edges</span>
+      <span class="delta removed">-{{len .Diff.RemovedEdge}} edges</span>
+      <span class="delta modified">~{{len .Diff.ModEdges}} modified</span>
+    </p>
+    <p class="small">
+      Enumerated paths to <code>{{.Diff.Target}}</code>:
+      <span class="num">{{.Diff.PathStats.From}}</span> &rarr;
+      <span class="num">{{.Diff.PathStats.To}}</span>
+    </p>
+
+    {{if .Diff.NewPathsToTarget}}
+    <h3 class="txt-bad">New paths to {{.Diff.Target}} ({{len .Diff.NewPathsToTarget}})</h3>
+    <table>
+      <thead><tr><th>path</th></tr></thead>
+      <tbody>{{range .Diff.NewPathsToTarget}}<tr><td class="mono small">{{join . " &rarr; "}}</td></tr>{{end}}</tbody>
+    </table>
+    {{end}}
+
+    {{if .Diff.ClosedPathsToTarget}}
+    <h3 class="txt-ok">Closed paths to {{.Diff.Target}} ({{len .Diff.ClosedPathsToTarget}})</h3>
+    <table>
+      <thead><tr><th>path</th></tr></thead>
+      <tbody>{{range .Diff.ClosedPathsToTarget}}<tr><td class="mono small">{{join . " &rarr; "}}</td></tr>{{end}}</tbody>
+    </table>
+    {{end}}
+
+    {{if .Diff.AddedNodes}}
+    <h3>Added nodes</h3>
+    <table>
+      <thead><tr><th>ID</th><th>label</th><th>type</th><th>provider</th></tr></thead>
+      <tbody>
+        {{range .Diff.AddedNodes}}
+        <tr><td class="mono small">{{.ID}}</td><td>{{.Label}}</td><td class="small">{{.Type}}</td><td class="small">{{.Provider}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{end}}
+
+    {{if .Diff.RemovedNode}}
+    <h3>Removed nodes</h3>
+    <table>
+      <thead><tr><th>ID</th><th>label</th><th>type</th></tr></thead>
+      <tbody>
+        {{range .Diff.RemovedNode}}
+        <tr><td class="mono small strike">{{.ID}}</td><td class="strike">{{.Label}}</td><td class="small">{{.Type}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{end}}
+
+    {{if .Diff.ModNodes}}
+    <h3>Modified nodes</h3>
+    <table>
+      <thead><tr><th>ID</th><th>field</th><th>before</th><th>after</th></tr></thead>
+      <tbody>
+        {{range .Diff.ModNodes}}{{$id := .ID}}
+          {{range $k, $v := .Changes}}
+          <tr><td class="mono small">{{$id}}</td><td class="small">{{$k}}</td><td class="mono small strike">{{index $v 0}}</td><td class="mono small">{{index $v 1}}</td></tr>
+          {{end}}
+        {{end}}
+      </tbody>
+    </table>
+    {{end}}
+
+    {{if .Diff.AddedEdges}}
+    <h3>Added edges</h3>
+    <table>
+      <thead><tr><th>source</th><th>type</th><th>target</th></tr></thead>
+      <tbody>
+        {{range .Diff.AddedEdges}}
+        <tr><td class="mono small">{{.Source}}</td><td class="small">{{.Type}}</td><td class="mono small">{{.Target}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{end}}
+
+    {{if .Diff.RemovedEdge}}
+    <h3>Removed edges</h3>
+    <table>
+      <thead><tr><th>source</th><th>type</th><th>target</th></tr></thead>
+      <tbody>
+        {{range .Diff.RemovedEdge}}
+        <tr><td class="mono small strike">{{.Source}}</td><td class="small strike">{{.Type}}</td><td class="mono small strike">{{.Target}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{end}}
+
+  {{else}}
+    <p class="small muted mb-0">
+      Choose two chain entry numbers. The server reconstructs the graph at each
+      from the nearest checkpoint plus replay, then reports added, removed and
+      modified nodes and edges. Supplying a target additionally compares the
+      enumerated attack paths, because a diff showing only added users hides the
+      case where one new edge created a path to a high-value target.
+    </p>
+  {{end}}
+</div>
+{{end}}

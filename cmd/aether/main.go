@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	_ "github.com/Debajyoti0-0/aether/internal/cli/ad"
 	"github.com/Debajyoti0-0/aether/internal/cli"
 	"github.com/Debajyoti0-0/aether/internal/version"
 )

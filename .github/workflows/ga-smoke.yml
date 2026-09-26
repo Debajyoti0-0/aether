@@ -1,0 +1,64 @@
+name: ga-smoke
+# Stage 48 B-3 closure mechanism: per-platform runtime smoke for the three
+# targets that cannot be executed in the development lab (darwin-amd64,
+# darwin-arm64, windows-arm64). Requires the authorized remote to exist
+# (workflow_dispatch + push). Log artifacts are the runtime evidence.
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "GA candidate commit (defaults to checked-out ref)"
+        required: false
+
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-13, goarch: amd64, ext: "" }     # darwin-amd64 (Intel)
+          - { os: macos-14, goarch: arm64, ext: "" }     # darwin-arm64 (Apple Silicon)
+          - { os: windows-11-arm, goarch: arm64, ext: .exe }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit || github.ref }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build (reproducible mode)
+        shell: bash
+        run: |
+          V=$(cat VERSION); C=$(git rev-parse --short HEAD)
+          EXT="${{ matrix.ext }}"
+          go build -buildvcs=false -trimpath \
+            -ldflags "-s -w -X github.com/Debajyoti0-0/aether/internal/version.Version=$V -X github.com/Debajyoti0-0/aether/internal/version.Commit=$C" \
+            -o aether-smoke$EXT ./cmd/aether
+          sha256sum aether-smoke$EXT | tee hash-${{ matrix.os }}.txt
+      - name: Runtime smoke
+        shell: bash
+        run: |
+          EXT="${{ matrix.ext }}"
+          ./aether-smoke$EXT --version                       # must print aether version from VERSION
+          ./aether-smoke$EXT doctor || true                  # record; FAILs here are findings
+          export PW="Smoke-Pw-$RANDOM-Test"
+          ./aether-smoke$EXT workspace create qa --passphrase "$PW"
+          ./aether-smoke$EXT workspace list
+          ./aether-smoke$EXT workspace delete qa --force
+          python3 - <<'EOF'
+          import json
+          json.dump({"value": [{"id": f"u{i:05d}", "userPrincipalName": f"u{i:05d}@x.c", "department": f"d{i%5}"} for i in range(2000)]}, open("g.json", "w"))
+          EOF
+          ./aether-smoke$EXT graph build --input g.json --kind entra:users --output gg.json
+          ./aether-smoke$EXT graph qualify --graph gg.json --path u00000,d:d0 || true
+          echo "SMOKE_OK platform=${{ matrix.os }} arch=${{ matrix.goarch }}"
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-${{ matrix.os }}
+          path: |
+            hash-*.txt
+            *.log

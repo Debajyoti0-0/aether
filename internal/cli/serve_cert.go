@@ -37,8 +37,15 @@ func init() {
 	serveCertIssueCmd.Flags().StringVar(&tsCertCaps, "caps", "", "Comma-separated execute capabilities to grant (e.g. exec.azure,exec.aws); read caps are granted by default")
 	serveCertIssueCmd.Flags().IntVar(&tsCertDays, "days", 365, "Certificate validity in days")
 	_ = serveCertIssueCmd.MarkFlagRequired("operator")
-	// Charter fix (charter fix H1): revoke reads tsCertOperator but never
-	// registered the flag — revocation via CLI was unusable.
+	// Revocation-flag fix, independently identified on both development
+	// lines and preserved here as a single record:
+	//   D-002 (workspace line): revocation was unreachable — the --operator
+	//     flag existed only on `issue`, so `revoke` always failed with
+	//     "invalid operator name".
+	//   H1 (C:\dev\aether line): revoke reads tsCertOperator but never
+	//     registered the flag — revocation via CLI was unusable.
+	// Same defect, same fix, two separate finding IDs. Neither record is
+	// discarded (Stage 53R historical-evidence rule).
 	serveCertRevokeCmd.Flags().StringVar(&tsCertOperator, "operator", "", "Operator name to revoke (required)")
 	_ = serveCertRevokeCmd.MarkFlagRequired("operator")
 	serveCertInitCmd.Flags().StringVar(&tsCertHosts, "extra-hosts", "", "Extra SAN hosts for the server cert (comma-separated)")
@@ -68,6 +75,15 @@ var serveCertInitCmd = &cobra.Command{
 					extra = append(extra, h)
 				}
 			}
+		}
+		// The PKI root holds teamserver-ca.key. Key *files* are written
+		// 0600, but a world-readable root directory would still leak the
+		// key's name and contents to any local user who can list it, so
+		// the root itself is created owner-only and its creation is
+		// fail-closed (reconciliation: restored from the C:\dev\aether
+		// line, which had this control and the workspace line did not).
+		if err := os.MkdirAll(tsCertDir, 0o700); err != nil {
+			return err
 		}
 		paths, err := api.InitCA(tsCertDir, extra)
 		if err != nil {
@@ -126,12 +142,6 @@ var serveCertRevokeCmd = &cobra.Command{
 			return err
 		}
 		path := filepath.Join(tsCertDir, "revoked.txt")
-		// Stage 42 finding (S42-1): revoke appended to revoked.txt without
-		// ensuring the PKI directory exists — a fresh --dir made revocation
-		// fail with "cannot find the path" after flag parsing succeeded.
-		if err := os.MkdirAll(tsCertDir, 0o700); err != nil {
-			return err
-		}
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 		if err != nil {
 			return err

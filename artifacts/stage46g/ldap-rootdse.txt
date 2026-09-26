@@ -1,0 +1,22 @@
+configurationNamingContext: CN=Configuration,DC=aether,DC=test
+defaultNamingContext: DC=aether,DC=test
+rootDomainNamingContext: DC=aether,DC=test
+schemaNamingContext: CN=Schema,CN=Configuration,DC=aether,DC=test
+subschemaSubentry: CN=Aggregate,CN=Schema,CN=Configuration,DC=aether,DC=test
+supportedCapabilities: 1.2.840.113556.1.4.800,  1.2.840.113556.1.4.1670,  1.2.840.113556.1.4.1791,  1.2.840.113556.1.4.1935,  1.2.840.113556.1.4.2080
+supportedLDAPVersion: 2,  3
+vendorName: Samba Team (https://www.samba.org)
+isSynchronized: TRUE
+dsServiceName: CN=NTDS Settings,CN=DC01,CN=Servers,CN=Default-First-Site-Name,CN=Sites,CN=Configuration,DC=aether,DC=test
+serverName: CN=DC01,CN=Servers,CN=Default-First-Site-Name,CN=Sites,CN=Configuration,DC=aether,DC=test
+dnsHostName: dc01.aether.test
+ldapServiceName: aether.test:dc01$@AETHER.TEST
+currentTime: 20260925102642.0Z
+supportedControl: 1.2.840.113556.1.4.1413,  1.2.840.113556.1.4.1413,  1.2.840.113556.1.4.1413,  1.2.840.113556.1.4.1413,  1.2.840.113556.1.4.1413,  1.2.840.113556.1.4.528,  1.2.840.113556.1.4.841,  1.2.840.113556.1.4.319,  2.16.840.1.113730.3.4.9,  1.2.840.113556.1.4.473,  1.2.840.113556.1.4.1504,  1.2.840.113556.1.4.801,  1.2.840.113556.1.4.801,  1.2.840.113556.1.4.801,  1.2.840.113556.1.4.805,  1.2.840.113556.1.4.1338,  1.2.840.113556.1.4.529,  1.2.840.113556.1.4.417,  1.2.840.113556.1.4.2064,  1.2.840.113556.1.4.1339,  1.2.840.113556.1.4.1340,  1.2.840.113556.1.4.1413,  1.2.840.113556.1.4.1341
+namingContexts: DC=aether,DC=test,  CN=Configuration,DC=aether,DC=test,  CN=Schema,CN=Configuration,DC=aether,DC=test,  DC=DomainDnsZones,DC=aether,DC=test,  DC=ForestDnsZones,DC=aether,DC=test
+supportedSASLMechanisms: GSS-SPNEGO,  GSSAPI,  NTLM
+highestCommittedUSN: 11055
+domainFunctionality: 4
+forestFunctionality: 4
+domainControllerFunctionality: 4
+isGlobalCatalogReady: TRUE

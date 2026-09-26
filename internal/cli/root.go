@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,11 +20,46 @@ var rootCmd = &cobra.Command{
 	Version: version.Version,
 }
 
+var (
+	modulesMu sync.Mutex
+	modules   []Module
+)
+
+type Module interface {
+	Name() string
+	Commands() []*cobra.Command
+}
+
+func RegisterModule(m Module) {
+	modulesMu.Lock()
+	defer modulesMu.Unlock()
+	modules = append(modules, m)
+}
+
+func loadModules() {
+	modulesMu.Lock()
+	defer modulesMu.Unlock()
+	for _, m := range modules {
+		for _, cmd := range m.Commands() {
+			rootCmd.AddCommand(cmd)
+		}
+	}
+}
+
 // SetVersion overrides the CLI version from build-time injection.
 func SetVersion(v string) {
 	if v != "" {
 		rootCmd.Version = v
 	}
+}
+
+func init() {
+	cobra.OnInitialize(initConfig)
+	rootCmd.PersistentFlags().String("config", "", "Config file path")
+	rootCmd.PersistentFlags().String("log-level", "info", "Log level (debug, info, warn, error)")
+
+	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+	_ = viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 }
 
 // NewRootCommand builds and returns the full command tree. It is used
@@ -38,21 +74,12 @@ func NewRootCommand() *cobra.Command {
 }
 
 func Execute() error {
+	loadModules()
 	return NewRootCommand().Execute()
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().String("config", "", "Config file path")
-	rootCmd.PersistentFlags().String("log-level", "info", "Log level (debug, info, warn, error)")
-
-	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
-	_ = viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
-}
-
 func initConfig() {
-	cfgFile := viper.GetString("config")
-	if cfgFile != "" {
+	if cfgFile := viper.GetString("config"); cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		viper.SetConfigName("aether")
@@ -67,13 +94,17 @@ func initConfig() {
 		// A config file that exists but cannot be read must never be
 		// silently ignored: an operator whose security-relevant settings
 		// silently fall back to defaults is a fail-open configuration.
+		// Only the "no config file found" case is expected and silent;
+		// an explicit --config that fails to load, or any other read
+		// error, is surfaced.
 		var notFound viper.ConfigFileNotFoundError
-		if cfgFile != "" || !errors.As(err, &notFound) {
+		if !errors.As(err, &notFound) {
 			fmt.Fprintf(os.Stderr, "Warning: config file ignored: %v\n", err)
 		}
 	} else if viper.ConfigFileUsed() != "" {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
+
 	// Reject invalid --log-level values instead of silently accepting
 	// them (F-34-2); the flag is reserved but its contract is strict.
 	viper.Set("log-level", normalizeLogLevel(viper.GetString("log-level")))

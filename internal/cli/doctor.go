@@ -142,17 +142,6 @@ func workspaceRoundtripCheck() check {
 	if err != nil {
 		return check{name: "workspace roundtrip", ok: false, detail: "create: " + err.Error()}
 	}
-	// Charter fix (H4/F-38-1): the probe workspace's bbolt file was left
-	// open through Delete — on Windows the open file blocks removal and
-	// the whole roundtrip check FAILED every run. Close on every path.
-	closeProbe := func() {
-		if w != nil {
-			_ = w.Close()
-			w = nil
-		}
-	}
-	defer closeProbe()
-
 	type rec struct {
 		V string `json:"v"`
 	}
@@ -163,7 +152,11 @@ func workspaceRoundtripCheck() check {
 	if err := w.LoadRecord(workspace.BucketTokens, "probe", &out); err != nil {
 		return check{name: "workspace roundtrip", ok: false, detail: "load: " + err.Error()}
 	}
-	closeProbe()
+	// The vault holds an open file handle; on Windows an open file cannot
+	// be unlinked, so the handle must be released before Delete shreds it.
+	if err := w.Close(); err != nil {
+		return check{name: "workspace roundtrip", ok: false, detail: "close: " + err.Error()}
+	}
 	if err := workspace.Delete(name); err != nil {
 		return check{name: "workspace roundtrip", ok: false, detail: "delete: " + err.Error()}
 	}

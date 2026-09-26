@@ -209,7 +209,10 @@ func runServe(cmd *cobra.Command, args []string) error {
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	revoked := api.LoadRevocationList(revokedData)
+	// File-bound list: revoked.txt is re-read on every connection so
+	// `serve cert revoke` fails closed on new connections without a
+	// restart (D-003).
+	revoked := api.FileRevocationList(revokedPath, revokedData)
 
 	srv, err := api.NewTeamserver(tsListenAddr, srvCert, clientCAs, operatorsDir, revoked, serveCommandRunner)
 	if err != nil {

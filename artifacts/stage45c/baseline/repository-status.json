@@ -1,0 +1,29 @@
+{
+  "git_status": "M VERSION\nM cmd/aether/main.go\nM internal/cli/governance.go\nM internal/cli/root.go\n?? ad.test.exe\n?? admin.keytab\n?? artifacts/stage45/\n?? artifacts/stage45b/\n?? artifacts/stage46/\n?? artifacts/stage47/\n?? artifacts/track-b-recovery/\n?? docs/stage45-certification.md\n?? docs/stage45-ws0-structure.md\n?? docs/stage45-ws0-summary.md\n?? docs/stage45-ws1-kerberos-protocol.md\n?? docs/stage45-ws2-engines.md\n?? docs/stage45-ws3-cli.md\n?? docs/stage45-ws4-spine.md\n?? docs/stage45-ws5-test-harness.md\n?? docs/stage45b-integration-tests.md\n?? docs/stage45b-live-qualification.md\n?? docs/stage45b-samba4-harness.md\n?? internal/cli/ad/\n?? internal/engine/ad/\n?? internal/protocol/kerberos/\n?? scripts/ad-lab/\n?? test/integration/ad/",
+  "head": "a887a0ed9c9fcdbf0400a5d59ccad162cfcac202",
+  "branch": "master",
+  "version": "5.0.0-alpha1",
+  "tags": [],
+  "log_last_20": [
+    "a887a0e (HEAD -> master) chore(artifacts): rename stage*/ to release/, audit/, handoff/",
+    "264f04c chore(artifacts): remove PROCESS-HISTORY pointer file; fix RELEASING.md references",
+    "127103f chore(cleanup): drop temporary hash scratch files",
+    "af6bf86 chore(cleanup): prune process history under artifacts/",
+    "682f3d6 chore: remove obsolete development artifacts",
+    "1c3ec25 chore(cleanup): phases 0-3 complete — inventory, classification, dead-file proof, approval proposal PENDING",
+    "9ebebf0 final: release status locked — governance blocked, ceremony not executed",
+    "20e8412 docs: RELEASING.md — standing operator runbook + resume prompt for v3.4.0-ga",
+    "4c5d0b2 stage49: operator intake — no new external inputs; blocker status recorded, RELEASE GOVERNANCE BLOCKED",
+    "ce9ee7b stage48: governance blocker closure — handoff packages complete, RELEASE GOVERNANCE BLOCKED",
+    "d0f2d2e stage47: GA blocker closure attempt — cross-platform runtime upgraded, gate matrix, RELEASE BLOCKED (4 process blockers)",
+    "eeb86e7 stage44-47 (re-based, World B): operational qualification, supply chain, 3 defect fixes, evidence package",
+    "0dae3ae docs: Stage 7 G0/G26 — Baseline reconciliation and lineage resolution",
+    "b69a152 review: development-cycle forensic review — actual baseline is Stage 3 (3.4.0-stage3); zero native fuzz targets; fixture-only interop; M3 verified-engineering / M1 release process verdict; evidence index E1-E15",
+    "d5d91eb docs: Stage 6 Phase 9 — Final release-candidate certification",
+    "b3ed72f docs: Stage 6 Phase 8 — Version/release surface audit",
+    "350dd91 docs: Stage 6 Phase 7 — Adversarial regression testing",
+    "54e84b5 fix(test): TestMultiOperatorRace flaky backpressure - set higher in-flight cap",
+    "53f55a1 docs: Stage 6 Phase 6 — CI/cross-platform/supply-chain review",
+    "d128b29 docs: Stage 6 Phase 5 — Artifact signing & trust chain design"
+  ]
+}

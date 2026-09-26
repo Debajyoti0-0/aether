@@ -1,0 +1,20 @@
+Error: unknown flag: --json
+Usage:
+  aether ad ldap rootdse [flags]
+
+Flags:
+      --bind-dn string     Bind DN
+      --bind-pass string   Bind password
+      --domain string      Target domain (FQDN) for RootDSE base DN
+  -h, --help               help for rootdse
+      --host string        LDAP server hostname or IP
+      --port int           Port (default 389)
+      --starttls           Use StartTLS
+      --tls                Use TLS
+      --workspace string   Workspace name (required for governance)
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Error: unknown flag: --json

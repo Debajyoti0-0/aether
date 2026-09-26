@@ -1,0 +1,28 @@
+services:
+  aether-ad-lab:
+    image: aether-samba-ad-dc:latest
+    hostname: dc01
+    container_name: aether-ad-lab-backup
+    privileged: true
+    environment:
+      - SAMBA_DOMAIN=AETHER
+      - SAMBA_REALM=AETHER.TEST
+      - ADMIN_PASSWORD=Passw0rd123!
+      - KERBEROS_ENCRYPTION_TYPES=aes256-cts-hmac-sha1-96,aes128-cts-hmac-sha1-96,rc4-hmac
+      - DNS_FORWARDER=1.1.1.1
+    ports:
+      - "1389:389/tcp"
+      - "1088:88/tcp"
+      - "1088:88/udp"
+    networks:
+      - aether-ad-net
+    healthcheck:
+      test: ["CMD", "samba-tool", "domain", "info", "127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  aether-ad-net:
+    driver: bridge

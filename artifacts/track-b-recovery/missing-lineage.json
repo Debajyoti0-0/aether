@@ -1,0 +1,70 @@
+{
+  "missing_track_b_components": [
+    {
+      "stage": 45,
+      "batch": 1,
+      "name": "Kerberos Enumeration + Roasting",
+      "protocol_package": "internal/protocol/kerberos/",
+      "engine_package": "internal/engine/ad/kerberos/",
+      "cli_commands": [
+        "aether ad enum users",
+        "aether ad enum asrep",
+        "aether ad enum spn",
+        "aether ad kerberoast",
+        "aether ad asreproast",
+        "aether ad tgt",
+        "aether ad ccache"
+      ],
+      "capabilities": [
+        "ad.enum.read",
+        "ad.kerberos.roast",
+        "ad.kerberos.tgt"
+      ],
+      "lab_requirement": "scripts/ad-lab/ (Samba4 AD DC)",
+      "status": "NEVER IMPLEMENTED"
+    },
+    {
+      "stage": 46,
+      "batch": 2,
+      "name": "LDAP Enumeration + ACL Path Analysis",
+      "protocol_package": "internal/protocol/ldap/",
+      "engine_packages": [
+        "internal/engine/ad/ldap/",
+        "internal/engine/ad/acl/"
+      ],
+      "cli_commands": [
+        "aether ad ldap enum users",
+        "aether ad ldap enum groups",
+        "aether ad ldap enum computers",
+        "aether ad ldap enum ous",
+        "aether ad ldap acl",
+        "aether ad ldap path"
+      ],
+      "capabilities": [
+        "ad.enum.read",
+        "ad.ldap.acl"
+      ],
+      "lab_requirement": "scripts/ad-lab/ (Samba4 AD DC)",
+      "status": "NEVER IMPLEMENTED"
+    },
+    {
+      "stage": 47,
+      "batch": 3,
+      "name": "AD CS ESC1-ESC15 + PKINIT",
+      "protocol_package": "internal/protocol/ms-wcce/",
+      "engine_package": "internal/engine/ad/adcs/",
+      "cli_commands": [
+        "aether ad cert enum",
+        "aether ad cert abuse"
+      ],
+      "capabilities": [
+        "ad.adcs.enum",
+        "ad.adcs.issue",
+        "ad.kerberos.pkinit"
+      ],
+      "lab_requirement": "scripts/ad-lab/ with AD CS",
+      "status": "BLOCKED - depends on Stages 45, 46"
+    }
+  ],
+  "overall_status": "Complete Track B AD Expansion (Stages 45-47) is absent from repository history. Must be built from 3.4.0-stage3 baseline."
+}

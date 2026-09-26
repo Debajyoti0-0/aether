@@ -1,0 +1,20 @@
+Error: decrypt AS-REP: integrity check failed
+Usage:
+  aether ad tgt [flags]
+
+Flags:
+      --ccache string      Path to existing ccache for auth
+      --dc string          Domain controller hostname or IP
+      --domain string      Target domain (FQDN)
+  -h, --help               help for tgt
+      --keytab string      Path to keytab file (not yet implemented)
+      --output string      Output ccache path (default: /tmp/<user>_<timestamp>.ccache)
+      --password string    Password for the user
+      --username string    Username to authenticate as
+      --workspace string   Workspace name (required for governance)
+
+Global Flags:
+      --config string      Config file path
+      --log-level string   Log level (debug, info, warn, error) (default "info")
+
+Error: decrypt AS-REP: integrity check failed

@@ -1,0 +1,8 @@
+	interfaces = lo eth0
+	ldap server require strong auth = No
+	winbindd:use external pipes = true
+---RAW CONF---
+	bind interfaces only = No
+	interfaces = lo eth0
+	ldap server require strong auth = no
+(end)

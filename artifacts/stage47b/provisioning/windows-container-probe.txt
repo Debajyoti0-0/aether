@@ -1,0 +1,39 @@
+﻿STAGE 47B - WINDOWS CONTAINER PATH DEFINITIVE PROBE
+date: 2026-09-26 01:15:22 +05:30
+docker OSType: linux  server: 29.7.2
+docker context: desktop-linux
+
+--- 1. registry manifest lookup (registry-side) ---
+{
+   "schemaVersion": 2,
+   "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+   "manifests": [
+      {
+         "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+         "size": 429,
+         "digest": "sha256:87af42244113104b3ce4b5646f9ec1ab6690e6753dd68924e698bdc2132546b3",
+         "platform": {
+            "architecture": "amd64",
+            "os": "windows",
+            "os.version": "10.0.20348.5622"
+         }
+      }
+   ]
+}
+
+--- 2. actual pull attempt (client-side, authoritative) ---
+docker : Error response from daemon: no matching manifest for linux/amd64/v4 in the manifest list entries: no match 
+for platform in manifest: not found
+At line:15 char:10
++ $pull = (docker pull mcr.microsoft.com/windows/nanoserver:ltsc2022 2> ...
++          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Error response ...fest: not found:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+--- 3. conclusion ---
+Registry manifest EXISTS (docker manifest inspect returned schemaVersion 2).
+Client PULL result recorded above. A Windows image can only run on a Windows
+daemon; this daemon is linux/amd64, so no Windows container can run here.
+Separately: AD DS and AD CS are NOT supported as Windows container roles by
+Microsoft, so a Windows container would not provide a DC/KDC/CA even on a
+Windows host. This closes the container path on two independent grounds.

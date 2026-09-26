@@ -1,0 +1,8 @@
+DEBUG: UDP recv failed (read udp 172.18.0.3:34316->172.18.0.2:88: i/o timeout), trying TCP fallback
+DEBUG: Dialing TCP 172.18.0.2:88
+DEBUG: UDP recv failed (read udp 172.18.0.3:34316->172.18.0.2:88: i/o timeout), trying TCP fallback
+Action: mut-1790333729801876437-d7c417d6
+Status: completed
+Enumerated 2 users
+  Administrator: TCP read length: EOF
+  Passw0rd123!: TCP write data: write tcp 172.18.0.3:37704->172.18.0.2:88: write: broken pipe

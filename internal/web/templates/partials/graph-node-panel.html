@@ -1,0 +1,64 @@
+{{define "graph-node-panel"}}
+{{/*
+  The proof panel. Its job is to be honest about provenance: when a node exists
+  in the graph file but no signed entry records when it was discovered, it says
+  so and shows no signature, rather than displaying a plausible-looking hash.
+*/}}
+{{if .Node}}
+  {{/*
+    The close control is a data attribute, not an inline onclick. The dashboard
+    sends `script-src 'self'`, which blocks inline handlers outright, so an
+    onclick here would be a control that silently does nothing.
+  */}}
+  <button data-close-panel class="float-right" aria-label="Close panel">&times;</button>
+  <h2>Proof</h2>
+  <p class="mono small break-all">{{.Node.Label}}</p>
+  <dl class="kv">
+    <dt>ID</dt><dd>{{.Node.ID}}</dd>
+    <dt>kind</dt><dd>{{.Node.Type}}</dd>
+    {{if .Node.Provider}}<dt>provider</dt><dd>{{.Node.Provider}}</dd>{{end}}
+    {{if .Node.Type}}<dt>in / out degree</dt><dd class="num">{{.Node.InDegree}} / {{.Node.OutDegree}}</dd>{{end}}
+  </dl>
+
+  {{if .Node.Props}}
+  <h3>Properties</h3>
+  <dl class="kv">
+    {{range $k, $v := .Node.Props}}<dt>{{$k}}</dt><dd>{{$v}}</dd>{{end}}
+  </dl>
+  {{end}}
+
+  <h3>Provenance</h3>
+  {{if .Node.Entry}}
+    <dl class="kv">
+      <dt>audit seq</dt><dd class="num">{{.Node.Entry.Seq}}</dd>
+      <dt>command</dt><dd>{{.Node.Entry.Command}}</dd>
+      <dt>timestamp</dt><dd>{{.Node.Entry.Timestamp}}</dd>
+      <dt>entry hash</dt><dd>{{.Node.Entry.Hash}}</dd>
+      <dt>prev hash</dt><dd>{{.Node.Entry.PrevHash}}</dd>
+      <dt>signature</dt><dd>{{.Node.Entry.Signature}}</dd>
+    </dl>
+    <p class="small">
+      This entry is signed. Its signature is checked in your browser by
+      <code>verify.wasm</code>, independently of this server.
+    </p>
+    <p>
+      <a href="/api/proof/{{.Node.Entry.Seq}}" download>Export proof bundle</a>
+      &nbsp;·&nbsp;
+      <a href="/api/audit/entry/{{.Node.Entry.Seq}}" target="_blank" rel="noopener">Raw entry</a>
+    </p>
+  {{else}}
+    <p class="small txt-warn">
+      No signed audit entry in this chain records the discovery of this object.
+      {{if .Node.Reason}}{{.Node.Reason}}{{end}}
+    </p>
+    <p class="small muted mb-0">
+      This is reported rather than papered over. A graph object with no signed
+      entry behind it has no provenance this dashboard can attest to, and
+      presenting one anyway would defeat the purpose of the panel.
+    </p>
+  {{end}}
+{{else}}
+  <h2>Proof</h2>
+  <p class="small muted">Click a node or edge in the graph to see its signed provenance.</p>
+{{end}}
+{{end}}

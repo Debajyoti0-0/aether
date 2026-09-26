@@ -1,0 +1,48 @@
+{
+  "stage45b_findings": {
+    "D45b-001": {
+      "severity": "CRITICAL",
+      "title": "ASN.1 encoding mismatch - KDCREQ/KDCREQBody missing all context-specific tags",
+      "description": "The Go structs for KDCREQ and KDCREQBody lack explicit context-specific tags required by RFC 4120. All fields are encoded with universal tags instead of the required explicit context-specific tags [1], [2], [3], [4] for KDCREQ and [0] through [8] for KDCREQBody.",
+      "affected_structs": ["KDCREQ", "KDCREQBody"],
+      "affected_file": "internal/protocol/kerberos/types.go",
+      "rfc4120_reference": "§5.4.1 KDC-REQ and §5.4.2 KDC-REQ-BODY",
+      "evidence": "Samba4 KDC returns EOF / silently rejects Aether-generated AS-REQ"
+    },
+    "D45b-002": {
+      "severity": "HIGH",
+      "title": "PAData missing context-specific tags [1] and [2]",
+      "description": "The PAData struct fields PADataType and PADataValue lack explicit tags [1] and [2] respectively. They are encoded as universal INTEGER and OCTET STRING instead of context-specific [1] and [2].",
+      "affected_struct": "PAData",
+      "affected_file": "internal/protocol/kerberos/types.go:149",
+      "rfc4120_reference": "§5.2.7 PA-DATA",
+      "expected_tags": "padata-type [1] Int32, padata-value [2] OCTET STRING"
+    },
+    "D45b-003": {
+      "severity": "HIGH",
+      "title": "PrincipalName missing context-specific tags [0] and [1] when embedded",
+      "description": "The PrincipalName struct has a custom MarshalASN1/UnmarshalASN1 using principalNameASN1 with correct tags, but when embedded in KDCREQBody, the custom marshaler is not invoked because Go's encoding/asn1 uses the struct field directly, not the custom marshaler for non-pointer embedded structs.",
+      "affected_struct": "PrincipalName",
+      "affected_file": "internal/protocol/kerberos/types.go:87, internal/protocol/kerberos/principal.go:120",
+      "rfc4120_reference": "§6.2 PrincipalName",
+      "expected_tags": "name-type [0] Int32, name-string [1] SEQUENCE OF KerberosString"
+    },
+    "D45b-004": {
+      "severity": "MEDIUM",
+      "title": "Realm requires GeneralString encoding (tag 27)",
+      "description": "The Realm type is defined as 'type Realm string' which encoding/asn1 encodes as IA5String (tag 22) or PrintableString (tag 19). Kerberos requires GeneralString (tag 27) per RFC 4120.",
+      "affected_type": "Realm",
+      "affected_file": "internal/protocol/kerberos/types.go:99",
+      "rfc4120_reference": "§6.1 Realm, §6.2 KerberosString",
+      "required_tag": 27
+    }
+  },
+  "stage45b_status": "BLOCKED-WITH-OWNER",
+  "root_cause": "Missing explicit context-specific tags in ASN.1 struct definitions. Go's encoding/asn1 does not automatically apply context-specific tags from ASN.1 module definitions - they must be explicitly specified in struct tags using 'explicit,tag:N'.",
+  "workaround_noted": "keytab auth works (kinit -k -t keytab), proving ccache, crypto, TGS, and downstream operations are correct. Defect is isolated to AS-REQ construction.",
+  "diagnostic_commands": [
+    "go test -tags=integration -v ./test/integration/ad/... (FAILS on TestKerberosASREP)",
+    "kinit -V user1@AETHER.TEST (WORKS - proves KDC is healthy)",
+    "KRB5_TRACE=/dev/stderr kinit -V user1@AETHER.TEST (shows correct AS-REQ from MIT)"
+  ]
+}

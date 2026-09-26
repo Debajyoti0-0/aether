@@ -1,0 +1,10 @@
+{
+  "git_status": "clean (modified: VERSION, cmd/aether/main.go, internal/cli/governance.go, internal/cli/root.go; new: artifacts/stage45/, stage47/, track-b-recovery/, docs/stage45-*.md, internal/cli/ad/, internal/engine/ad/kerberos/, internal/protocol/kerberos/)",
+  "commit_sha": "a887a0ed9c9fcdbf0400a5d59ccad162cfcac202",
+  "branch": "master",
+  "version_file": "5.0.0-alpha1",
+  "tags_at_head": [],
+  "go_version": "go1.27.1 windows/amd64",
+  "timestamp": "2026-09-21T14:20:00Z",
+  "tree_state": "Stage 45 implementation present with uncommitted changes"
+}

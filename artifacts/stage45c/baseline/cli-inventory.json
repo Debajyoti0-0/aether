@@ -1,0 +1,106 @@
+{
+  "cli_surface": {
+    "ad": {
+      "enum": {
+        "users": {
+          "description": "Enumerate valid usernames via Kerberos AS-REQ",
+          "flags": {
+            "--domain": { "required": true, "type": "string", "description": "Target domain (FQDN)" },
+            "--dc": { "required": true, "type": "string", "description": "Domain controller hostname or IP" },
+            "--userlist": { "required": false, "type": "string", "description": "Path to file with usernames (one per line)" },
+            "--workspace": { "required": true, "type": "string", "description": "Workspace name (required for governance)" }
+          },
+          "positional_args": ["usernames..."],
+          "governance": "requires workspace, capability: ad.kerberos.enum"
+        },
+        "asrep": {
+          "description": "Enumerate AS-REP roastable accounts (no pre-auth)",
+          "flags": {
+            "--domain": { "required": true, "type": "string" },
+            "--dc": { "required": true, "type": "string" },
+            "--userlist": { "required": false, "type": "string" },
+            "--workspace": { "required": true, "type": "string" }
+          },
+          "positional_args": ["usernames..."],
+          "governance": "requires workspace, capability: ad.kerberos.asreproast"
+        },
+        "spn": {
+          "description": "Enumerate Service Principal Names via LDAP",
+          "flags": {
+            "--domain": { "required": true, "type": "string" },
+            "--dc": { "required": true, "type": "string" },
+            "--workspace": { "required": true, "type": "string" }
+          },
+          "governance": "requires workspace, capability: ad.kerberos.enum"
+        }
+      },
+      "kerberoast": {
+        "description": "Kerberoast SPNs to extract crackable hashes",
+        "flags": {
+          "--domain": { "required": true, "type": "string" },
+          "--dc": { "required": true, "type": "string" },
+          "--spnlist": { "required": false, "type": "string" },
+          "--creds": { "required": false, "type": "string", "description": "Path to file with SPN:password pairs" },
+          "--ccache": { "required": false, "type": "string", "description": "Path to ccache file for authentication" },
+          "--max-requests": { "required": false, "type": "int", "default": 0 },
+          "--rate-limit": { "required": false, "type": "duration", "default": 0 },
+          "--workspace": { "required": true, "type": "string" }
+        },
+        "positional_args": ["spns..."],
+        "governance": "requires workspace, capability: ad.kerberos.kerberoast"
+      },
+      "asreproast": {
+        "description": "AS-REP roast accounts without pre-authentication",
+        "flags": {
+          "--domain": { "required": true, "type": "string" },
+          "--dc": { "required": true, "type": "string" },
+          "--userlist": { "required": false, "type": "string" },
+          "--workspace": { "required": true, "type": "string" }
+        },
+        "positional_args": ["usernames..."],
+        "governance": "requires workspace, capability: ad.kerberos.asreproast"
+      },
+      "tgt": {
+        "description": "Acquire Ticket Granting Ticket (TGT) and store in ccache",
+        "flags": {
+          "--domain": { "required": true, "type": "string" },
+          "--dc": { "required": true, "type": "string" },
+          "--username": { "required": true, "type": "string" },
+          "--password": { "required": false, "type": "string" },
+          "--ccache": { "required": false, "type": "string", "description": "Path to existing ccache for auth" },
+          "--keytab": { "required": false, "type": "string", "description": "Path to keytab file (not yet implemented)" },
+          "--output": { "required": false, "type": "string", "description": "Output ccache path" },
+          "--workspace": { "required": true, "type": "string" }
+        },
+        "governance": "requires workspace, capability: ad.kerberos.tgt"
+      },
+      "ccache": {
+        "show": {
+          "description": "Show contents of a ccache file",
+          "flags": {
+            "--ccache": { "required": false, "type": "string", "description": "Path to ccache file" },
+            "--workspace": { "required": true, "type": "string" }
+          },
+          "positional_args": ["ccache_path"]
+        },
+        "convert": {
+          "description": "Convert ccache between MIT and Heimdal formats",
+          "flags": {
+            "--input": { "required": false, "type": "string", "description": "Input ccache path" },
+            "--output": { "required": true, "type": "string", "description": "Output ccache path" },
+            "--workspace": { "required": true, "type": "string" }
+          },
+          "positional_args": ["input_path"],
+          "governance": "requires workspace, capability: ad.kerberos.tgt"
+        }
+      }
+    }
+  },
+  "global_flags": {
+    "--json": { "description": "Output JSON format" },
+    "--workspace": { "description": "Workspace name for governance", "required": "true for all ad commands" }
+  },
+  "total_commands": 8,
+  "total_subcommands": 8,
+  "total_flags": 27
+}

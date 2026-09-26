@@ -1,0 +1,28 @@
+{
+  "existing_capabilities": [
+    "cap.read", "cap.write", "exec.azure", "exec.gcp", "exec.kubernetes",
+    "graph.read", "graph.write", "identity.read", "identity.write",
+    "pivot.cross", "pivot.lateral", "prt.read", "prt.write",
+    "relay.read", "relay.write", "token.read", "token.write",
+    "workspace.create", "workspace.delete", "workspace.modify",
+    "ad.enum.read", "ad.kerberos.roast", "ad.kerberos.tgt"
+  ],
+  "missing_capabilities_for_stage46": [
+    {
+      "id": "ad.ldap.read",
+      "description": "LDAP enumeration of AD objects",
+      "risk_score": 10,
+      "reversible": true,
+      "category": "enumeration"
+    },
+    {
+      "id": "ad.acl.path",
+      "description": "ACL path analysis and graph resolution",
+      "risk_score": 20,
+      "reversible": true,
+      "category": "credential-access"
+    }
+  ],
+  "capability_registration_location": "internal/engine/cap/registry.go",
+  "default_policy": "DENY_ALL"
+}

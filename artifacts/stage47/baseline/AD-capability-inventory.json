@@ -1,0 +1,45 @@
+{
+  "ad_capabilities": {
+    "kerberos": {
+      "protocol_package": "MISSING - internal/protocol/kerberos/ does not exist",
+      "engine_package": "MISSING - internal/engine/ad/kerberos/ does not exist",
+      "enumeration": "NOT IMPLEMENTED",
+      "roasting": "NOT IMPLEMENTED",
+      "stage45_status": "NOT STARTED"
+    },
+    "ldap": {
+      "protocol_package": "MISSING - internal/protocol/ldap/ does not exist",
+      "engine_package": "MISSING - internal/engine/ad/ldap/ does not exist",
+      "enumeration": "NOT IMPLEMENTED",
+      "acl_analysis": "NOT IMPLEMENTED",
+      "stage46_status": "NOT STARTED"
+    },
+    "adcs": {
+      "protocol_package": "MISSING - internal/protocol/ms-wcce/ does not exist",
+      "engine_package": "MISSING - internal/engine/ad/adcs/ does not exist",
+      "ca_discovery": "NOT IMPLEMENTED",
+      "template_enumeration": "NOT IMPLEMENTED",
+      "template_security_analysis": "NOT IMPLEMENTED",
+      "esc_detection": "NOT IMPLEMENTED",
+      "certificate_issuance": "NOT IMPLEMENTED",
+      "pkinit": "NOT IMPLEMENTED",
+      "stage47_status": "NOT STARTED"
+    }
+  },
+  "cli_commands": {
+    "ad": "NOT IMPLEMENTED - no 'ad' subcommand exists",
+    "ad_kerberos": "NOT IMPLEMENTED",
+    "ad_ldap": "NOT IMPLEMENTED",
+    "ad_cert": "NOT IMPLEMENTED"
+  },
+  "spine_capabilities": {
+    "ad.adcs.enum": "NOT REGISTERED",
+    "ad.adcs.issue": "NOT REGISTERED",
+    "ad.kerberos.pkinit": "NOT REGISTERED"
+  },
+  "test_harness": {
+    "samba4_lab": "NOT EXIST - scripts/ad-lab/ does not exist",
+    "adcs_lab": "NOT EXIST",
+    "fuzz_targets": "NOT EXIST for AD protocols"
+  }
+}

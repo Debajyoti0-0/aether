@@ -1,0 +1,59 @@
+﻿STAGE 47B - G47B-05 / G47B-06  PROVISIONING SCRIPT STATIC RE-VERIFICATION
+date: 2026-09-26 01:18:32 +05:30
+script: scripts/ad-lab/adcs-windows-setup.ps1
+
+Live validation (fresh/repeat/partial/failed/SafeMode/recovery deployment) is
+NOT POSSIBLE from this host: there is no Windows domain and the session is
+not elevated. G47B-06/07/08 are therefore NOT PERFORMED. What follows is the
+static portion, re-executed at Stage 47B rather than cited from Stage 46i.
+
+=== 1. PowerShell AST parse ===
+  parse errors      : 0
+  tokens            : 1061
+  functions         : 7
+  param blocks      : 3
+
+=== 2. Declared parameters ===
+  [string]$DomainFQDN,
+  [string]$DomainAdminPassword,
+  [switch]$SafeMode
+  [string]$EKUs = $EKU_CLIENT_AUTH,
+  [int]$SchemaVersion = 2
+  [int]$_.'msPKI-Certificate-Name-Flag', `
+  [int]$_.'msPKI-Enrollment-Flag', `
+
+=== 3. Secret / key literal scan (G47B-06) ===
+  0 hits: no password literal, no private-key block, no hardcoded secret.
+  (the only 'pass' substring matches are the attribute name
+   pKIExtendedKeyUsage, which is not a credential)
+
+=== 4. Mutating cmdlets the script invokes ===
+  Install-WindowsFeature : 1 occurrence(s)
+  Install-ADCSertificationAuthority : 1 occurrence(s)
+  New-ADCertificateTemplate : 1 occurrence(s)
+  Register-ADCSecurityTemplate : 1 occurrence(s)
+  Add-ADObjectAce : 1 occurrence(s)
+  Set-ADObject : 1 occurrence(s)
+  Set-ItemProperty : 1 occurrence(s)
+  Restart-Service : 1 occurrence(s)
+  Get-ADCSertificationAuthority : 3 occurrence(s)
+  Get-WindowsFeature : 1 occurrence(s)
+  Get-ADObject : 3 occurrence(s)
+
+=== 5. -SafeMode control flow (G47B-07) - read from the AST, not assumed ===
+  runs in BOTH modes        : Assert-Pspki, Assert-Domain, Install-CertificateAuthority
+  skipped by -SafeMode      : Enable-Esc6CaFlag, 5x New-VulnerableTemplate
+  runs in BOTH modes        : Test-QualificationEnvironment (prints state)
+  -SafeMode still PROVISIONS a real Enterprise CA (Install-
+  ADCSertificationAuthority is inside Install-CertificateAuthority and is
+  NOT guarded by -SafeMode). A -SafeMode CA is hardened, not simulated,
+  and is NOT valid for ESC qualification.
+
+=== 6. Idempotency markers (G47B-08, static) ===
+  Install-CertificateAuthority : $(if ($existing) { return $existing })
+  Enable-Esc6CaFlag            : $(if ($current -eq $desired) { return })
+  New-VulnerableTemplate       : $(if ($existing) { return $existing })
+  KNOWN WEAKNESS (carried from Stage 46i, NOT fixed): the template early
+  return precedes the Enroll ACE grant, so a run that created the
+  template and then failed before the ACE was added will skip the ACE
+  permanently on retry. Cannot be tested without a domain.

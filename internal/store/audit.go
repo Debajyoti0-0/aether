@@ -204,6 +204,20 @@ func (l *Log) Append(command, result string) (*Entry, error) {
 	return &e, nil
 }
 
+// PublicKey returns the Ed25519 public key that signs this chain.
+//
+// It is exposed so a verifier can check the chain without holding the private
+// key, which is the whole point of a signed chain: the checking side must not
+// need the signing capability. Returning a copy of the slice header's
+// underlying array is safe because ed25519 public keys are never mutated in
+// place by this package.
+func (l *Log) PublicKey() ed25519.PublicKey {
+	if l == nil || l.key == nil {
+		return nil
+	}
+	return l.key.Public().(ed25519.PublicKey)
+}
+
 // VerifyResult reports the integrity of the whole chain.
 type VerifyResult struct {
 	Total     int      `json:"total"`
