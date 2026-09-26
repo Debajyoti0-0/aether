@@ -56,3 +56,10 @@ ad_sampledata/
 /artifacts/stage46h/*.linux
 /artifacts/stage46h/*.exe
 /artifacts/stage46h/aether-*
+
+# Rust build output for the dashboard's WebAssembly modules. The compiled
+# artifacts that actually ship (internal/web/wasm/*.wasm and the wasm-bindgen
+# glue in internal/web/static/verify.js) are committed deliberately, because
+# `go build` embeds them and a checkout must build without a Rust toolchain.
+/internal/web/wasm/*/target/
+/internal/web/wasm/*/pkg/

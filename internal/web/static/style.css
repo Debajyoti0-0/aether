@@ -1,0 +1,337 @@
+﻿/* Aether dashboard — hand-written CSS.
+ *
+ * No framework, no build step, no CDN. Every rule here ships inside the Go
+ * binary. The font stack is the operating system's, which means no font binary
+ * is committed to the repository and no font is fetched at runtime; see
+ * docs/stage52-certification.md for that deliberate deviation.
+ *
+ * Colour is the only place where meaning is carried visually, and every colour
+ * is paired with a text label or a shape so the dashboard does not become
+ * unreadable for a colour-blind operator or in a monochrome terminal capture.
+ */
+
+:root {
+  --bg: #0d1117;
+  --bg-raised: #161b22;
+  --bg-inset: #010409;
+  --border: #30363d;
+  --border-strong: #484f58;
+  --fg: #e6edf3;
+  --fg-dim: #8b949e;
+  --accent: #58a6ff;
+
+  --ok: #3fb950;
+  --ok-bg: #0d2818;
+  --bad: #f85149;
+  --bad-bg: #2d1214;
+  --warn: #d29922;
+  --warn-bg: #2b1f05;
+  --choke: #ff8c42;
+
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --radius: 6px;
+  --gap: 16px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --bg-raised: #f6f8fa;
+    --bg-inset: #eaeef2;
+    --border: #d0d7de;
+    --border-strong: #afb8c1;
+    --fg: #1f2328;
+    --fg-dim: #59636e;
+    --accent: #0969da;
+    --ok: #1a7f37;
+    --ok-bg: #dafbe1;
+    --bad: #cf222e;
+    --bad-bg: #ffebe9;
+    --warn: #9a6700;
+    --warn-bg: #fff8c5;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--ui);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code, pre, .mono, .hash, .num { font-family: var(--mono); font-size: 12.5px; }
+
+/* ---------------------------------------------------------------- layout */
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gap);
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+
+.topbar .brand { font-weight: 700; letter-spacing: 0.02em; }
+.topbar .brand span { color: var(--fg-dim); font-weight: 400; margin-left: 8px; }
+.topbar nav { display: flex; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+.topbar nav a.active { color: var(--fg); font-weight: 600; }
+
+main { padding: 20px; max-width: 1600px; margin: 0 auto; }
+
+.grid { display: grid; gap: var(--gap); }
+.grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+.grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+/* ---------------------------------------------------------------- cards */
+
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  font-weight: 600;
+}
+
+.card h3 { margin: 16px 0 8px; font-size: 13px; font-weight: 600; }
+
+/* ------------------------------------------------------- chain banner */
+
+.chain-status {
+  border-width: 2px;
+  display: flex;
+  gap: var(--gap);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.chain-status .verdict { font-size: 20px; font-weight: 700; letter-spacing: 0.01em; }
+.chain-status .detail { flex: 1 1 320px; min-width: 260px; }
+.chain-status .detail dl { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; }
+.chain-status .detail dt { color: var(--fg-dim); }
+.chain-status .detail dd { margin: 0; }
+
+.chain-status.valid { border-color: var(--ok); background: var(--ok-bg); }
+.chain-status.valid .verdict { color: var(--ok); }
+.chain-status.invalid { border-color: var(--bad); background: var(--bad-bg); }
+.chain-status.invalid .verdict { color: var(--bad); }
+.chain-status.pending { border-color: var(--warn); background: var(--warn-bg); }
+.chain-status.pending .verdict { color: var(--warn); }
+
+/* The browser verdict and the server verdict are shown side by side on
+ * purpose. A disagreement between them is the most interesting thing this
+ * dashboard can display, so it is never hidden behind a single boolean. */
+.verdicts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.verdict-chip {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-inset);
+  white-space: nowrap;
+}
+.verdict-chip.ok { border-color: var(--ok); color: var(--ok); }
+.verdict-chip.bad { border-color: var(--bad); color: var(--bad); }
+.verdict-chip.wait { border-color: var(--warn); color: var(--warn); }
+
+/* ------------------------------------------------------------ banners */
+
+.banner {
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: var(--gap);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-raised);
+}
+.banner.warn { border-color: var(--warn); background: var(--warn-bg); }
+.banner strong { color: var(--warn); }
+
+/* ------------------------------------------------------------- tables */
+
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th { color: var(--fg-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+tbody tr:hover { background: var(--bg-inset); }
+td.num, th.num { text-align: right; font-family: var(--mono); }
+.scroll { max-height: 460px; overflow: auto; }
+
+/* ---------------------------------------------------------------- graph */
+
+.graph-wrap { position: relative; width: 100%; height: 640px; background: var(--bg-inset); border-radius: var(--radius); overflow: hidden; }
+#graph-canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+#graph-canvas.dragging { cursor: grabbing; }
+
+.graph-overlay {
+  position: absolute;
+  top: 10px; left: 10px;
+  background: rgba(1, 4, 9, 0.82);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--fg);
+  pointer-events: none;
+  max-width: 60%;
+}
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--fg-dim); }
+.legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.legend .swatch.edge { width: 18px; height: 3px; border-radius: 2px; }
+
+/* ------------------------------------------------------------- sidebar */
+
+.sidebar {
+  position: fixed;
+  top: 0; right: 0;
+  width: min(460px, 100vw);
+  height: 100vh;
+  background: var(--bg-raised);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
+  padding: 20px;
+  overflow: auto;
+  transform: translateX(100%);
+  transition: transform 140ms ease-out;
+  z-index: 40;
+}
+.sidebar.open { transform: translateX(0); }
+.sidebar h2 { margin-top: 0; }
+.sidebar dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; }
+.sidebar dt { color: var(--fg-dim); }
+.sidebar dd { margin: 0; word-break: break-all; }
+
+/* ------------------------------------------------------------- controls */
+
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+
+input[type="text"], input[type="number"], select {
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 6px 9px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+input[type="range"] { flex: 1 1 260px; accent-color: var(--accent); min-width: 200px; }
+
+button {
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-family: var(--ui);
+  font-size: 13px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button:active { transform: translateY(1px); }
+button[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* ------------------------------------------------------------- deltas */
+
+.delta { display: inline-block; padding: 1px 7px; border-radius: 999px; font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
+.delta.added { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok); }
+.delta.removed { background: var(--bad-bg); color: var(--bad); border: 1px solid var(--bad); }
+.delta.modified { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
+
+/* -------------------------------------------------------- choke points */
+
+.choke-row { display: grid; grid-template-columns: 34px 1fr 68px; gap: 10px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.choke-row:last-child { border-bottom: none; }
+.choke-rank { font-family: var(--mono); color: var(--fg-dim); text-align: right; }
+.choke-edge { font-family: var(--mono); font-size: 12px; }
+.choke-edge .arrow { color: var(--choke); font-weight: 700; }
+.choke-cov { font-family: var(--mono); text-align: right; color: var(--choke); font-weight: 600; }
+
+.bar { height: 5px; background: var(--bg-inset); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.bar > i { display: block; height: 100%; background: var(--choke); }
+
+/* -------------------------------------------------------------- misc */
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; }
+.kv dt { color: var(--fg-dim); }
+.kv dd { margin: 0; font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
+
+.muted { color: var(--fg-dim); }
+.small { font-size: 12px; }
+.nowrap { white-space: nowrap; }
+.strike { text-decoration: line-through; opacity: 0.65; }
+
+/* Layout utilities.
+   These exist because the dashboard's CSP is `style-src 'self'`, which blocks
+   style attributes outright. A `style="margin-top:16px"` in a template is not a
+   cosmetic preference: the browser drops it and logs a violation, so the page
+   renders differently from what the markup says. The classes below are the
+   styles the templates used to carry inline, and they are the only way a
+   template may express spacing, width, or colour.
+
+   The one genuinely dynamic value — a coverage bar's width — is expressed as a
+   custom property instead, because its value comes from the data. app.js sets it
+   through the CSSOM after a partial swap, which the CSP does not restrict (it
+   governs style attributes in parsed markup, not scripted property writes). The
+   markup carries the number in data-w so the value is still in the HTML for
+   anyone reading it. */
+.mt-16 { margin-top: 16px; }
+.mb-0 { margin-bottom: 0; }
+.tight { margin: 0; }
+.float-right { float: right; }
+.break-all { word-break: break-all; }
+.txt-bad { color: var(--bad); }
+.txt-warn { color: var(--warn); }
+.txt-ok { color: var(--ok); }
+.txt-choke { color: var(--choke); }
+.w-70 { width: 70px; }
+.w-110 { width: 110px; }
+.minw-180 { min-width: 180px; }
+.minw-200 { min-width: 200px; }
+.minw-240 { min-width: 240px; }
+.truncate { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar > i { width: var(--w, 0%); }
+
+/* Dimmed while a partial is in flight, so a slow reconstruct is visible rather
+   than looking like a control that did nothing. */
+.aether-request { opacity: 0.55; transition: opacity 80ms linear; }
+
+footer { padding: 16px 20px 40px; color: var(--fg-dim); font-size: 12px; max-width: 1600px; margin: 0 auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+  button:active { transform: none; }
+}

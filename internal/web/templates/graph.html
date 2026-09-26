@@ -1,0 +1,62 @@
+{{define "page-graph"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aether Attack Graph - {{if .Config.Workspace}}{{.Config.Workspace}}{{else}}no workspace{{end}}</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/app.js" defer></script>
+<script type="module" src="/static/verifier.js"></script>
+<script src="/static/graph.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">AETHER<span>attack graph - read-only</span></div>
+  <nav>
+    <a href="/">Dashboard</a>
+    <a href="/graph" class="active">Attack graph</a>
+    <a href="/audit">Audit trail</a>
+  </nav>
+</header>
+
+<main>
+  {{range .Warnings}}<div class="banner warn"><strong>Note.</strong> {{.}}</div>{{end}}
+
+  <div class="card">
+    <h2>Graph</h2>
+    <div class="controls">
+      <span class="mono">{{.Status.NodeCount}} nodes - {{.Status.EdgeCount}} edges</span>
+      <label for="g-filter">filter</label>
+      <input type="text" id="g-filter" placeholder="node id or label substring" class="minw-240" autocomplete="off">
+      <button id="g-fit">Fit</button>
+      <label for="g-choke">highlight choke points to</label>
+      <input type="text" id="g-choke" placeholder="e.g. Domain Admins" class="minw-180" autocomplete="off">
+      <button id="g-choke-go">Analyse</button>
+    </div>
+    <div class="graph-wrap">
+      <canvas id="graph-canvas"></canvas>
+      <div class="graph-overlay" id="graph-overlay">initialising renderer-</div>
+    </div>
+    <div class="legend" id="graph-legend"></div>
+  </div>
+
+  <div class="grid cols-2 mt-16">
+    <div id="chain-status" hx-get="/partials/chain-status" hx-trigger="load" hx-swap="innerHTML">
+      {{template "chain-status" .}}
+    </div>
+    <div id="choke-points" hx-get="/partials/choke-points" hx-trigger="load" hx-swap="innerHTML">
+      {{template "choke-points" .}}
+    </div>
+  </div>
+</main>
+
+<aside class="sidebar" id="proof-sidebar" aria-live="polite">
+  <div id="graph-node-panel">{{template "graph-node-panel" .}}</div>
+</aside>
+
+<footer><p class="small">Chain head <span class="hash">{{short .Status.HeadHash}}</span> - read-only view</p></footer>
+</body>
+</html>
+{{end}}
+

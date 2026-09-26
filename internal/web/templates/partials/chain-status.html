@@ -1,0 +1,56 @@
+{{define "chain-status"}}
+{{/*
+  The banner shows two independent verdicts and never collapses them into one.
+
+  "server" is what Go computed. "browser" is what the WASM module computed in
+  this tab. A disagreement is the single most valuable thing this panel can
+  show, so it gets its own row rather than being resolved in the server's
+  favour. Until the browser has reported, the banner says "pending" instead of
+  borrowing the server's answer.
+*/}}
+{{$serverOK := .Status.Verify.Valid}}
+<div class="card chain-status {{if not .Status.HasPubKey}}pending{{else if $serverOK}}valid{{else}}invalid{{end}}">
+  <div class="verdict">
+    {{if not .Status.HasPubKey}}?{{else if $serverOK}}&#10003;{{else}}&#10007;{{end}}
+  </div>
+  <div class="detail">
+    <h2 class="tight">Audit chain</h2>
+    {{if not .Status.HasPubKey}}
+      <p>No Ed25519 public key is attached, so this chain cannot be verified by anyone. Nothing below claims otherwise.</p>
+    {{else if $serverOK}}
+      <p><strong>{{.Status.EntryCount}}</strong> entries &middot; <strong>{{.Status.Verify.ValidCount}}</strong> signatures valid &middot; no linkage break.</p>
+    {{else}}
+      <p><strong>Server-side verification failed.</strong> {{len .Status.Verify.TamperedSeq}} entr(y/ies) failed hash or signature checks.</p>
+      {{if .Status.Verify.BrokenAt}}<p>Chain linkage first breaks at seq <span class="num">{{.Status.Verify.BrokenAt}}</span>.</p>{{end}}
+      {{range .Status.Verify.Notes}}<p class="small">{{.}}</p>{{end}}
+    {{end}}
+
+    <div class="verdicts">
+      <span class="verdict-chip {{if $serverOK}}ok{{else}}bad{{end}}" id="verdict-server"
+            title="Computed by internal/store, mirrored in internal/web">
+        server: {{if $serverOK}}valid{{else}}INVALID{{end}}
+      </span>
+      <span class="verdict-chip wait" id="verdict-browser"
+            title="Computed by verify.wasm in this browser tab">
+        browser: verifying&hellip;
+      </span>
+      <span class="verdict-chip" id="verdict-agree" hidden>verdicts agree</span>
+      <span class="verdict-chip bad" id="verdict-disagree" hidden>VERDICTS DISAGREE &mdash; investigate before trusting this view</span>
+    </div>
+
+    <dl>
+      <dt>head seq</dt><dd class="num">{{.Status.HeadSeq}}</dd>
+      <dt>head hash</dt><dd class="hash">{{short .Status.HeadHash}}</dd>
+      <dt>signing key</dt><dd class="hash">{{if .Status.PubKeyPrint}}{{.Status.PubKeyPrint}}{{else}}unavailable{{end}}</dd>
+      <dt>genesis</dt><dd class="hash">{{short .Status.Genesis}}</dd>
+      <dt>verified at</dt><dd>{{.Status.Loaded.Format "2006-01-02 15:04:05 UTC"}}</dd>
+    </dl>
+
+    <p class="small muted mb-0">
+      Hash format: SHA-256 (lowercase hex) over
+      <code>&lt;seq&gt;|&lt;timestamp&gt;|&lt;command&gt;|&lt;result&gt;|&lt;prev_hash&gt;</code>.
+      Signature: Ed25519 over the ASCII bytes of that hex hash, base64.
+    </p>
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,72 @@
+{{define "page-audit"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aether Audit Trail - {{if .Config.Workspace}}{{.Config.Workspace}}{{else}}no workspace{{end}}</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/app.js" defer></script>
+<script type="module" src="/static/verifier.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">AETHER<span>audit trail - read-only</span></div>
+  <nav>
+    <a href="/">Dashboard</a>
+    <a href="/graph">Attack graph</a>
+    <a href="/audit" class="active">Audit trail</a>
+  </nav>
+</header>
+
+<main>
+  {{range .Warnings}}<div class="banner warn"><strong>Note.</strong> {{.}}</div>{{end}}
+
+  <div id="chain-status" hx-get="/partials/chain-status" hx-trigger="every 5s" hx-swap="innerHTML">
+    {{template "chain-status" .}}
+  </div>
+
+  <div class="card mt-16">
+    <h2>Chain ({{.Status.EntryCount}} entries)</h2>
+    <p class="small muted">
+      Newest first. Every row is a signed entry; the hash column links are the
+      proof bundles, which a third party can verify without trusting this tool.
+    </p>
+    <div class="scroll">
+      <table id="audit-table">
+        <thead>
+          <tr>
+            <th class="num">seq</th><th>timestamp (UTC)</th><th>command</th>
+            <th>result</th><th>hash</th><th>prev</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $i, $e := .Status.Entries}}
+          <tr>
+            <td class="num">{{$e.Seq}}</td>
+            <td class="mono small nowrap">{{$e.Timestamp}}</td>
+            <td class="mono small">{{$e.Command}}</td>
+            <td class="mono small truncate"
+                title="{{$e.Result}}">{{$e.Result}}</td>
+            <td class="mono small">{{short $e.Hash}}</td>
+            <td class="mono small">{{short $e.PrevHash}}</td>
+            <td><a href="/api/proof/{{$e.Seq}}" download>proof</a></td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{if not .Status.Entries}}
+    <p class="small txt-warn mb-0">
+      This workspace has an empty audit chain. Nothing has been recorded yet, so
+      there is nothing to verify and nothing to replay.
+    </p>
+    {{end}}
+  </div>
+</main>
+
+<footer><p class="small">Chain head <span class="hash">{{short .Status.HeadHash}}</span> - read-only view</p></footer>
+</body>
+</html>
+{{end}}
+

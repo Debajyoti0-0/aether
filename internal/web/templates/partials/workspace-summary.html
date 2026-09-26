@@ -1,0 +1,55 @@
+{{define "workspace-summary"}}
+<div class="card">
+  <h2>Engagement</h2>
+  <dl class="kv">
+    <dt>workspace</dt><dd>{{if .Config.Workspace}}{{.Config.Workspace}}{{else}}<span class="muted">not specified</span>{{end}}</dd>
+    <dt>operator</dt><dd>{{if .Config.Operator}}{{.Config.Operator}}{{else}}<span class="muted">not specified</span>{{end}}</dd>
+    <dt>capability</dt><dd>{{if .Config.Capability}}{{.Config.Capability}}{{else}}<span class="muted">none required (loopback only)</span>{{end}}</dd>
+    <dt>bind</dt><dd>{{if .Config.BindAll}}all interfaces{{else}}127.0.0.1 (loopback only){{end}}</dd>
+    <dt>tls</dt><dd>{{if .Config.TLSCert}}{{.Config.TLSCert}}{{else}}<span class="muted">disabled</span>{{end}}</dd>
+    <dt>read-only</dt><dd>yes — no mutating endpoint exists</dd>
+  </dl>
+
+  <h3>Chain</h3>
+  <dl class="kv">
+    <dt>entries</dt><dd class="num">{{.Status.EntryCount}}</dd>
+    <dt>head seq</dt><dd class="num">{{.Status.HeadSeq}}</dd>
+    <dt>graph operations</dt><dd class="num">{{.Timeline.OpCount}}</dd>
+    {{if gt .Timeline.FirstGraphOp 0}}
+    <dt>first graph op</dt><dd class="num">seq {{.Timeline.FirstGraphOp}}</dd>
+    <dt>last graph op</dt><dd class="num">seq {{.Timeline.LastGraphOp}}</dd>
+    {{end}}
+  </dl>
+
+  <h3>Graph</h3>
+  <dl class="kv">
+    <dt>nodes</dt><dd class="num">{{.Status.NodeCount}}</dd>
+    <dt>edges</dt><dd class="num">{{.Status.EdgeCount}}</dd>
+  </dl>
+
+  {{if .Timeline.Errors}}
+  <h3>Unreadable operations</h3>
+  <p class="small txt-bad">
+    {{len .Timeline.Errors}} graph operation(s) could not be interpreted and are
+    skipped during reconstruction. Reconstructed history is incomplete until
+    these are resolved.
+  </p>
+  <table>
+    <thead><tr><th>seq</th><th>command</th><th>problem</th></tr></thead>
+    <tbody>
+      {{range .Timeline.Errors}}
+      <tr><td class="num">{{.Seq}}</td><td class="mono">{{.Command}}</td><td class="small">{{.Problem}}</td></tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+
+  <h3>Embedded assets</h3>
+  <table>
+    <thead><tr><th>asset</th><th class="num">size</th></tr></thead>
+    <tbody>
+      {{range $k, $v := .Assets}}<tr><td class="mono">{{$k}}</td><td class="num">{{$v}}</td></tr>{{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}

@@ -1,0 +1,7 @@
+﻿internal/web/static/app.js                      13001 bytes  sha256:eeddded086facfd07ffb96aa9043ebcd015377020b2779a42b0d5a5abf7a562d
+internal/web/static/graph.js                    22695 bytes  sha256:ebe6ed09b1a0b9e523b5b5a15c324631c56e87b6630a0786beccfc9969e37c04
+internal/web/static/verifier.js                  7085 bytes  sha256:d83cc7588f934e21c01358e8c28267516c340bac426b6c941571c6dff909557e
+internal/web/static/verify.js                    9983 bytes  sha256:519275a546aff5786b9c9bd0179e5d25d8201286fb7876514ee667757ca35ba2
+internal/web/static/style.css                   11877 bytes  sha256:1670dd323945d7902a7169082c74cfb0ead5b1b7e4078e0349754b4ad20df08c
+internal/web/wasm/graph.wasm                    35221 bytes  sha256:c5fa1de048112d3c621c49ab6848d7ea390c5e9086b80534bc91a0c3d015421a
+internal/web/wasm/verify.wasm                  179559 bytes  sha256:1ff30b8a27b83f32d578b5b42f6ad5314a7e41a79ab5ade4e30ab9567d54e40a

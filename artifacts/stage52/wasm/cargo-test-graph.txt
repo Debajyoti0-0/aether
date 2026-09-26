@@ -1,0 +1,37 @@
+﻿powershell.exe :     Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+At C:\Users\Debajyoti0-0\OneDrive\Documents\aether\scripts\stage52-evidence.ps1:52 char:11
++   $text = & powershell -NoProfile -Command $cmd 2>&1 | Out-String
++           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Finished `t...get(s) in 0.01s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+     Running unittests src\lib.rs (internal\web\wasm\graph\target\debug\deps\aether_graph-cde4c5f67e06300b.exe)
+
+running 17 tests
+test quadtree::tests::theta_zero_matches_exact_pairwise ... ok
+test quadtree::tests::empty_graph_builds ... ok
+test quadtree::tests::single_node_has_no_self_force ... ok
+test tests::out_of_range_edges_are_dropped_not_fatal ... ok
+test quadtree::tests::coincident_nodes_do_not_hang_or_panic ... ok
+test tests::single_node_stays_at_origin ... ok
+test quadtree::tests::distinct_nodes_all_survive_in_the_tree ... ok
+test tests::pinned_nodes_do_not_move ... ok
+test tests::non_finite_seeds_are_replaced ... ok
+test tests::an_all_coincident_seed_still_lays_out ... ok
+test tests::coincident_nodes_separate ... ok
+test quadtree::tests::repulsion_pushes_apart ... ok
+test quadtree::tests::build_is_deterministic ... ok
+test tests::a_flat_seed_still_lays_out ... ok
+test tests::layout_is_deterministic ... ok
+test tests::edge_ends_stay_nearer_than_unconnected_pairs ... ok
+test tests::layout_produces_finite_coordinates ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests aether_graph
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+

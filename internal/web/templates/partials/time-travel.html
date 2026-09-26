@@ -1,0 +1,39 @@
+{{define "time-travel"}}
+{{/*
+  Time travel is anchored to real chain sequence numbers. When the chain
+  records no graph operations the controls are disabled and the reason is
+  stated, rather than presenting a slider that appears to move through history
+  while the picture never changes.
+*/}}
+{{$hasHistory := gt .Timeline.OpCount 0}}
+<div class="controls">
+  <label for="seq-slider">chain position</label>
+  <input type="range" id="seq-slider"
+         min="{{.MinSeq}}" max="{{.MaxSeq}}" value="{{.MaxSeq}}"
+         {{if not $hasHistory}}disabled{{end}}
+         aria-label="audit chain sequence number">
+  <span class="mono" id="seq-label">seq {{.MaxSeq}}</span>
+  <button id="play-btn" {{if not $hasHistory}}disabled{{end}}>&#9654; Replay</button>
+  <button id="live-btn">Live (head)</button>
+</div>
+
+{{if not $hasHistory}}
+  <p class="small txt-warn mb-0">
+    This chain contains <strong>0</strong> graph operations, so there is no
+    recorded history to replay. Every position reconstructs to the current
+    graph unchanged. History appears once actions append
+    <code>graph.addNode</code>, <code>graph.addEdge</code>,
+    <code>graph.removeNode</code>, <code>graph.removeEdge</code> or
+    <code>graph.checkpoint</code> entries to the chain.
+  </p>
+{{else}}
+  <p class="small muted">
+    {{.Timeline.OpCount}} graph operation(s) between seq
+    {{.Timeline.FirstGraphOp}} and {{.Timeline.LastGraphOp}}. A position is a
+    real chain entry: the server reconstructs the graph by taking the nearest
+    checkpoint at or before it and replaying forward, so what you see is the
+    state the signed history attests to at that entry.
+  </p>
+  <p class="small mb-0" id="replay-status"></p>
+{{end}}
+{{end}}

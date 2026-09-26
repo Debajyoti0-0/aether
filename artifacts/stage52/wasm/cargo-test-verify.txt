@@ -1,0 +1,34 @@
+﻿powershell.exe :     Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+At C:\Users\Debajyoti0-0\OneDrive\Documents\aether\scripts\stage52-evidence.ps1:52 char:11
++   $text = & powershell -NoProfile -Command $cmd 2>&1 | Out-String
++           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Finished `t...get(s) in 0.12s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+     Running unittests src\lib.rs (internal\web\wasm\verify\target\debug\deps\aether_verify-bbbd109d3272b71e.exe)
+
+running 14 tests
+test tests::a_malformed_key_is_an_error_not_a_panic ... ok
+test tests::a_payload_that_is_not_a_chain_is_rejected ... ok
+test tests::an_empty_chain_is_consistent_but_attests_to_nothing ... ok
+test tests::the_embedded_vector_is_rejected_under_another_key ... ok
+test tests::the_embedded_vector_agrees_with_an_independent_signer ... ok
+test tests::a_well_formed_but_wrong_key_verifies_nothing ... ok
+test tests::a_tampered_payload_is_caught_by_the_hash ... ok
+test tests::a_correctly_signed_chain_is_valid ... ok
+test tests::a_bare_array_is_accepted_as_well_as_an_object ... ok
+test tests::a_chain_signed_by_another_key_is_rejected ... ok
+test tests::a_reordered_chain_breaks_linkage ... ok
+test tests::a_non_canonical_timestamp_is_reported_but_not_fatal ... ok
+test tests::a_signature_over_the_raw_digest_is_rejected ... ok
+test tests::selftest_reports_ok_only_when_it_actually_verifies ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests aether_verify
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+

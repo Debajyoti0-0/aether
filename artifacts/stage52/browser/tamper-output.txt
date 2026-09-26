@@ -1,0 +1,16 @@
+﻿FAIL: the verifier rejected the chain: {
+  "valid": false,
+  "entryCount": 24,
+  "validCount": 23,
+  "tamperedSeq": [
+    2
+  ],
+  "brokenChainAt": null,
+  "error": null,
+  "notes": [
+    "seq 2: recomputed hash does not match the recorded hash, so this entry was altered after signing"
+  ],
+  "verifiedBy": "aether-verify.wasm (client-side)",
+  "fingerprint": "a1eb2478-6fece21e-67389373-b11a5da1",
+  "at": "2026-09-25T21:38:49.286Z"
+}

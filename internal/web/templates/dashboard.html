@@ -1,0 +1,99 @@
+{{define "page-dashboard"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aether Dashboard - {{if .Config.Workspace}}{{.Config.Workspace}}{{else}}no workspace{{end}}</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/app.js" defer></script>
+<script type="module" src="/static/verifier.js"></script>
+<script src="/static/graph.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">AETHER <span>dashboard - read-only</span></div>
+  <nav>
+    <a href="/" class="active">Dashboard</a>
+    <a href="/graph">Attack graph</a>
+    <a href="/audit">Audit trail</a>
+    <a href="/api/health">Health</a>
+  </nav>
+</header>
+
+<main>
+
+{{range .Warnings}}<div class="banner warn"><strong>Note.</strong> {{.}}</div>
+{{end}}
+
+<div id="chain-status" hx-get="/partials/chain-status" hx-trigger="every 5s" hx-swap="innerHTML">
+  {{template "chain-status" .}}
+</div>
+
+<div class="grid cols-2 mt-16">
+  <div id="workspace-summary" hx-get="/partials/workspace-summary" hx-trigger="load" hx-swap="innerHTML">
+    {{template "workspace-summary" .}}
+  </div>
+  <div id="choke-points" hx-get="/partials/choke-points" hx-trigger="load" hx-swap="innerHTML">
+    {{template "choke-points" .}}
+  </div>
+</div>
+
+<div class="mt-16">
+  <div class="card">
+    <h2>Attack graph</h2>
+    <div class="graph-wrap">
+      <canvas id="graph-canvas"></canvas>
+      <div class="graph-overlay" id="graph-overlay">initialising renderer</div>
+    </div>
+    <div class="legend" id="graph-legend"></div>
+    <p class="small muted mb-0">
+      Drag to pan, scroll to zoom, click a node for its cryptographic proof.
+      Layout runs in WebAssembly; the audit chain is verified in your browser,
+      not by the server.
+    </p>
+  </div>
+</div>
+
+<div class="mt-16">
+  <div class="card">
+    <h2>Time travel</h2>
+    <div id="time-travel" hx-get="/partials/time-travel" hx-trigger="load" hx-swap="innerHTML">
+      {{template "time-travel" .}}
+    </div>
+  </div>
+</div>
+
+<div class="mt-16">
+  <div class="card">
+    <h2>Differential mode</h2>
+    <div id="diff-mode" hx-get="/partials/diff-mode" hx-trigger="load" hx-swap="innerHTML">
+      {{template "diff-mode" .}}
+    </div>
+  </div>
+</div>
+
+</main>
+
+<aside class="sidebar" id="proof-sidebar" aria-live="polite">
+  <div id="graph-node-panel">
+    {{template "graph-node-panel" .}}
+  </div>
+</aside>
+
+<footer>
+  <p>
+    Aether {{.Status.EntryCount}} chain entries &middot; {{.Status.NodeCount}} nodes &middot;
+    {{.Status.EdgeCount}} edges &middot; chain head
+    <span class="hash">{{short .Status.HeadHash}}</span>
+  </p>
+  <p class="small">
+    This view is read-only. There is no POST, PUT, PATCH or DELETE endpoint, and
+    the WebSocket accepts no commands. Execution stays on the CLI, where every
+    action passes through the spine.
+  </p>
+</footer>
+
+</body>
+</html>
+{{end}}

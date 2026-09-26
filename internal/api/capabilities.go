@@ -11,25 +11,38 @@ import (
 // identifiers checked per command — they extend the spine's AuthZ
 // stage to remote operators; they are never permission bypasses.
 const (
-	CapExecAzure     = "exec.azure"
-	CapExecAWS       = "exec.aws"
-	CapExecGitHub    = "exec.github"
-	CapExecGCP       = "exec.gcp"
-	CapExecParallel  = "exec.parallel"
+	CapExecAzure      = "exec.azure"
+	CapExecAWS        = "exec.aws"
+	CapExecGitHub     = "exec.github"
+	CapExecGCP        = "exec.gcp"
+	CapExecParallel   = "exec.parallel"
 	CapSimulateStream = "simulate.stream"
 	CapPluginsInstall = "plugins.install"
-	CapPrtImport     = "prt.import"
-	CapPivotCloud    = "pivot.cloud-to-onprem"
-	CapRelay         = "relay"
-	CapReadAudit     = "read.audit"
-	CapReadEvents    = "read.events"
-	CapReadGraph     = "read.graph"
-	CapReadWorkspace = "read.workspace"
+	CapPrtImport      = "prt.import"
+	CapPivotCloud     = "pivot.cloud-to-onprem"
+	CapRelay          = "relay"
+	CapReadAudit      = "read.audit"
+	CapReadEvents     = "read.events"
+	CapReadGraph      = "read.graph"
+	CapReadWorkspace  = "read.workspace"
+	// CapReadDashboard gates the read-only operator dashboard. It is a separate
+	// capability from read.graph and read.audit even though it serves both,
+	// because the dashboard exposes the two together in one surface: granting
+	// only the dashboard is a narrower grant than granting the underlying reads
+	// individually, and an operator who can read the audit chain does not
+	// automatically get a browser window onto the engagement.
+	CapReadDashboard = "dashboard.read"
 )
 
 // DefaultOperatorCaps are granted to a freshly issued operator unless
 // the admin overrides them: read-only visibility. Execute capabilities
 // are granted explicitly per operator by the teamserver admin.
+//
+// CapReadDashboard is deliberately absent. Every capability in this default set
+// reads data the CLI already needs to run; the dashboard instead opens a network
+// listener that serves the whole engagement at once, so it is granted per
+// operator ("-dashboard.read") rather than handed to everyone. Default deny for
+// a surface this wide is the point, not an oversight.
 var DefaultOperatorCaps = CapabilitySet{
 	CapReadAudit:     true,
 	CapReadEvents:    true,

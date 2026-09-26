@@ -1,0 +1,13 @@
+﻿fuzz: elapsed: 1s, gathering baseline coverage: 0/170 completed
+fuzz: elapsed: 2s, gathering baseline coverage: 170/170 completed, now fuzzing with 16 workers
+fuzz: elapsed: 4s, execs: 7856 (2618/sec), new interesting: 5 (total: 175)
+fuzz: elapsed: 7s, execs: 17552 (3229/sec), new interesting: 11 (total: 181)
+fuzz: elapsed: 10s, execs: 33044 (5166/sec), new interesting: 17 (total: 187)
+fuzz: elapsed: 13s, execs: 47937 (4965/sec), new interesting: 20 (total: 190)
+fuzz: elapsed: 16s, execs: 58237 (3429/sec), new interesting: 23 (total: 193)
+fuzz: elapsed: 19s, execs: 72482 (4756/sec), new interesting: 31 (total: 201)
+fuzz: elapsed: 22s, execs: 78743 (2087/sec), new interesting: 32 (total: 202)
+fuzz: elapsed: 22s, execs: 78743 (0/sec), new interesting: 32 (total: 202)
+PASS
+ok  	github.com/Debajyoti0-0/aether/internal/web	22.210s
+
