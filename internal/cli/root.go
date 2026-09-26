@@ -3,7 +3,9 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/spf13/cobra"
@@ -89,7 +91,13 @@ func initConfig() {
 		}
 	}
 
-	viper.AutomaticEnv()
+	// The environment tier has to be declared, and the key replacer is what
+	// makes a hyphenated key reachable at all: viper derives the variable name
+	// from the key, so "log-level" would otherwise map to "LOG-LEVEL" and no
+	// shell would ever set it. Without the prefix and the replacer an operator
+	// could export AETHER_LOG_LEVEL, be told nothing was wrong, and get the
+	// default anyway.
+	applyEnvWiring(viper.GetViper())
 	if err := viper.ReadInConfig(); err != nil {
 		// A config file that exists but cannot be read must never be
 		// silently ignored: an operator whose security-relevant settings
@@ -107,7 +115,57 @@ func initConfig() {
 
 	// Reject invalid --log-level values instead of silently accepting
 	// them (F-34-2); the flag is reserved but its contract is strict.
-	viper.Set("log-level", normalizeLogLevel(viper.GetString("log-level")))
+	level := normalizeLogLevel(viper.GetString("log-level"))
+	viper.Set("log-level", level)
+	initLogging(level)
+}
+
+// applyEnvWiring declares the environment tier of the configuration chain.
+//
+// It is a separate function so the wiring can be exercised against a fresh
+// viper in tests. initConfig cannot be: it ends by pinning the resolved level
+// with viper.Set, which outranks the environment, so a second call in the same
+// process can no longer observe a new environment.
+func applyEnvWiring(v *viper.Viper) {
+	v.SetEnvPrefix("AETHER")
+	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	v.AutomaticEnv()
+}
+
+// slogLevelFor maps a resolved --log-level onto a slog threshold. Anything
+// unrecognised is treated as info, which normalizeLogLevel has already warned
+// about by the time this is reached.
+func slogLevelFor(level string) slog.Level {
+	switch level {
+	case "debug":
+		return slog.LevelDebug
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
+// initLogging gives --log-level an actual consumer.
+//
+// Until this existed the flag and the environment variable were inert: parsed,
+// validated, written back to viper, and then read by nothing. A setting an
+// operator believed they had applied produced no observable behaviour change at
+// all, which is why the precedence chain could not be verified and G53R-25 had
+// to be recorded as blocked.
+//
+// The handler is installed before the startup record below is emitted, so the
+// level being verified is the one that decides whether that record appears. That
+// makes each tier of the chain directly observable: a debug record on stderr at
+// debug, and silence at info, warn and error.
+func initLogging(level string) {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slogLevelFor(level)})))
+	slog.Debug("configuration loaded",
+		"log_level", level,
+		"config_file", viper.ConfigFileUsed(),
+	)
 }
 
 // validLogLevels is the set accepted by --log-level. The flag is
