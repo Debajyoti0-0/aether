@@ -94,6 +94,11 @@ func walkCommands(cmd *cobra.Command, prefix string) []CommandInfo {
 func describeCommand(cmd *cobra.Command, parentPath string) CommandInfo {
 	path := parentPath + " " + cmd.Name()
 
+	// cobra adds these during execution; without this the inventory omits
+	// --help on all 155 commands and --version on the root.
+	cmd.InitDefaultHelpFlag()
+	cmd.InitDefaultVersionFlag()
+
 	info := CommandInfo{
 		Path:        path,
 		Parent:      parentPath,
@@ -120,9 +125,6 @@ func collectFlags(fs *pflag.FlagSet, cmd *cobra.Command) []FlagInfo {
 	}
 	var out []FlagInfo
 	fs.VisitAll(func(f *pflag.Flag) {
-		if f.Name == "help" {
-			return
-		}
 		out = append(out, FlagInfo{
 			Name:         f.Name,
 			Shorthand:    f.Shorthand,

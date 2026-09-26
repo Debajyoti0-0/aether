@@ -4,6 +4,15 @@
       "path": "aether ad",
       "parent": "aether",
       "description": "Active Directory operations (Kerberos, LDAP, AD CS)",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for ad",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether ad asreproast",
@@ -24,6 +33,13 @@
               "name": "engagement",
               "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for asreproast",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "userlist",
@@ -49,12 +65,28 @@
           "path": "aether ad ccache",
           "parent": "aether ad",
           "description": "CCache management (show, convert)",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for ccache",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "subcommands": [
             {
               "path": "aether ad ccache convert",
               "parent": "aether ad ccache",
               "description": "Convert ccache between MIT and Heimdal formats",
               "local_flags": [
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for convert",
+                  "default_value": "false",
+                  "required": false
+                },
                 {
                   "name": "input",
                   "usage": "Input ccache path",
@@ -89,6 +121,13 @@
                   "required": false
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for show",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "workspace",
                   "usage": "Workspace name (required for governance)",
                   "required": false
@@ -105,6 +144,15 @@
           "path": "aether ad enum",
           "parent": "aether ad",
           "description": "Active Directory enumeration",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for enum",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "subcommands": [
             {
               "path": "aether ad enum asrep",
@@ -125,6 +173,13 @@
                   "name": "engagement",
                   "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                   "required": true
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for asrep",
+                  "default_value": "false",
+                  "required": false
                 },
                 {
                   "name": "userlist",
@@ -167,6 +222,13 @@
                   "required": true
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for spn",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "workspace",
                   "usage": "Workspace name (required for governance)",
                   "required": true
@@ -200,6 +262,13 @@
                   "name": "engagement",
                   "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                   "required": true
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for users",
+                  "default_value": "false",
+                  "required": false
                 },
                 {
                   "name": "userlist",
@@ -256,6 +325,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for kerberoast",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "max-requests",
               "usage": "Maximum number of requests (0 = unlimited)",
               "default_value": "0",
@@ -291,11 +367,29 @@
           "path": "aether ad ldap",
           "parent": "aether ad",
           "description": "LDAP enumeration and ACL analysis",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for ldap",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "subcommands": [
             {
               "path": "aether ad ldap acl",
               "parent": "aether ad ldap",
               "description": "Security descriptor and ACL analysis",
+              "local_flags": [
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for acl",
+                  "default_value": "false",
+                  "required": false
+                }
+              ],
               "subcommands": [
                 {
                   "path": "aether ad ldap acl effective",
@@ -316,6 +410,13 @@
                       "name": "engagement",
                       "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                       "required": true
+                    },
+                    {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for effective",
+                      "default_value": "false",
+                      "required": false
                     },
                     {
                       "name": "object",
@@ -383,6 +484,13 @@
                       "required": true
                     },
                     {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for get",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
                       "name": "object",
                       "usage": "Object DN to analyze",
                       "required": true
@@ -441,6 +549,13 @@
                   "required": true
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for bind",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "host",
                   "usage": "LDAP server hostname or IP",
                   "required": true
@@ -482,6 +597,15 @@
               "path": "aether ad ldap enum",
               "parent": "aether ad ldap",
               "description": "LDAP directory enumeration",
+              "local_flags": [
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for enum",
+                  "default_value": "false",
+                  "required": false
+                }
+              ],
               "subcommands": [
                 {
                   "path": "aether ad ldap enum all",
@@ -502,6 +626,13 @@
                       "name": "engagement",
                       "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                       "required": true
+                    },
+                    {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for all",
+                      "default_value": "false",
+                      "required": false
                     },
                     {
                       "name": "limit",
@@ -571,6 +702,13 @@
                       "name": "filter",
                       "usage": "LDAP filter",
                       "default_value": "(objectClass=computer)",
+                      "required": false
+                    },
+                    {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for computers",
+                      "default_value": "false",
                       "required": false
                     },
                     {
@@ -644,6 +782,13 @@
                       "required": false
                     },
                     {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for groups",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
                       "name": "limit",
                       "usage": "Maximum results",
                       "default_value": "1000",
@@ -714,6 +859,13 @@
                       "required": false
                     },
                     {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for ous",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
                       "name": "limit",
                       "usage": "Maximum results",
                       "default_value": "1000",
@@ -771,6 +923,13 @@
                       "name": "engagement",
                       "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                       "required": true
+                    },
+                    {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for spns",
+                      "default_value": "false",
+                      "required": false
                     },
                     {
                       "name": "limit",
@@ -843,6 +1002,13 @@
                       "required": false
                     },
                     {
+                      "name": "help",
+                      "shorthand": "h",
+                      "usage": "help for users",
+                      "default_value": "false",
+                      "required": false
+                    },
+                    {
                       "name": "limit",
                       "usage": "Maximum results",
                       "default_value": "1000",
@@ -904,6 +1070,13 @@
                   "name": "engagement",
                   "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                   "required": true
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for path",
+                  "default_value": "false",
+                  "required": false
                 },
                 {
                   "name": "max-depth",
@@ -977,6 +1150,13 @@
                   "required": false
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for rootdse",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "host",
                   "usage": "LDAP server hostname or IP",
                   "required": true
@@ -1044,6 +1224,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for tgt",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "keytab",
               "usage": "Path to keytab file (not yet implemented)",
               "required": false
@@ -1086,6 +1273,15 @@
       "path": "aether audit",
       "parent": "aether",
       "description": "Tamper-evident audit trail (signed hash chain)",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for audit",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether audit record",
@@ -1096,6 +1292,13 @@
               "name": "cmd",
               "usage": "Command to record (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for record",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "result",
@@ -1121,6 +1324,13 @@
           "description": "Verify the workspace audit chain integrity",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for verify",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "workspace",
               "usage": "Workspace name (required)",
               "required": true
@@ -1140,6 +1350,15 @@
       "path": "aether cap",
       "parent": "aether",
       "description": "Conditional Access policy operations",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for cap",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether cap evaluate",
@@ -1149,6 +1368,13 @@
             {
               "name": "app",
               "usage": "Target app (id or name)",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for evaluate",
+              "default_value": "false",
               "required": false
             },
             {
@@ -1184,6 +1410,13 @@
               "name": "browser-preset",
               "usage": "TLS preset",
               "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for exploit",
+              "default_value": "false",
               "required": false
             },
             {
@@ -1231,6 +1464,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for matrix",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "output",
               "usage": "Write matrix JSON to file",
               "required": false
@@ -1273,6 +1513,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for parse",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "output",
               "usage": "Output file for policies (JSON)",
               "required": false
@@ -1312,6 +1559,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for predict",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "history",
               "usage": "Historical observations JSON (required)",
               "required": true
@@ -1336,12 +1590,28 @@
       "path": "aether completion",
       "parent": "aether",
       "description": "Generate the autocompletion script for the specified shell",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for completion",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether completion bash",
           "parent": "aether completion",
           "description": "Generate the autocompletion script for bash",
           "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for bash",
+              "default_value": "false",
+              "required": false
+            },
             {
               "name": "no-descriptions",
               "usage": "disable completion descriptions",
@@ -1358,6 +1628,13 @@
           "description": "Generate the autocompletion script for fish",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for fish",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "no-descriptions",
               "usage": "disable completion descriptions",
               "default_value": "false",
@@ -1373,6 +1650,13 @@
           "description": "Generate the autocompletion script for powershell",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for powershell",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "no-descriptions",
               "usage": "disable completion descriptions",
               "default_value": "false",
@@ -1387,6 +1671,13 @@
           "parent": "aether completion",
           "description": "Generate the autocompletion script for zsh",
           "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for zsh",
+              "default_value": "false",
+              "required": false
+            },
             {
               "name": "no-descriptions",
               "usage": "disable completion descriptions",
@@ -1409,6 +1700,13 @@
         {
           "name": "exec",
           "usage": "Execute one command on the teamserver and exit",
+          "required": false
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for connect",
+          "default_value": "false",
           "required": false
         },
         {
@@ -1468,6 +1766,13 @@
           "name": "graph",
           "usage": "Graph JSON file (required)",
           "required": true
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for dashboard",
+          "default_value": "false",
+          "required": false
         },
         {
           "name": "operator-cert",
@@ -1552,6 +1857,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for view",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "no-audit",
               "usage": "Start without an audit chain (nothing can be verified; the UI says so)",
               "default_value": "false",
@@ -1606,6 +1918,15 @@
       "path": "aether doctor",
       "parent": "aether",
       "description": "Check host environment health",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for doctor",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "is_group": false,
       "is_runnable": true
     },
@@ -1613,6 +1934,15 @@
       "path": "aether exec",
       "parent": "aether",
       "description": "Cloud command execution (governed: audit + rollback recorded)",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for exec",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether exec aws",
@@ -1628,6 +1958,13 @@
               "name": "cmd",
               "usage": "Shell command to run (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for aws",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "instance-id",
@@ -1688,6 +2025,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for azure",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "resource-group",
               "usage": "Resource group (required)",
               "required": true
@@ -1740,6 +2084,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for gcp",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "project",
               "usage": "GCP project id (required)",
               "required": true
@@ -1778,6 +2129,13 @@
               "name": "browser-preset",
               "usage": "TLS fingerprint preset (chrome | edge | firefox)",
               "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for github",
+              "default_value": "false",
               "required": false
             },
             {
@@ -1832,6 +2190,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for imds",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "object-id",
               "usage": "Pin user-assigned identity by object id",
               "required": false
@@ -1877,6 +2242,13 @@
               "name": "cmd",
               "usage": "Command to run on each target (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for parallel",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "parallel",
@@ -1951,6 +2323,15 @@
       "path": "aether export",
       "parent": "aether",
       "description": "Export evidence, reports, and graph topologies",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for export",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether export attck",
@@ -1961,6 +2342,13 @@
               "name": "actions",
               "usage": "Comma-separated actions (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for attck",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "output",
@@ -1986,6 +2374,13 @@
           "description": "Export the signed audit trail as JSONL",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for audit",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "output",
               "usage": "Output JSONL file",
               "required": false
@@ -2010,6 +2405,13 @@
             {
               "name": "bh-json",
               "usage": "BloodHound path JSON to validate and include",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for executive",
+              "default_value": "false",
               "required": false
             },
             {
@@ -2040,6 +2442,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for graph",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "output",
               "usage": "Output file",
               "required": false
@@ -2059,6 +2468,13 @@
             {
               "name": "bh-json",
               "usage": "BloodHound path JSON to include",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for pdf",
+              "default_value": "false",
               "required": false
             },
             {
@@ -2092,6 +2508,13 @@
               "name": "graph",
               "usage": "Graph JSON file (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for prioritize",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "kev-file",
@@ -2128,6 +2551,13 @@
           "description": "Export the workspace journal as a markdown report",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for report",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "output",
               "usage": "Output file",
               "required": false
@@ -2153,6 +2583,13 @@
               "name": "bh-json",
               "usage": "BloodHound path JSON (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for sarif",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "output",
@@ -2196,6 +2633,13 @@
               "name": "fail-closed",
               "usage": "Fail closed on network/validation errors",
               "default_value": "true",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for verify-evidence",
+              "default_value": "false",
               "required": false
             },
             {
@@ -2249,6 +2693,15 @@
       "path": "aether graph",
       "parent": "aether",
       "description": "Cross-provider identity graph",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for graph",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether graph build",
@@ -2265,6 +2718,13 @@
               "name": "graph-base",
               "usage": "Graph base URL",
               "default_value": "https://graph.microsoft.com/v1.0",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for build",
+              "default_value": "false",
               "required": false
             },
             {
@@ -2311,6 +2771,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for correlate",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "max-paths",
               "usage": "Max paths per provider pair",
               "default_value": "3",
@@ -2344,6 +2811,13 @@
               "name": "graph",
               "usage": "Graph JSON file (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for generate",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "output",
@@ -2380,6 +2854,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for qualify",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "path",
               "usage": "Comma-separated node IDs (required)",
               "required": true
@@ -2407,6 +2888,13 @@
               "name": "graph",
               "usage": "Graph JSON file (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for stats",
+              "default_value": "false",
+              "required": false
             }
           ],
           "required_flags": [
@@ -2424,6 +2912,13 @@
               "name": "graph",
               "usage": "Graph JSON file (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for visualize",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "output",
@@ -2450,6 +2945,15 @@
       "path": "aether help",
       "parent": "aether",
       "description": "Help about any command",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for help",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "is_group": false,
       "is_runnable": true
     },
@@ -2457,11 +2961,29 @@
       "path": "aether ldap",
       "parent": "aether",
       "description": "LDAP enumeration and ACL analysis",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for ldap",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether ldap acl",
           "parent": "aether ldap",
           "description": "Security descriptor and ACL analysis",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for acl",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "subcommands": [
             {
               "path": "aether ldap acl effective",
@@ -2482,6 +3004,13 @@
                   "name": "engagement",
                   "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                   "required": true
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for effective",
+                  "default_value": "false",
+                  "required": false
                 },
                 {
                   "name": "object",
@@ -2549,6 +3078,13 @@
                   "required": true
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for get",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "object",
                   "usage": "Object DN to analyze",
                   "required": true
@@ -2607,6 +3143,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for bind",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "host",
               "usage": "LDAP server hostname or IP",
               "required": true
@@ -2648,6 +3191,15 @@
           "path": "aether ldap enum",
           "parent": "aether ldap",
           "description": "LDAP directory enumeration",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for enum",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "subcommands": [
             {
               "path": "aether ldap enum all",
@@ -2668,6 +3220,13 @@
                   "name": "engagement",
                   "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                   "required": true
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for all",
+                  "default_value": "false",
+                  "required": false
                 },
                 {
                   "name": "limit",
@@ -2737,6 +3296,13 @@
                   "name": "filter",
                   "usage": "LDAP filter",
                   "default_value": "(objectClass=computer)",
+                  "required": false
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for computers",
+                  "default_value": "false",
                   "required": false
                 },
                 {
@@ -2810,6 +3376,13 @@
                   "required": false
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for groups",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "limit",
                   "usage": "Maximum results",
                   "default_value": "1000",
@@ -2880,6 +3453,13 @@
                   "required": false
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for ous",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "limit",
                   "usage": "Maximum results",
                   "default_value": "1000",
@@ -2937,6 +3517,13 @@
                   "name": "engagement",
                   "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
                   "required": true
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for spns",
+                  "default_value": "false",
+                  "required": false
                 },
                 {
                   "name": "limit",
@@ -3009,6 +3596,13 @@
                   "required": false
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for users",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "limit",
                   "usage": "Maximum results",
                   "default_value": "1000",
@@ -3070,6 +3664,13 @@
               "name": "engagement",
               "usage": "Rules-of-engagement JSON file authorizing this domain, domain controller and capability (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for path",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "max-depth",
@@ -3143,6 +3744,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for rootdse",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "host",
               "usage": "LDAP server hostname or IP",
               "required": true
@@ -3188,6 +3796,15 @@
       "path": "aether pivot",
       "parent": "aether",
       "description": "Cross-boundary pivoting operations",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for pivot",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether pivot cloud-to-onprem",
@@ -3198,6 +3815,13 @@
               "name": "domain",
               "usage": "On-prem realm, e.g. INTERNAL.LOCAL (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for cloud-to-onprem",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "kkdcp",
@@ -3252,6 +3876,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for imds",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "object-id",
               "usage": "Pin user-assigned identity by object id",
               "required": false
@@ -3281,6 +3912,15 @@
           "path": "aether pivot verify-imds",
           "parent": "aether pivot",
           "description": "Verify the full IMDS v2 two-step handshake (PUT token → GET identity)",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for verify-imds",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "is_group": false,
           "is_runnable": true
         }
@@ -3292,12 +3932,28 @@
       "path": "aether plan",
       "parent": "aether",
       "description": "RL planner: train, export episodes, generate adaptive plans",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for plan",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether plan export",
           "parent": "aether plan",
           "description": "Export workspace operations as RL training episodes (vault; --output for JSONL)",
           "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for export",
+              "default_value": "false",
+              "required": false
+            },
             {
               "name": "output",
               "usage": "Output episodes JSONL file",
@@ -3323,6 +3979,13 @@
             {
               "name": "graph",
               "usage": "Graph JSON (for density discretization)",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for generate",
+              "default_value": "false",
               "required": false
             },
             {
@@ -3382,6 +4045,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for train",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "learning-rate",
               "usage": "Q-learning alpha",
               "default_value": "0.1",
@@ -3410,6 +4080,13 @@
       "description": "Plugin registry: search and install community plugins",
       "local_flags": [
         {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for plugins",
+          "default_value": "false",
+          "required": false
+        },
+        {
           "name": "index",
           "usage": "Registry index URL",
           "default_value": "https://raw.githubusercontent.com/Debajyoti0-0/aether-plugins/main/index.json",
@@ -3437,6 +4114,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for install",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "name",
               "usage": "Plugin name (required)",
               "required": true
@@ -3457,6 +4141,15 @@
           "path": "aether plugins installed",
           "parent": "aether plugins",
           "description": "List locally installed plugins",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for installed",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "is_group": false,
           "is_runnable": true
         },
@@ -3465,6 +4158,13 @@
           "parent": "aether plugins",
           "description": "Search the remote plugin registry",
           "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for search",
+              "default_value": "false",
+              "required": false
+            },
             {
               "name": "query",
               "usage": "Search substring",
@@ -3486,6 +4186,13 @@
         {
           "name": "domain",
           "usage": "Provider base URL, e.g. https://org.okta.com (required)",
+          "required": false
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for providers",
+          "default_value": "false",
           "required": false
         },
         {
@@ -3518,6 +4225,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for exec",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "target",
               "usage": "gitlab: project id | kubernetes: namespace/pod (required)",
               "required": true
@@ -3534,6 +4248,15 @@
           "path": "aether providers list",
           "parent": "aether providers",
           "description": "List registered provider plugins",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for list",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "is_group": false,
           "is_runnable": true
         },
@@ -3541,6 +4264,15 @@
           "path": "aether providers users",
           "parent": "aether providers",
           "description": "okta: enumerate users",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for users",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "is_group": false,
           "is_runnable": true
         },
@@ -3548,6 +4280,15 @@
           "path": "aether providers validate",
           "parent": "aether providers",
           "description": "Validate provider configuration and connectivity (okta, gitlab, kubernetes)",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for validate",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "is_group": false,
           "is_runnable": true
         }
@@ -3559,6 +4300,15 @@
       "path": "aether prt",
       "parent": "aether",
       "description": "Primary Refresh Token operations",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for prt",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether prt convert",
@@ -3575,6 +4325,13 @@
               "name": "client-id",
               "usage": "Public client id",
               "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for convert",
+              "default_value": "false",
               "required": false
             },
             {
@@ -3628,6 +4385,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for extract",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "output",
               "usage": "Write extracted PRTs JSON to file",
               "required": false
@@ -3644,6 +4408,13 @@
           "parent": "aether prt",
           "description": "Import a PRT (and optional TLS binding) into a workspace",
           "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for import",
+              "default_value": "false",
+              "required": false
+            },
             {
               "name": "prt",
               "usage": "PRT JSON/bin file (required)",
@@ -3672,6 +4443,13 @@
           "description": "Display PRT metadata without exchanging",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for show",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "prt-file",
               "usage": "PRT JSON file (required)",
               "required": true
@@ -3691,6 +4469,15 @@
       "path": "aether relay",
       "parent": "aether",
       "description": "Authentication relay operations",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for relay",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether relay cae-handler",
@@ -3704,6 +4491,13 @@
               "name": "client-id",
               "usage": "Public client id",
               "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for cae-handler",
+              "default_value": "false",
               "required": false
             },
             {
@@ -3739,6 +4533,13 @@
               "name": "client-id",
               "usage": "Public client id",
               "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for devicecode",
+              "default_value": "false",
               "required": false
             },
             {
@@ -3778,6 +4579,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for fido2-downgrade",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "mex",
               "usage": "Local MEX XML file (optional; else discovery by convention)",
               "required": false
@@ -3804,6 +4612,13 @@
               "name": "domain",
               "usage": "Federated domain (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for mex",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "mex",
@@ -3839,6 +4654,13 @@
               "name": "client-id",
               "usage": "Public client id",
               "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for mfa",
+              "default_value": "false",
               "required": false
             },
             {
@@ -3891,6 +4713,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for saml-strip",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "output",
               "usage": "Write stripped XML to file",
               "required": false
@@ -3911,6 +4740,13 @@
               "name": "client-id",
               "usage": "Public client id",
               "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for stretch",
+              "default_value": "false",
               "required": false
             },
             {
@@ -3960,6 +4796,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for ztna",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "password",
               "usage": "Password (or AETHER_PASSWORD env)",
               "required": false
@@ -4006,6 +4849,13 @@
           "name": "filter",
           "usage": "Only replay steps containing this substring",
           "required": false
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for replay",
+          "default_value": "false",
+          "required": false
         }
       ],
       "required_flags": [
@@ -4021,6 +4871,13 @@
               "name": "graph",
               "usage": "Graph JSON file (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for save",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "output",
@@ -4055,12 +4912,28 @@
       "path": "aether rollback",
       "parent": "aether",
       "description": "Revert engagement changes (deterministic cleanup)",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for rollback",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether rollback list",
           "parent": "aether rollback",
           "description": "List recorded reversible actions",
           "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for list",
+              "default_value": "false",
+              "required": false
+            },
             {
               "name": "workspace",
               "usage": "Workspace name (required)",
@@ -4081,6 +4954,13 @@
             {
               "name": "detail",
               "usage": "Human detail",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for push",
+              "default_value": "false",
               "required": false
             },
             {
@@ -4129,6 +5009,13 @@
           "description": "Undo all recorded actions (newest first)",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for undo",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "workspace",
               "usage": "Workspace name (required)",
               "required": true
@@ -4163,6 +5050,13 @@
         {
           "name": "bh-json",
           "usage": "BloodHound path JSON (optional)",
+          "required": false
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for run",
+          "default_value": "false",
           "required": false
         },
         {
@@ -4226,6 +5120,13 @@
           "description": "Execute an adaptive DAG plan (JSON) with fallbacks and retries",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for plan",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "parallel",
               "usage": "Max concurrent nodes",
               "default_value": "3",
@@ -4266,6 +5167,13 @@
           "name": "health-path",
           "usage": "Health endpoint path",
           "default_value": "/healthz",
+          "required": false
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for serve",
+          "default_value": "false",
           "required": false
         },
         {
@@ -4333,6 +5241,15 @@
           "path": "aether serve cert",
           "parent": "aether serve",
           "description": "Teamserver PKI management (CA, operator certificates, revocation)",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for cert",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "subcommands": [
             {
               "path": "aether serve cert init",
@@ -4348,6 +5265,13 @@
                 {
                   "name": "extra-hosts",
                   "usage": "Extra SAN hosts for the server cert (comma-separated)",
+                  "required": false
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for init",
+                  "default_value": "false",
                   "required": false
                 }
               ],
@@ -4377,6 +5301,13 @@
                   "required": false
                 },
                 {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for issue",
+                  "default_value": "false",
+                  "required": false
+                },
+                {
                   "name": "operator",
                   "usage": "Operator name (required)",
                   "required": true
@@ -4397,6 +5328,13 @@
                   "name": "dir",
                   "usage": "Teamserver PKI directory",
                   "default_value": "C:\\Users\\Debajyoti0-0\\AppData\\Roaming\\aether\\teamserver",
+                  "required": false
+                },
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for revoke",
+                  "default_value": "false",
                   "required": false
                 },
                 {
@@ -4428,6 +5366,13 @@
           "name": "action",
           "usage": "Action e.g. prt_exchange, wstrust_relay, vm_runcommand (required)",
           "required": true
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for simulate",
+          "default_value": "false",
+          "required": false
         },
         {
           "name": "json",
@@ -4467,6 +5412,13 @@
               "name": "count",
               "usage": "Number of variants (1-100)",
               "default_value": "20",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for fuzz",
+              "default_value": "false",
               "required": false
             },
             {
@@ -4514,6 +5466,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for stream",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "index",
               "usage": "Splunk index",
               "default_value": "redteam",
@@ -4552,6 +5511,15 @@
       "path": "aether token",
       "parent": "aether",
       "description": "Token Protection \u0026 channel binding operations",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for token",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether token confuse",
@@ -4561,6 +5529,13 @@
             {
               "name": "e",
               "usage": "RSA exponent hex (public key)",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for confuse",
+              "default_value": "false",
               "required": false
             },
             {
@@ -4602,6 +5577,13 @@
               "name": "client-id",
               "usage": "Public client id",
               "default_value": "1950a258-227b-4e31-a9cf-717495945fc2",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for protect",
+              "default_value": "false",
               "required": false
             },
             {
@@ -4655,6 +5637,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for repurpose",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "jwt",
               "usage": "JWT to repurpose (required)",
               "required": true
@@ -4676,6 +5665,13 @@
               "name": "binding",
               "usage": "Binding dump file (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for show",
+              "default_value": "false",
+              "required": false
             }
           ],
           "required_flags": [
@@ -4697,6 +5693,13 @@
           "name": "browser-preset",
           "usage": "TLS preset",
           "default_value": "chrome",
+          "required": false
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for tunnel",
+          "default_value": "false",
           "required": false
         },
         {
@@ -4727,6 +5730,15 @@
       "path": "aether validate",
       "parent": "aether",
       "description": "Attack path validation and OPSEC scoring",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for validate",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether validate path",
@@ -4747,6 +5759,13 @@
             {
               "name": "graph-token",
               "usage": "Optional Graph token for live user checks",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for path",
+              "default_value": "false",
               "required": false
             },
             {
@@ -4771,12 +5790,28 @@
           "path": "aether validate profile",
           "parent": "aether validate",
           "description": "Engagement profile presets (banking, red-team, incident-response, ...)",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for profile",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "subcommands": [
             {
               "path": "aether validate profile apply",
               "parent": "aether validate profile",
               "description": "Apply a profile to a config file",
               "local_flags": [
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for apply",
+                  "default_value": "false",
+                  "required": false
+                },
                 {
                   "name": "output",
                   "usage": "Config file to write",
@@ -4799,6 +5834,15 @@
               "path": "aether validate profile show",
               "parent": "aether validate profile",
               "description": "Show all built-in profiles",
+              "local_flags": [
+                {
+                  "name": "help",
+                  "shorthand": "h",
+                  "usage": "help for show",
+                  "default_value": "false",
+                  "required": false
+                }
+              ],
               "is_group": false,
               "is_runnable": true
             }
@@ -4831,6 +5875,13 @@
             {
               "name": "edr",
               "usage": "EDR detected on target",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for risk",
               "default_value": "false",
               "required": false
             },
@@ -4874,6 +5925,13 @@
               "required": true
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for soc",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "new-device",
               "usage": "Sign-in from new device",
               "default_value": "false",
@@ -4912,6 +5970,13 @@
               "name": "browser-preset",
               "usage": "TLS preset that will be used",
               "default_value": "chrome",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for stealth",
+              "default_value": "false",
               "required": false
             },
             {
@@ -4961,6 +6026,13 @@
           "required": false
         },
         {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for watch",
+          "default_value": "false",
+          "required": false
+        },
+        {
           "name": "interval",
           "usage": "Poll interval",
           "default_value": "5m0s",
@@ -4993,6 +6065,15 @@
       "path": "aether workspace",
       "parent": "aether",
       "description": "Engagement workspace management",
+      "local_flags": [
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for workspace",
+          "default_value": "false",
+          "required": false
+        }
+      ],
       "subcommands": [
         {
           "path": "aether workspace create",
@@ -5002,6 +6083,13 @@
             {
               "name": "allow-empty-passphrase",
               "usage": "Explicitly create a keyless workspace (strongly discouraged; emits warnings on every open)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for create",
               "default_value": "false",
               "required": false
             },
@@ -5026,6 +6114,13 @@
               "required": false
             },
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for delete",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "passphrase",
               "usage": "Workspace passphrase (or AETHER_PASSPHRASE env)",
               "required": false
@@ -5045,6 +6140,13 @@
           "description": "Show workspace details",
           "local_flags": [
             {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for info",
+              "default_value": "false",
+              "required": false
+            },
+            {
               "name": "passphrase",
               "usage": "Workspace passphrase (or AETHER_PASSPHRASE env)",
               "required": false
@@ -5062,6 +6164,15 @@
           "path": "aether workspace list",
           "parent": "aether workspace",
           "description": "List workspaces",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for list",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "is_group": false,
           "is_runnable": true
         },
@@ -5073,6 +6184,13 @@
             {
               "name": "confirm-keyless",
               "usage": "Required when migrating a keyless/legacy workspace (empty old passphrase)",
+              "default_value": "false",
+              "required": false
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for rekey",
               "default_value": "false",
               "required": false
             },
@@ -5100,6 +6218,13 @@
           "parent": "aether workspace",
           "description": "Generate the workspace engagement report",
           "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for report",
+              "default_value": "false",
+              "required": false
+            },
             {
               "name": "output",
               "usage": "Write report to file",
@@ -5133,6 +6258,13 @@
           "usage": "TLS fingerprint preset",
           "default_value": "chrome",
           "required": false
+        },
+        {
+          "name": "help",
+          "shorthand": "h",
+          "usage": "help for ztna",
+          "default_value": "false",
+          "required": false
         }
       ],
       "persistent_flags": [
@@ -5148,6 +6280,15 @@
           "path": "aether ztna detect",
           "parent": "aether ztna",
           "description": "Detect the ZTNA broker in the network path",
+          "local_flags": [
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for detect",
+              "default_value": "false",
+              "required": false
+            }
+          ],
           "is_group": false,
           "is_runnable": true
         },
@@ -5160,6 +6301,13 @@
               "name": "cmd",
               "usage": "Command to hand to the handler (required)",
               "required": true
+            },
+            {
+              "name": "help",
+              "shorthand": "h",
+              "usage": "help for exec",
+              "default_value": "false",
+              "required": false
             },
             {
               "name": "target",

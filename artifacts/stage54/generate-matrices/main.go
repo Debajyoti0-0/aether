@@ -129,6 +129,15 @@ func walkCommands(cmd *cobra.Command, parentPath string, flags *[]FlagDetail, ar
 
 	*commands = append(*commands, detail)
 
+	// cobra attaches --help and --version while executing, not while the tree is
+	// built, so an in-process walk sees neither. Initialise them explicitly or
+	// the matrix silently omits 156 bindings the binary really exposes (--help
+	// on all 155 commands, --version on the root). --help matters beyond
+	// completeness: it is the flag that returns flag.ErrHelp, which is the
+	// documented cause of argument validation being skipped.
+	cmd.InitDefaultHelpFlag()
+	cmd.InitDefaultVersionFlag()
+
 	// Collect local flags
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		*flags = append(*flags, FlagDetail{
@@ -144,8 +153,31 @@ func walkCommands(cmd *cobra.Command, parentPath string, flags *[]FlagDetail, ar
 		})
 	})
 
-	// Collect persistent flags
+	// Collect persistent flags.
+	//
+	// InitDefaultHelpFlag above calls mergePersistentFlags, so cmd.Flags() now
+	// also contains this command's persistent flags. Without the guard below
+	// each persistent flag is emitted twice - once as local, once as persistent -
+	// which produced 6 duplicate rows (aether|config, aether|log-level,
+	// aether plugins|index, aether providers|domain, aether providers|token,
+	// aether ztna|browser-preset). The persistent classification is authoritative,
+	// so a flag already recorded locally is reclassified rather than duplicated.
+	seen := map[string]bool{}
+	for _, existing := range *flags {
+		if existing.CommandPath == fullPath {
+			seen[existing.FlagName] = true
+		}
+	}
 	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		if seen[f.Name] {
+			for i := range *flags {
+				if (*flags)[i].CommandPath == fullPath && (*flags)[i].FlagName == f.Name {
+					(*flags)[i].IsPersistent = true
+					(*flags)[i].IsGlobal = parentPath == ""
+				}
+			}
+			return
+		}
 		*flags = append(*flags, FlagDetail{
 			CommandPath:  fullPath,
 			FlagName:     f.Name,
