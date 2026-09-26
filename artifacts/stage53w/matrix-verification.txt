@@ -1,0 +1,38 @@
+﻿Stage 53W WS1 - Stage 54 matrices verified against the shipped binary
+captured-utc  : 2026-09-26T08:34:22Z
+HEAD          : e47226ab6a1dd57b530458676d6581c71b41a61c
+binary        : bin\aether-53w.exe built from HEAD (29094912 bytes)
+source of truth: the binary's own --help output, walked recursively
+
+=== NODES ===
+binary tree nodes (incl. root, help, completion) : 155
+command-details.json                            : 155   missing=0  extra=0
+command-inventory.json (nested, excl. root)     : 154   +1 root = 155
+reconciles Stage 53S's 152 commands: 155 - root - help - completion = 152
+
+=== FLAGS ===
+binary (command,flag) bindings : 1101
+flag-matrix.json entries       : 1101   missing=0  extra=0  duplicates=0
+
+=== FINDING F-53W-01 (fixed) ===
+First verification found the matrix INCOMPLETE: 945 entries against the
+binary's 1101 bindings. 156 declared-present bindings were absent:
+  --help on all 155 commands (cobra attaches it during execution)
+  --version on the root
+Both were omitted because the in-process walk never initialised cobra's
+auto-added flags. --help is not cosmetic: it is the flag that returns
+flag.ErrHelp, which is the documented cause of argument validation being
+skipped, so omitting it hid a flag the qualification matrix must cover.
+
+Fix: call InitDefaultHelpFlag and InitDefaultVersionFlag per command. That
+triggers cobra's mergePersistentFlags, which made cmd.Flags() include
+persistent flags and produced 6 duplicate rows; the persistent loop now
+reclassifies instead of duplicating.
+
+=== VERDICT ===
+nodes : PASS  155 == 155, 0 missing, 0 extra
+flags : PASS  1101 == 1101, 0 missing, 0 extra, 0 duplicates
+reproducibility : PASS  all 6 matrices regenerate byte-identically (drift 0 of 6)
+
+NOTE: the previously cited figure of 945 flags was correct only for
+application-declared flags. The binary exposes 1101 flag bindings.

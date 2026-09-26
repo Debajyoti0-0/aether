@@ -289,3 +289,47 @@ Stage 53U's blocker list for G53R-25 was wrong and is withdrawn.
 Stage 54 §38 forbids promotion until the Stage 54 production matrix passes, and
 that matrix has not been run. The two remaining blockers are internal and closable;
 neither is waived.
+
+---
+
+## Update — Stage 53W Final Status (2026-09-26)
+
+Stage 53T's two residual blockers from Stage 53V were evaluated.
+
+- **G53R-26 (security review): `BLOCKED-WITH-OWNER`.** The review was executed —
+  13 checklist items, 10 PASS / 1 FAIL / 1 FLAKY / 1 PARTIAL, 3 findings all
+  dispositioned. It found **SEC-53W-01 (P1)**: both the LDAPS and StartTLS paths
+  in `internal/engine/ad/ldap/engine.go` hardcode `InsecureSkipVerify: true`, the
+  `Engine` struct has no CA pool and no verification toggle, and none of the 14
+  LDAP/AD commands exposes a `--ca-file` or `--insecure` flag. `Bind(ctx, dn,
+  password)` therefore sends directory credentials over an unauthenticated
+  channel that the operator cannot override.
+
+  The blocker is no longer "the review was not performed". It is now a specific,
+  located, reproducible P1 with a five-step remediation and a named owner. That
+  is a stronger position than Stage 53V's, and it is still not a pass.
+
+- **Browser cross-platform: `WAIVED-WITH-OWNER`** (scope-reduced, documented in
+  `docs/stage53w-browser-scope.md`). Chromium/Edge qualified. Firefox 156.0.1 is
+  installed and confirmed via `Get-AppxPackage`, but is **NOT PERFORMED** because
+  `scripts/browser-verify.mjs` speaks CDP only and Firefox does not implement
+  CDP. Safari **NOT PERFORMED**; it cannot run on Windows. The reduction is
+  justified by measurement — no WebGL/WebGPU, no SharedArrayBuffer/Atomics, no
+  Workers, so no cross-origin isolation requirement.
+
+### Matrix correction carried into the record
+
+Stage 53V reported the Stage 54 matrices as verified at 155 nodes / 945 flags.
+Stage 53W re-verified them against the shipped binary rather than against the
+generator, and **the flag count was wrong**: the binary exposes **1101** flag
+bindings. The matrix omitted `--help` on all 155 commands and `--version` on the
+root, because cobra attaches them during execution and the in-process walk never
+initialised them. Fixed in `4364ab4`; the matrix is now 1101 entries with 0
+missing, 0 extra, 0 duplicates. The "945 flags" figure is withdrawn.
+
+**Exit status: `BLOCKED-WITH-OWNER`** — residual item G53R-26, on SEC-53W-01 (P1).
+
+**Promotion status: unchanged.** `master` remains at `c75732a` on local and
+origin. Stage 54 §38 forbids promotion until the Stage 54 production matrix
+passes, and that matrix has not been run. SEC-53W-01 independently blocks a
+production claim on its own merits.
