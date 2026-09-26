@@ -42,6 +42,23 @@ func requireEngagementScope(path, domain, dc, capability string) error {
 // An unrecognised leaf resolves to the stronger ACL capability rather than
 // the weaker read capability, so a subcommand added later cannot silently
 // inherit a broader engagement than it needs.
+// rejectUnknownSubcommand makes a grouping command refuse an unrecognised leaf
+// instead of quietly printing its own help and exiting 0.
+//
+// Setting Args alone cannot do this. cobra checks Runnable() and returns
+// flag.ErrHelp before it validates arguments at all (cobra v1.8.0 command.go,
+// the Runnable check precedes ValidateArgs), so a command with no RunE never
+// reaches its validator. Making the group runnable is what lets the validation
+// happen: an unexpected argument is then rejected, while no argument still
+// falls through to the help the group was going to print anyway.
+//
+// Without this, `aether ad ldap acl path` exits 0 having done nothing, so an
+// operator who asked for an analysis that never ran is told it succeeded.
+func rejectUnknownSubcommand(cmd *cobra.Command) {
+	cmd.Args = cobra.NoArgs
+	cmd.RunE = func(c *cobra.Command, args []string) error { return c.Help() }
+}
+
 func ldapCapability(cmd *cobra.Command) string {
 	switch cmd.Name() {
 	case "users", "groups", "computers", "ous", "spns", "all":

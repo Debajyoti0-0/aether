@@ -21,7 +21,7 @@
 // script must never be ambiguous about. Polling for the result instead means a
 // slow machine gets more time rather than a wrong answer.
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -141,36 +141,45 @@ const child = spawn(
 );
 
 let stderrBuf = "";
-const wsURL = await new Promise((resolve, reject) => {
-  const timer = setTimeout(
-    () => reject(new Error(`the browser never reported a DevTools endpoint:\n${stderrBuf}`)),
-    30000
-  );
-  child.stderr.on("data", (d) => {
-    stderrBuf += d.toString();
-    const m = stderrBuf.match(/ws:\/\/[^\s]+/);
-    if (m) {
-      clearTimeout(timer);
-      resolve(m[0]);
-    }
-  });
-  child.on("error", (e) => {
-    clearTimeout(timer);
-    reject(e);
-  });
-  child.on("exit", (code) => {
-    clearTimeout(timer);
-    reject(new Error(`the browser exited with code ${code} before reporting an endpoint:\n${stderrBuf}`));
-  });
-});
-
 let code = 1;
 try {
+  const wsURL = await new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`the browser never reported a DevTools endpoint:\n${stderrBuf}`)),
+      30000
+    );
+    child.stderr.on("data", (d) => {
+      stderrBuf += d.toString();
+      const m = stderrBuf.match(/ws:\/\/[^\s]+/);
+      if (m) {
+        clearTimeout(timer);
+        resolve(m[0]);
+      }
+    });
+    child.on("error", (e) => {
+      clearTimeout(timer);
+      reject(e);
+    });
+    child.on("exit", (code) => {
+      clearTimeout(timer);
+      reject(
+        new Error(`the browser exited with code ${code} before reporting an endpoint:\n${stderrBuf}`)
+      );
+    });
+  });
   code = await drive(wsURL);
+} catch (e) {
+  // The browser launch, the DevTools socket and the polling loop can all fail,
+  // and none of them is allowed to escape as an unhandled rejection: an
+  // exception thrown at this level skips the cleanup below, which leaks both
+  // the browser process and its profile, and every leaked browser makes the
+  // next run slower and likelier to fail the same way.
+  console.error(`FAIL: ${e && e.message ? e.message : e}`);
+  code = 1;
 } finally {
-  child.kill();
+  await stopBrowser(child);
   try {
-    rmSync(profile, { recursive: true, force: true });
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   } catch {
     // A leftover temp profile is not worth failing the run over.
   }
@@ -264,6 +273,16 @@ async function drive(wsURL) {
       });
       if (r.exceptionDetails) {
         throw new Error(`evaluating the probe failed: ${r.exceptionDetails.text}`);
+      }
+      // A response with no value is not a broken page. Navigating destroys and
+      // recreates the execution context, and an evaluate that lands in that
+      // window comes back with an empty result rather than an error, so parsing
+      // it would throw on undefined and blame the dashboard for the browser's
+      // timing. Sampling again is correct for the same reason this loop already
+      // tolerates a mid-refetch sample: the transient is in the browser.
+      if (typeof r.result?.value !== "string") {
+        await sleep(150);
+        continue;
       }
       const state = JSON.parse(r.result.value);
       // Both conditions are required, not just the verdict. A chain update can
@@ -367,7 +386,12 @@ async function checkGraph(send, expectedNodes, expectedEdges) {
       })()`,
       returnByValue: true,
     });
-    state = JSON.parse(r.result.value);
+      if (typeof r.result?.value !== "string") {
+        // The empty-result window opened by the navigate above, not a fault.
+        await sleep(150);
+        continue;
+      }
+      state = JSON.parse(r.result.value);
     // allFinite is part of the wait condition, not just an assertion: a chain
     // update can trigger a refetch, and a sample taken mid-refetch would report
     // a loaded node list with no layout yet. That is a normal transient, not a
@@ -410,4 +434,26 @@ async function checkGraph(send, expectedNodes, expectedEdges) {
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+// stopBrowser ends the browser and waits for it to actually be gone.
+//
+// child.kill() only signals the process, so removing the profile immediately
+// afterwards races a browser that is still running and still holding that
+// directory. On Windows that race is lost every time: the removal returns
+// EPERM, the surrounding catch swallows it, and a profile directory is left in
+// the temp directory on every single run rather than only on failures. The
+// renderers and the GPU process are children of the browser process and are
+// not covered by kill() on its own, so the tree is taken down explicitly and
+// the exit is awaited before the directory is touched.
+async function stopBrowser(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise((resolve) => child.once("exit", resolve));
+  if (process.platform === "win32") {
+    // /T takes the child processes with it, /F does not prompt.
+    spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+  } else {
+    child.kill("SIGKILL");
+  }
+  await Promise.race([exited, sleep(10000)]);
 }

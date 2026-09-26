@@ -50,6 +50,14 @@ ad_sampledata/
 *.keytab
 /test_bind.py
 
+# The audit chain's signing key and ledger are written into the working
+# directory by a dashboard run or a test that runs with the repository root as
+# its working directory. aether-audit.key holds a real Ed25519 seed, so it is
+# credential material on the same footing as a keytab and must never be
+# committed; the ledger is derived local state.
+aether-audit.key
+aether-audit.jsonl
+
 # Per-stage evidence produced by live qualification runs. Cross-compiled test
 # binaries land here too and are matched by extension and by the aether-* stem
 # (a bare `aether-linux-d1` carries no extension at all).

@@ -58,6 +58,8 @@ func newLDAPCmd() *cobra.Command {
 		Long:  `LDAP operations including directory enumeration, security descriptor analysis, and ACL path finding.`,
 	}
 
+	rejectUnknownSubcommand(cmd)
+
 	cmd.AddCommand(newLDAPBindCmd())
 	cmd.AddCommand(newLDAPEnumCmd())
 	cmd.AddCommand(newLDAPACLCmd())
@@ -145,6 +147,8 @@ func newLDAPEnumCmd() *cobra.Command {
 		Short: "LDAP directory enumeration",
 		Long:  `Enumerate objects in the directory (users, groups, computers, OUs, SPNs).`,
 	}
+
+	rejectUnknownSubcommand(cmd)
 
 	cmd.AddCommand(newLDAPEnumUsersCmd())
 	cmd.AddCommand(newLDAPEnumGroupsCmd())
@@ -878,6 +882,8 @@ func newLDAPACLCmd() *cobra.Command {
 		Short: "Security descriptor and ACL analysis",
 		Long:  `Analyze security descriptors and ACLs on directory objects.`,
 	}
+
+	rejectUnknownSubcommand(cmd)
 
 	cmd.AddCommand(newLDAPACLGetCmd())
 	cmd.AddCommand(newLDAPACLEffectiveCmd())
