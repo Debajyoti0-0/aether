@@ -53,6 +53,14 @@ const (
 	CapEnumRead  = "ad.enum.read"
 	CapKerbRoast = "ad.kerberos.roast"
 	CapKerbTGT   = "ad.kerberos.tgt"
+	// CapLDAPRead covers plain LDAP enumeration (users, groups, computers,
+	// OUs, SPNs) and directory-wide reads.
+	CapLDAPRead = "ad.ldap.read"
+	// CapLDAPACL covers security-descriptor analysis: reading an object's ACL,
+	// computing a principal's effective rights, and ACL path finding. It is a
+	// separate capability so an engagement can grant directory reads without
+	// granting rights analysis.
+	CapLDAPACL = "ad.ldap.acl"
 )
 
 // IsAuthorized reports whether the engagement permits the given capability

@@ -29,3 +29,24 @@ func requireEngagementScope(path, domain, dc, capability string) error {
 	}
 	return e.IsAuthorized(domain, dc, capability)
 }
+
+// ldapCapability maps an LDAP subcommand to the engagement capability it
+// requires. ACL and rights analysis are separated from plain enumeration.
+//
+// The lookup keys off the leaf command name because the LDAP tree is mounted
+// at two command paths (aether ldap ... and aether ad ldap ...), so the full
+// command path is not stable. Within the LDAP subtree the leaf names are
+// unambiguous: users/groups/computers/ous/spns/all enumerate, while
+// get/effective/path analyse security descriptors.
+//
+// An unrecognised leaf resolves to the stronger ACL capability rather than
+// the weaker read capability, so a subcommand added later cannot silently
+// inherit a broader engagement than it needs.
+func ldapCapability(cmd *cobra.Command) string {
+	switch cmd.Name() {
+	case "users", "groups", "computers", "ous", "spns", "all":
+		return engagement.CapLDAPRead
+	default:
+		return engagement.CapLDAPACL
+	}
+}

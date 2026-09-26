@@ -167,6 +167,7 @@ func newLDAPEnumUsersCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -174,6 +175,10 @@ func newLDAPEnumUsersCmd() *cobra.Command {
 		Short: "Enumerate user objects",
 		Long:  `Enumerate user objects in the directory.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -248,6 +253,8 @@ func newLDAPEnumUsersCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 1000, "Maximum results")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
+	bindEngagementFlag(cmd, &engFile)
+
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
 	cmd.MarkFlagRequired("workspace")
@@ -266,12 +273,17 @@ func newLDAPEnumGroupsCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "groups",
 		Short: "Enumerate group objects",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -346,6 +358,8 @@ func newLDAPEnumGroupsCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 1000, "Maximum results")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
+	bindEngagementFlag(cmd, &engFile)
+
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
 	cmd.MarkFlagRequired("workspace")
@@ -364,12 +378,17 @@ func newLDAPEnumComputersCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "computers",
 		Short: "Enumerate computer objects",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -444,6 +463,8 @@ func newLDAPEnumComputersCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 1000, "Maximum results")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
+	bindEngagementFlag(cmd, &engFile)
+
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
 	cmd.MarkFlagRequired("workspace")
@@ -462,12 +483,17 @@ func newLDAPEnumOUsCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "ous",
 		Short: "Enumerate organizational units",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -542,6 +568,8 @@ func newLDAPEnumOUsCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 1000, "Maximum results")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
+	bindEngagementFlag(cmd, &engFile)
+
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
 	cmd.MarkFlagRequired("workspace")
@@ -558,12 +586,17 @@ func newLDAPEnumSPNCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "spns",
 		Short: "Enumerate service principal names via LDAP",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -633,6 +666,8 @@ func newLDAPEnumSPNCmd() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 1000, "Maximum results")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
+	bindEngagementFlag(cmd, &engFile)
+
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
 	cmd.MarkFlagRequired("workspace")
@@ -649,12 +684,17 @@ func newLDAPEnumAllCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "all",
 		Short: "Enumerate all object types",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -731,6 +771,8 @@ func newLDAPEnumAllCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&startTLS, "starttls", false, "Use StartTLS")
 	cmd.Flags().IntVar(&limit, "limit", 1000, "Maximum results per type")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
@@ -852,6 +894,7 @@ func newLDAPACLGetCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -859,6 +902,10 @@ func newLDAPACLGetCmd() *cobra.Command {
 		Short: "Get and analyze ACL on an object",
 		Long:  `Retrieve and analyze the security descriptor (ACL) on a directory object.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -927,6 +974,8 @@ func newLDAPACLGetCmd() *cobra.Command {
 	cmd.Flags().StringVar(&objectDN, "object", "", "Object DN to analyze")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
+	bindEngagementFlag(cmd, &engFile)
+
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
 	cmd.MarkFlagRequired("object")
@@ -945,6 +994,7 @@ func newLDAPACLEffectiveCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -952,6 +1002,10 @@ func newLDAPACLEffectiveCmd() *cobra.Command {
 		Short: "Get effective rights for a principal on an object",
 		Long:  `Calculate effective rights for a specific principal on a directory object.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -1018,6 +1072,8 @@ func newLDAPACLEffectiveCmd() *cobra.Command {
 	cmd.Flags().StringVar(&principal, "principal", "", "Principal SID")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
 
+	bindEngagementFlag(cmd, &engFile)
+
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
 	cmd.MarkFlagRequired("object")
@@ -1038,6 +1094,7 @@ func newLDAPPathCmd() *cobra.Command {
 		useTLS    bool
 		startTLS  bool
 		port      int
+		engFile   string
 	)
 
 	cmd := &cobra.Command{
@@ -1045,6 +1102,10 @@ func newLDAPPathCmd() *cobra.Command {
 		Short: "Find ACL-based attack paths",
 		Long:  `Find ACL-based attack paths from a start principal to a target object.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireEngagementScope(engFile, domain, dc, ldapCapability(cmd)); err != nil {
+				return err
+			}
+
 			_, err := cli.OpenGovernedWorkspace(cli.GetWorkspaceFlag(cmd))
 			if err != nil {
 				return err
@@ -1117,6 +1178,8 @@ func newLDAPPathCmd() *cobra.Command {
 	cmd.Flags().StringVar(&targetObj, "target", "", "Target object DN")
 	cmd.Flags().IntVar(&maxDepth, "max-depth", 5, "Maximum path depth")
 	cmd.Flags().StringVar(&workspace, "workspace", "", "Workspace name (required for governance)")
+
+	bindEngagementFlag(cmd, &engFile)
 
 	cmd.MarkFlagRequired("domain")
 	cmd.MarkFlagRequired("dc")
